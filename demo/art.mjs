@@ -1,0 +1,30 @@
+// 原创代码绘制的 SVG 插画。所有封面均为虚构作品的演示素材。
+export function posterArt(type = 'sword', color = 'amber', prefix = 'poster') {
+  const palettes = {
+    amber: ['#172b31', '#daa86a', '#f9d795', '#344c4c'],
+    red: ['#251e30', '#a94f49', '#f3ad86', '#593b50'],
+    jade: ['#173a3b', '#7aa891', '#e9dca5', '#426b62'],
+    violet: ['#29273d', '#9a87b4', '#f0c29e', '#514c70'],
+    teal: ['#112e35', '#537c82', '#bfcea8', '#28505c'],
+    peach: ['#484957', '#d2a38c', '#f3ddb1', '#9b7770'],
+    blue: ['#17283f', '#596a99', '#d1c6e0', '#344765'],
+  };
+  const [dark, mid, light, back] = palettes[color] || palettes.amber;
+  const defs = `<defs><linearGradient id="${prefix}-bg" x2="0.8" y2="1"><stop stop-color="${mid}"/><stop offset="1" stop-color="${dark}"/></linearGradient><linearGradient id="${prefix}-fade" x2="0" y2="1"><stop stop-color="${dark}" stop-opacity="0"/><stop offset="1" stop-color="${dark}"/></linearGradient><filter id="${prefix}-noise"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".09"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter></defs>`;
+  const star = (x, y, r = 1.3) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${light}" opacity=".65"/>`;
+  const stars = [[25,35],[67,74],[240,37],[184,96],[268,122],[43,144],[121,28],[214,165],[96,109]].map(([x,y]) => star(x,y)).join('');
+  const figure = (x, y, scale = 1) => `<g transform="translate(${x} ${y}) scale(${scale})" fill="${dark}"><path d="M-7-45Q-15-59-6-68Q4-76 12-64L14-44L7-40L18-27L32 8L15 5L25 70L-26 70L-17 3L-31 10L-16-29Z"/><path d="M2-65Q22-63 22-42L12-50Z"/><path d="M-10-35L-65 28L-70 25L-22-33Z"/><path d="M9-38Q60-22 65 36Q28 5 8 9Z" opacity=".7"/></g>`;
+  let scene = '';
+  if (type === 'sword' || type === 'moon') {
+    scene = `<circle cx="182" cy="115" r="80" fill="${light}" opacity=".85"/><circle cx="182" cy="115" r="93" fill="none" stroke="${light}" opacity=".24"/>${type === 'moon' ? `<circle cx="204" cy="91" r="67" fill="${mid}"/>` : ''}<path d="M0 251L59 148L91 186L129 118L172 214L212 162L300 237V420H0Z" fill="${back}"/><path d="M0 294L67 223L110 287L170 204L211 270L266 218L300 280V420H0Z" fill="${dark}" opacity=".62"/><path d="M0 342Q69 287 138 324T300 309V420H0Z" fill="${dark}"/>${figure(158, 275, 0.9)}<path d="M153 245L230 135L235 137L167 258Z" fill="${light}" opacity=".8"/><path d="M0 279Q93 263 148 283M142 205Q199 192 300 213M0 202Q41 188 79 195" fill="none" stroke="${light}" stroke-width="2" opacity=".17"/><g fill="${dark}"><path d="M0 46Q47 45 68 88L37 72L57 105L13 77Z"/><path d="M300 18Q252 41 249 92L272 63L266 105L298 64Z"/></g>`;
+  } else if (type === 'city') {
+    scene = `<circle cx="198" cy="114" r="64" fill="${light}" opacity=".72"/><path d="M0 235H25V153H60V208H77V121H108V196H124V86H147V184H176V139H204V205H227V109H254V178H278V135H300V420H0Z" fill="${back}"/><path d="M0 301H38V234H75V259H99V204H136V268H169V214H202V253H234V185H271V240H300V420H0Z" fill="${dark}" opacity=".8"/>${[45,85,130,180,240,280].map((x,i)=>`<path d="M${x} ${170+i*11}v35m-6-28v20" stroke="${light}" opacity=".4" stroke-width="3"/>`).join('')}<path d="M128 420L157 266L185 420" fill="${mid}" opacity=".55"/><path d="M0 358L300 305M0 382L300 329" stroke="${light}" opacity=".2"/>${figure(155, 302, 0.55)}<path d="M20 53L144 53M20 58L98 58" stroke="${light}" opacity=".35"/>`;
+  } else if (type === 'door') {
+    scene = `<path d="M0 0L69 65V420H0M300 0L231 65V420H300" fill="${dark}" opacity=".55"/><path d="M89 420V105Q89 42 150 42T211 105V420Z" fill="${dark}"/><path d="M108 398V114Q108 66 150 66T192 114V398Z" fill="${mid}"/><path d="M120 398V116Q120 80 150 80T180 116V398Z" fill="${light}" opacity=".4"/><path d="M150 83L180 116V398L150 348Z" fill="${dark}"/><path d="M150 348L48 420H268L180 398Z" fill="${light}" opacity=".4"/>${figure(141, 287, 0.58)}<path d="M0 347Q89 321 160 343T300 324M0 368Q133 344 300 365" fill="none" stroke="${light}" stroke-width="18" opacity=".08"/><circle cx="166" cy="241" r="3" fill="${light}"/>`;
+  } else if (type === 'shop') {
+    scene = `<circle cx="219" cy="94" r="47" fill="${light}" opacity=".7"/><path d="M0 257Q69 183 166 231T300 209V420H0Z" fill="${back}"/><path d="M35 198L139 145L250 198V337H35Z" fill="${dark}"/><path d="M18 206L139 135L265 203L253 215L139 157L29 220Z" fill="${light}"/><path d="M53 213H232V260H53Z" fill="${mid}"/><path d="M58 216H227V249H58Z" fill="${light}" opacity=".7"/><path d="M57 270H103V318H57ZM118 270H164V337H118ZM179 270H225V318H179Z" fill="${light}" opacity=".82"/><path d="M80 270V318M202 270V318M141 270V337M57 294H103M179 294H225" stroke="${dark}" stroke-width="4"/><path d="M0 338H300V420H0Z" fill="${dark}" opacity=".8"/><path d="M120 339L89 420H221L161 339Z" fill="${light}" opacity=".15"/><g fill="${dark}"><path d="M253 288Q277 265 277 303V354H253Z"/><circle cx="264" cy="281" r="16"/><path d="M250 271L249 253L262 267M269 267L283 255L278 277"/><path d="M273 345Q300 329 289 312" fill="none" stroke="${dark}" stroke-width="9"/></g><path d="M24 80V115M16 93H32" stroke="${light}" stroke-width="2"/>`;
+  } else {
+    scene = `${stars}<circle cx="171" cy="158" r="88" fill="${back}"/><path d="M95 116Q167 70 234 133M88 141Q176 98 252 165M89 178Q163 139 254 187M104 211Q172 174 243 213" stroke="${mid}" stroke-width="12" fill="none" opacity=".8"/><ellipse cx="171" cy="158" rx="139" ry="29" fill="none" stroke="${light}" stroke-width="13" transform="rotate(-25 171 158)" opacity=".65"/><circle cx="49" cy="75" r="16" fill="${light}" opacity=".7"/><path d="M124 321L155 277L187 321L155 310Z" fill="${light}"/><path d="M148 320L156 360L164 320" fill="${mid}"/><path d="M0 388Q89 311 151 355T300 337V420H0Z" fill="${dark}"/>`;
+  }
+  return `<svg class="poster-art" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${defs}<g filter="url(#${prefix}-noise)"><path fill="url(#${prefix}-bg)" d="M0 0H300V420H0Z"/>${stars}${scene}<path fill="url(#${prefix}-fade)" d="M0 180H300V420H0Z" opacity=".8"/></g></svg>`;
+}

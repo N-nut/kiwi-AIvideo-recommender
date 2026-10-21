@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f4">
+  <meta name="description" content="漫游 · AI 漫剧智能推荐系统的模拟交互 Demo。">
+  <title>漫游 · 发现刚好对味的漫剧</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23ea613f'/%3E%3Cpath d='M32 12l6 14 14 6-14 6-6 14-6-14-14-6 14-6z' fill='white'/%3E%3C/svg%3E">
+  <style>
+:root{--bg:#f7f7f4;--paper:#fff;--ink:#25272c;--muted:#85878e;--line:#e9e9e5;--orange:#e9603b;--orange-soft:#fff2eb;--green:#3a7564;--radius:16px;font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg);font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;font-size:14px;line-height:1.6}button,input,textarea,select{font:inherit}button,a,select,input{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{cursor:wait;opacity:.65}button{color:inherit}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #e9603b88;outline-offset:4px}button{transition:background .18s,transform .18s,border-color .18s}button:hover:not(:disabled){transform:translateY(-1px)}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:fixed;left:20px;top:-70px;z-index:100;background:var(--ink);color:white;padding:12px 24px;border-radius:10px}.skip-link:focus{top:14px}
+.sidebar{width:212px;position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;padding:32px 20px 20px;background:#fff;border-right:1px solid var(--line);z-index:10}.brand{display:flex;align-items:center;gap:11px;margin:2px 14px 56px;font-weight:800;font-size:25px;line-height:1.1;letter-spacing:2px}.brand-icon{width:41px;height:44px;display:grid;place-items:center;background:var(--orange);color:white;border-radius:13px 13px 13px 3px;font-size:30px;font-weight:400;box-shadow:0 5px 12px #e9603b20}.brand small{display:block;font-size:9px;letter-spacing:3.5px;font-weight:500;color:#98989b;margin-top:7px}.nav-caption{font-size:10px;letter-spacing:1.5px;color:#a6a7ac;padding-left:16px;margin-bottom:15px}.nav-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;padding:12px 15px;margin:5px 0;font-size:13px;text-align:left;border-radius:9px;color:#7b7d85;white-space:nowrap}.nav-item.active{background:var(--orange-soft);color:#d65531;font-weight:650}.nav-item:hover{background:#f8f8f5}.nav-icon{font-size:22px;width:23px;line-height:1}.nav-dot{width:5px;height:5px;border-radius:50%;background:var(--orange);margin-left:auto}.nav-count{margin-left:auto;font-size:10px;background:#f1f1ee;padding:0 5px;border-radius:4px;color:#93949a}.sidebar-note{margin:auto 8px 33px;padding:29px 4px 8px;position:relative}.note-spark{font-size:32px;color:#d0ac87;display:block;margin-bottom:12px}.sidebar-note strong{font-size:12px;font-weight:600}.sidebar-note p{color:#9a9ba2;font-size:11px;line-height:1.9;margin:9px 0 22px}.note-line{display:block;width:28px;height:2px;background:#e2c9b1}.guide-link{display:flex;align-items:center;gap:9px;background:none;border:0;color:#888b93;text-align:left;font-size:12px;padding:13px 15px}.guide-link span:last-child{margin-left:auto}.sidebar-footer{display:flex;align-items:center;border-top:1px solid var(--line);padding:20px 5px 0;margin-top:13px;color:#96989e;font-size:10px;gap:7px}.sidebar-footer i{width:5px;height:5px;background:#70a38d;border-radius:50%}.sidebar-footer span{margin-left:auto;color:#b3b4ba}
+main{margin-left:212px;padding:0 42px;max-width:1650px}.topbar{height:85px;display:flex;align-items:center;justify-content:space-between;gap:12px}.breadcrumb{font-size:11px;color:#92959d;display:flex;align-items:center;gap:14px}.breadcrumb span{color:#c0c1c7}.breadcrumb strong{color:#62656e;font-weight:500}.demo-badge{display:flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid #e5e5df;border-radius:20px;color:#7a7d83;background:#fff;font-size:10px;white-space:nowrap}.demo-badge>span:first-child{width:5px;height:5px;border-radius:50%;background:#de976a}.badge-info{font-size:12px;color:#b3b3b8;margin-left:2px}
+.hero{height:268px;background:#252a32;border-radius:18px;position:relative;overflow:hidden;color:#fff;isolation:isolate}.hero:after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 80% 20%,#736d5833,transparent 65%)}.hero-copy{padding:30px 34px;position:relative;z-index:2;width:62%}.eyebrow{font-size:9px;letter-spacing:2.4px;font-weight:600;color:#a8a9ac;display:flex;gap:8px;align-items:center}.eyebrow>span{width:5px;height:5px;background:#e6b28d;border-radius:50%}.hero h1{font-size:33px;line-height:1.5;letter-spacing:1px;margin:11px 0 9px;font-weight:650}.hero h1 span{color:#f4b897}.hero-copy>p{font-size:11px;color:#b9bbc0;letter-spacing:.25px;margin:0}.hero-footer{display:flex;align-items:center;gap:10px;margin-top:22px;font-size:9px;color:#999da5}.hero-stars{color:#e9bea3;font-size:13px;letter-spacing:3px}.hero-art{position:absolute;width:42%;height:100%;right:1.5%;top:0;perspective:800px}.hero-poster{position:absolute;width:124px;height:187px;overflow:hidden;border-radius:5px;top:49px;box-shadow:0 16px 30px #10141a77;transform:rotate(10deg);right:18px;border:1px solid #ffffff20}.hero-poster .poster-art{width:100%;height:100%;object-fit:cover}.hero-poster:nth-child(1){right:181px;top:59px;transform:rotate(-12deg);width:112px;height:168px}.hero-poster:nth-child(2){right:86px;top:27px;transform:rotate(-2deg);width:137px;height:206px;z-index:2}.hero-poster:nth-child(3){right:1px;top:58px;transform:rotate(12deg);z-index:3}.hero-poster-title{position:absolute;inset:auto 0 24px;text-align:center;font-family:"SimSun","Songti SC",serif;font-size:23px;color:#f5e7cc;letter-spacing:3px;text-shadow:0 3px 8px #000}.hero-poster:nth-child(2) .hero-poster-title{font-size:27px}.hero-corner{position:absolute;right:22px;bottom:15px;font-size:7px;letter-spacing:2px;color:#a4a49e}
+.composer{margin-top:25px;background:white;border:1px solid var(--line);border-radius:var(--radius);padding:23px 25px 24px}.section-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:19px}.section-top>div{display:flex;align-items:center;gap:10px}.mini-number{font-size:10px;color:#c0b5a6;font-family:Georgia,serif;font-style:italic;font-weight:600}.section-top h2{font-size:17px;font-weight:650;margin:0;letter-spacing:.25px}.section-hint{color:#a0a1a7;font-size:10px}.composer-grid{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:26px}.query-column{min-width:0}textarea{display:block;resize:vertical;min-height:100px;max-height:220px;width:100%;padding:15px 16px;border-radius:10px;border:1px solid #e7e7e5;line-height:1.9;background:#fcfcfa;color:#3b3c43;font-size:12px;transition:border .2s}textarea:focus{border-color:#e6b09d;outline:2px solid #fff3eb}textarea::placeholder{color:#b0b1b7}.input-bottom{display:flex;justify-content:space-between;gap:8px;color:#aaabb1;font-size:9px;margin:7px 1px 14px}.input-bottom span:last-child{white-space:nowrap}.example-row{display:flex;gap:11px;align-items:flex-start;font-size:10px}.example-row>span{color:#a7a8ae;white-space:nowrap;padding-top:5px}.example-row>div{display:flex;gap:6px;flex-wrap:wrap}.example-button{background:#fafaf8;border:1px solid #eeeeea;border-radius:5px;font-size:10px;padding:4px 8px;color:#81838a}.example-button:hover{background:var(--orange-soft);color:var(--orange);border-color:#f2d4c5}.taste-panel{border-left:1px solid #ededea;padding-left:25px;display:flex;flex-direction:column;min-width:0}.taste-heading{display:flex;align-items:center;gap:7px;font-size:11px;margin:0 0 12px}.taste-heading>span{color:var(--orange);font-size:16px}.taste-heading strong{font-weight:600}.text-button{font-size:10px;border:0;background:none;color:#93959d;padding:0;display:flex;gap:5px;align-items:center}.taste-heading .text-button{margin-left:auto}.preference-chips{display:flex;gap:5px;flex-wrap:wrap;min-height:27px}.taste-chip{background:#f2f4f0;border:1px solid #e8ece4;border-radius:5px;padding:3px 7px;font-size:10px;color:#5e7466}.taste-chip.exclude{background:#fff4ef;border-color:#f5dfd4;color:#bb6f54}.empty-preferences{font-size:11px;color:#aaa}.taste-panel p{font-size:9px;line-height:1.9;color:#9c9da4;margin:9px 0 13px}.primary-button{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--orange);color:white;border:1px solid var(--orange);padding:10px 17px;border-radius:8px;font-size:12px;font-weight:600;box-shadow:0 4px 8px #e9603b13}.primary-button:hover:not(:disabled){background:#da5330;border-color:#da5330;box-shadow:0 5px 12px #e9603b28}.taste-panel .primary-button{margin-top:auto;width:100%}.primary-button>span:last-child{font-size:17px;font-weight:400;line-height:1}.field-error{color:#b84a37;font-size:11px;margin:9px 0 0}
+.results-section{padding-top:29px;scroll-margin-top:20px}.result-top{margin-bottom:17px}.subtle-pill{font-size:9px;border:1px solid #e6e6df;border-radius:5px;padding:2px 6px;color:#92948c;background:#f4f5ef;font-weight:400}.result-caption{font-size:10px;color:#9b9da4}.drama-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.drama-card{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s}.drama-card:hover{transform:translateY(-3px);box-shadow:0 9px 24px #242a3610}.poster-button{width:100%;display:block;position:relative;overflow:hidden;aspect-ratio:1.34;cursor:pointer;border:0;padding:0;background:#344644}.poster-button:hover:not(:disabled){transform:none}.poster-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.poster-button .poster-art{height:160%;top:-17%;transition:transform .5s}.poster-button:hover .poster-art{transform:scale(1.025)}.poster-button:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 18%,#0c19231c 52%,#0c1923b0)}.poster-tag{position:absolute;left:13px;top:12px;z-index:2;font-size:9px;background:#ffffffde;padding:3px 7px;border-radius:4px;color:#45504b;backdrop-filter:blur(4px)}.poster-demo{position:absolute;right:12px;top:14px;z-index:2;font-size:8px;color:#ffffffa8;letter-spacing:.8px}.poster-wordmark{position:absolute;left:21px;bottom:19px;z-index:2;text-align:left;color:#f8ebd8}.poster-wordmark strong{display:block;font-family:"SimSun","Songti SC",serif;font-size:28px;letter-spacing:5px;font-weight:500;text-shadow:0 2px 9px #0003}.poster-wordmark small{display:block;font-size:8px;letter-spacing:1.5px;color:#e3ddceb3;margin-top:5px}.poster-arrow{position:absolute;right:16px;bottom:21px;z-index:2;color:#fff9;display:grid;place-items:center;border:1px solid #fff3;border-radius:50%;width:26px;height:26px;font-size:14px}.card-body{padding:17px 17px 12px}.card-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.card-heading h3{font-size:15px;letter-spacing:.3px;margin:0}.card-meta{font-size:9px;color:#a1a3aa;white-space:nowrap}.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0 11px}.card-tag{font-size:9px;padding:2px 6px;background:#f7f7f4;border-radius:4px;color:#868982}.match-box{border-top:1px solid #f0f0ec;padding-top:11px;font-size:10px;line-height:1.8;color:#81838b;min-height:62px}.match-label{color:var(--green);font-size:9px;display:flex;align-items:center;gap:5px;margin-bottom:3px}.match-label:before{content:"✦";font-size:11px}.match-box p{margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.caveat{color:#ac8961;font-size:9px;margin-top:4px}.card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:13px;border-top:1px solid #f1f1ed;padding-top:10px;font-size:9px;color:#b0b1b7}.evidence-button{border:0;background:none;color:#777b84;font-size:10px;display:flex;gap:6px;padding:0}.evidence-button:hover{color:var(--orange)}
+.page-footer{display:flex;gap:15px;align-items:center;padding:30px 0 25px;margin-top:8px;font-size:9px;color:#a4a6ac}.footer-brand{font-weight:600;color:#7c7f86;white-space:nowrap}.footer-end{font-size:7px;letter-spacing:1.5px;margin-left:auto;color:#b6b8bd}.catalog-heading{padding:25px 0 28px}.catalog-heading .eyebrow{color:#ba8e72}.catalog-heading h1{font-size:30px;margin:12px 0 9px;letter-spacing:1px}.catalog-heading p{font-size:12px;color:#92949b}.catalog-filters{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid var(--line)}.filter-button{border:1px solid #e4e5df;border-radius:7px;background:white;padding:7px 18px;font-size:11px;color:#91938e}.filter-button.active{background:#2d3533;border-color:#2d3533;color:white}.catalog-count{font-size:11px;color:#9b9da3;margin:20px 0 15px}.catalog-grid{row-gap:25px}
+.empty-state{grid-column:1/-1;padding:37px 20px;text-align:center;background:#fff;border:1px dashed #dddeda;border-radius:12px}.empty-icon{display:block;font-size:34px;color:#ccab8e;line-height:1.5}.empty-state h3{font-size:17px;font-weight:600;margin:9px 0}.empty-state p{font-size:12px;line-height:1.9;color:#96979e;max-width:500px;margin:0 auto 18px}.empty-state .secondary-button{display:inline-flex;margin:0 5px 5px}.secondary-button{background:white;border:1px solid #e3e4df;border-radius:7px;padding:9px 14px;color:#72767d;font-size:11px}.secondary-button:hover{background:#f7f7f4;border-color:#cfd1c9}.loading-message{font-size:11px;color:#85877f;display:flex;gap:8px;align-items:center;margin:0 0 15px}.loading-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1s infinite}.skeleton{border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--line);height:338px}.skeleton-poster{height:195px;background:#e6e8e2;animation:pulse 1.2s infinite}.skeleton-line{height:10px;margin:18px 20px;background:#eceee8;width:48%;border-radius:4px}.skeleton-line.long{width:78%}.result-status{color:var(--green);font-size:10px;margin:-3px 0 15px;display:flex;gap:5px;align-items:center}@keyframes pulse{50%{opacity:.5}}
+dialog{border:1px solid #e7e6de;border-radius:19px;padding:30px;box-shadow:0 25px 100px #0b142540;color:var(--ink);max-height:90vh;overflow-y:auto;background:white;width:min(560px,calc(100vw - 32px))}dialog::backdrop{background:#1c252862;backdrop-filter:blur(4px)}.dialog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.dialog-heading .eyebrow{font-size:8px;color:#bf9376}.dialog-heading h2{margin:9px 0 6px;font-size:23px;font-weight:600}.icon-button{border:1px solid #e9e9e3;background:#fff;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:22px;color:#8d8e95;padding:0;flex:none;line-height:1}.dialog-intro{color:#92959c;font-size:11px;line-height:1.9;margin:9px 0 23px}.select-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.select-row label{font-size:11px;color:#737780;display:block}.select-row select{display:block;width:100%;margin-top:7px;background:#fafaf7;border:1px solid #e5e5df;border-radius:7px;padding:9px 10px;color:#626771;font-size:12px}fieldset{border:0;padding:0;margin:22px 0}legend{font-size:12px;margin-bottom:12px;font-weight:600}legend small{font-weight:400;color:#a2a3a9;font-size:9px;margin-left:8px}.option-grid{display:flex;gap:8px;flex-wrap:wrap}.option-label{position:relative;font-size:11px;cursor:pointer}.option-label input{position:absolute;opacity:0}.option-label span{border:1px solid #e9e9e3;border-radius:6px;background:#fbfbf8;color:#8a8c93;display:block;padding:6px 12px;transition:all .15s}.option-label input:checked+span{background:var(--orange-soft);border-color:#edbea9;color:#c76641}.option-label input:focus-visible+span{outline:3px solid #e9603b88;outline-offset:2px}.dialog-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:15px;border-top:1px solid var(--line)}.dialog-actions .primary-button{font-size:11px;padding:9px 16px}.guide-steps{list-style:none;padding:0;margin:20px 0}.guide-steps li{display:flex;gap:15px;padding:11px 0;align-items:flex-start}.guide-steps li>span{font-size:12px;color:var(--orange);font-family:Georgia,serif;font-style:italic;background:var(--orange-soft);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none}.guide-steps strong{font-size:12px;font-weight:600}.guide-steps p{color:#93969e;font-size:11px;margin:3px 0}.guide-scenarios{border-top:1px solid var(--line);padding-top:18px;display:flex;gap:8px;flex-wrap:wrap}.guide-scenarios>span{width:100%;font-size:10px;color:#a3a4aa;margin-bottom:3px}.detail-dialog{width:min(690px,calc(100vw - 32px));padding:0}.detail-close{position:absolute;top:15px;right:15px;z-index:5;background:#ffffffdd}.detail-banner{position:relative;height:210px;overflow:hidden;background:#31423e}.detail-banner .poster-art{height:240%;top:-65%}.detail-banner:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent,#15232cbb)}.detail-banner-text{position:absolute;bottom:22px;left:30px;z-index:1;color:white}.detail-banner-text h2{font-size:30px;letter-spacing:5px;font-family:"SimSun",serif;font-weight:500;margin:5px 0}.detail-banner-text span{font-size:10px;letter-spacing:2px;color:#efdbc5}.detail-main{padding:25px 30px 30px}.detail-main h3{font-size:12px;font-weight:600;margin:20px 0 9px}.detail-main h3:first-child{margin-top:0}.detail-main p{font-size:12px;line-height:1.95;color:#858992;margin:7px 0}.detail-labels{display:flex;gap:7px;flex-wrap:wrap}.detail-label{font-size:10px;color:#547c69;background:#f1f5ef;padding:4px 8px;border-radius:5px}.evidence-quote{border-left:2px solid #e2b698;padding:10px 16px;background:#faf9f5;color:#737980;font-size:12px;line-height:2;margin:0}.detail-source{display:flex;justify-content:space-between;gap:10px;margin-top:22px;border-top:1px solid var(--line);padding-top:15px;font-size:9px;color:#aaa;flex-wrap:wrap}.source-badge{color:#ae8065}.notice{padding:9px 12px;border:1px solid #f1dfd1;background:#fdf8f2;border-radius:7px;font-size:10px;color:#a68a6f;margin-top:15px}
+@media(min-width:1500px){main{padding:0 60px}.hero{height:300px}.hero-copy{padding:37px 40px}.hero h1{font-size:38px}.hero-art{right:5%;transform:scale(1.13);transform-origin:center}.composer-grid{grid-template-columns:minmax(0,1fr) 290px}.poster-button{aspect-ratio:1.5}}
+@media(max-width:1200px){.sidebar{width:184px;padding-left:15px;padding-right:15px}.brand{margin-left:11px}.sidebar-note{margin-left:4px}main{margin-left:184px;padding:0 28px}.composer{padding:21px}.composer-grid{grid-template-columns:minmax(0,1fr) 214px;gap:20px}.taste-panel{padding-left:20px}.section-hint{display:none}.hero-copy{padding-left:28px;width:65%}.hero h1{font-size:30px}.hero-art{right:-9px;transform:scale(.9);transform-origin:right center}.hero-corner{font-size:6px}.card-body{padding:14px}.poster-wordmark strong{font-size:25px;letter-spacing:3px}.footer-end{display:none}.drama-grid{gap:14px}}
+@media(max-width:980px){.sidebar{width:76px;padding:27px 11px 18px}.brand{margin:3px 5px 43px}.brand>span:last-child,.nav-caption,.nav-item>span:not(.nav-icon),.sidebar-note,.guide-link,.sidebar-footer{display:none}.brand-icon{width:41px;flex:none}.nav-item{font-size:0;padding:12px 14px;justify-content:center}.nav-item .nav-icon{font-size:22px;flex:none}.nav-item{gap:0}.nav-dot{display:none}main{margin-left:76px;padding:0 26px}.hero-art{transform:scale(.88);right:-13px}.hero-copy{width:66%}.hero h1{font-size:29px}.hero-copy>p{font-size:10px}.composer-grid{grid-template-columns:minmax(0,1fr) 212px}.card-meta{font-size:8px}.card-heading h3{font-size:14px}.poster-wordmark strong{font-size:23px}.card-body{padding:13px}.result-caption{font-size:9px}.hero-footer{font-size:8px}}
+@media(max-width:760px){main{padding:0 20px}.topbar{height:69px}.hero{height:241px}.hero-copy{padding:25px 24px;width:72%}.hero h1{font-size:27px}.hero-art{right:-35px;opacity:.55;transform:scale(.74);transform-origin:right center;width:48%}.hero-poster:nth-child(1){display:none}.hero-corner{display:none}.hero-copy>p{max-width:280px;line-height:1.8}.hero-footer{margin-top:19px;gap:5px}.hero-stars{font-size:11px}.composer{padding:20px;margin-top:19px}.composer-grid{grid-template-columns:1fr;gap:18px}.taste-panel{border:0;border-top:1px solid var(--line);padding:16px 0 0;display:grid;grid-template-columns:1fr auto;gap:0 16px}.taste-heading{grid-column:1;margin-bottom:8px}.preference-chips{grid-column:1}.taste-panel p{grid-column:1;margin:7px 0 0}.taste-panel .primary-button{grid-column:2;grid-row:1/4;margin:auto 0;width:auto;white-space:nowrap;gap:12px;padding:12px 15px}.taste-heading .text-button{margin-left:8px}.drama-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.drama-card:last-child:nth-child(odd){grid-column:auto}.result-top{align-items:flex-start;flex-direction:column;gap:6px}.result-caption{margin-left:24px}.poster-button{aspect-ratio:1.25}.page-footer{align-items:flex-start;font-size:8px;gap:10px}.footer-brand{font-size:9px}.hero .eyebrow{font-size:7px}.section-top h2{font-size:16px}.catalog-heading h1{font-size:25px}}
+@media(max-width:520px){.sidebar{position:static;width:100%;height:65px;border-right:0;border-bottom:1px solid var(--line);padding:0 18px;flex-direction:row;align-items:center;justify-content:space-between}.brand{margin:0;font-size:18px;gap:8px;letter-spacing:1px}.brand>span:last-child{display:block}.brand small{display:none}.brand-icon{width:30px;height:32px;border-radius:9px 9px 9px 2px;font-size:24px}.sidebar nav{display:flex;gap:5px}.nav-item{font-size:10px;padding:7px 10px;gap:5px;width:auto;margin:0}.nav-item .nav-icon{font-size:17px;width:18px}.nav-item>span:not(.nav-icon){display:none}main{margin-left:0;padding:0 16px}.topbar{height:55px}.breadcrumb{font-size:9px;gap:9px}.demo-badge{font-size:8px;padding:4px 8px}.hero{height:231px;border-radius:13px}.hero-copy{padding:23px 20px;width:100%}.hero h1{font-size:27px;line-height:1.45}.hero-art{opacity:.24;transform:scale(.77);right:-40px;width:44%}.hero-copy>p{max-width:240px;font-size:10px}.hero-footer{font-size:7px}.composer{padding:18px 15px;border-radius:12px}.section-top{margin-bottom:14px}.section-top h2{font-size:15px}.mini-number{font-size:9px}.input-bottom{font-size:8px}.input-bottom>span:first-child{max-width:215px}.example-row{gap:8px}.example-row>span{font-size:9px}.example-button{padding:4px 7px;font-size:9px}.taste-panel{grid-template-columns:1fr;gap:0}.taste-heading .text-button{margin-left:auto}.taste-panel .primary-button{grid-column:1;grid-row:auto;margin-top:15px;width:100%;padding:11px 15px}.taste-panel p{font-size:9px}.drama-grid{grid-template-columns:1fr}.poster-button{aspect-ratio:1.6}.poster-button .poster-art{height:180%;top:-33%}.poster-wordmark{left:24px;bottom:22px}.poster-wordmark strong{font-size:29px;letter-spacing:5px}.card-body{padding:17px 19px 13px}.card-heading h3{font-size:16px}.card-meta{font-size:10px}.card-tags .card-tag{font-size:10px}.match-box{font-size:11px;min-height:58px}.match-label{font-size:10px}.card-footer{font-size:9px}.evidence-button{font-size:11px}.results-section{padding-top:24px}.result-top>div{gap:8px}.subtle-pill{font-size:8px}.page-footer{line-height:1.9;padding-top:23px}.catalog-heading h1{font-size:23px}.filter-button{padding:6px 12px}.catalog-heading{padding-top:18px}dialog{padding:24px 20px}.dialog-heading h2{font-size:21px}.select-row{gap:12px}.detail-main{padding:23px}.detail-banner{height:180px}.detail-banner-text{left:23px}.guide-scenarios .secondary-button{width:100%;text-align:left}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+</style>
+  <script type="module">
+// 全部为虚构的界面演示数据，不对应真实作品或真实平台。
+const dramas = [
+  { id: 'd01', title: '破晓剑途', subtitle: '以一剑，问苍天', genre: '修仙', themes: ['逆袭', '成长'], pace: '快', harem: false, angst: false, romance: false, episodes: 68, art: 'sword', color: 'amber', intro: '灵根受损的外门少年意外找回失传剑谱，从宗门试炼一路成长，在一次次挑战中重新掌握自己的命运。故事以修行为主线，冲突紧凑，无后宫、无感情线，也没有虐心情节。' },
+  { id: 'd02', title: '万象归墟', subtitle: '重来一世，逆转乾坤', genre: '修仙', themes: ['逆袭', '复仇'], pace: '快', harem: false, angst: false, romance: false, episodes: 56, art: 'moon', color: 'red', intro: '遭同门陷害的年轻阵师带着记忆回到入门之日，以阵法破局，逐步找出背后的真相。复仇与逆袭贯穿主线，节奏明快，无后宫、无感情线，无虐心情节。' },
+  { id: 'd03', title: '山海问道', subtitle: '山海之间，自有答案', genre: '修仙', themes: ['成长', '冒险'], pace: '舒缓', harem: false, angst: false, romance: false, episodes: 42, art: 'sword', color: 'jade', intro: '山村少年与一只灵兽结伴游历，解开沿途小镇与秘境的谜题，在山海间逐渐理解修行的意义。偏重冒险与成长，叙事舒缓，无后宫、无感情线，无虐心情节。' },
+  { id: 'd04', title: '以凡叩天', subtitle: '凡人，也可登临绝顶', genre: '修仙', themes: ['逆袭', '成长'], pace: '快', harem: null, angst: null, romance: null, episodes: 72, art: 'moon', color: 'blue', intro: '没有灵根的少年借助古老机关术进入修行世界，在门派对抗中寻找凡人的道路。以快速推进的逆袭和成长为主线。现有演示简介未说明感情线、后宫及虐心情节情况。' },
+  { id: 'd05', title: '重启人生', subtitle: '这一次，把命运握在手里', genre: '都市', themes: ['逆袭', '复仇'], pace: '快', harem: false, angst: false, romance: false, episodes: 60, art: 'city', color: 'violet', intro: '被合伙人算计的创业者回到公司成立之前，凭借经验重新组队，在商业博弈中揭开骗局。逆袭与复仇交织，节奏紧凑，无后宫、无感情线，无虐心情节。' },
+  { id: 'd06', title: '第七封来信', subtitle: '每封来信，都藏着一个谎言', genre: '悬疑', themes: ['推理', '反转'], pace: '快', harem: false, angst: true, romance: false, episodes: 32, art: 'door', color: 'teal', intro: '旧书店老板接连收到署名相同的匿名信，信中线索把她引向一桩多年前的失踪案。以推理和反转推进，节奏快，有虐心情节，无后宫、无感情线。' },
+  { id: 'd07', title: '云端便利店', subtitle: '给疲惫的日子，一点温柔', genre: '治愈', themes: ['温暖', '日常'], pace: '舒缓', harem: false, angst: false, romance: false, episodes: 24, art: 'shop', color: 'peach', intro: '一间只在雨后出现的便利店，为过路人提供食物和倾听。每个独立故事围绕日常生活中的小小善意展开，节奏舒缓、气氛温暖，无后宫、无感情线，无虐心情节。' },
+  { id: 'd08', title: '星河邮局', subtitle: '把想念，寄往银河深处', genre: '科幻', themes: ['温暖', '冒险'], pace: '舒缓', harem: false, angst: false, romance: false, episodes: 36, art: 'space', color: 'blue', intro: '年轻邮递员驾驶小飞船穿梭星球，替陌生人投递无法送达的信件。以温暖的星际冒险展开，叙事舒缓，无后宫、无感情线，无虐心情节。' },
+  { id: 'd09', title: '长街有风', subtitle: '每一个小人物，都有主场', genre: '都市', themes: ['逆袭', '成长'], pace: '快', harem: false, angst: false, romance: false, episodes: 48, art: 'city', color: 'amber', intro: '刚毕业的设计师接手即将关门的老街工作室，靠创意和坚持带领伙伴接连解决难题。围绕职场逆袭与成长，节奏快，无后宫、无感情线，无虐心情节。' },
+  { id: 'd10', title: '雾夜来客', subtitle: '迷雾散去之前，谁是真凶', genre: '悬疑', themes: ['推理', '反转'], pace: '快', harem: false, angst: false, romance: false, episodes: 28, art: 'door', color: 'violet', intro: '暴雨封山的旅馆迎来五位陌生人，一本遗落的日记将他们卷入身份谜局。推理与反转密集、节奏紧凑，无后宫、无感情线，无虐心情节。' },
+  { id: 'd11', title: '她的反击', subtitle: '这一次，故事由她来写', genre: '都市', themes: ['逆袭', '复仇'], pace: '快', harem: false, angst: false, romance: true, episodes: 52, art: 'city', color: 'red', intro: '被冒名顶替成果的女建筑师重新出发，通过项目竞标揭穿对手、夺回自己的作品。主线为逆袭与复仇，节奏快，含感情线，无后宫，无虐心情节。' },
+  { id: 'd12', title: '今天也很晴', subtitle: '把普通日子，过成好天气', genre: '治愈', themes: ['温暖', '日常'], pace: '舒缓', harem: false, angst: false, romance: false, episodes: 20, art: 'shop', color: 'jade', intro: '回到海边小镇的插画师与邻居们经营一座共享花园，在普通日子里寻找新的节奏。以温暖日常为主，叙事舒缓，无后宫、无感情线，无虐心情节。' },
+];
+
+const examples = [
+  { label: '修仙逆袭', query: '想看修仙逆袭，节奏快一点，不要后宫。' },
+  { label: '都市爽剧', query: '想看都市逆袭，节奏快，不要感情线。' },
+  { label: '轻松治愈', query: '想看温暖治愈的日常，节奏舒缓，不要虐心。' },
+  { label: '悬疑反转', query: '想看悬疑推理，多一些反转，不要虐心。' },
+];
+
+
+const genreOptions = ['修仙', '都市', '悬疑', '治愈', '科幻'];
+const themeOptions = ['逆袭', '复仇', '成长', '冒险', '推理', '反转', '温暖', '日常'];
+const exclusionOptions = ['后宫', '虐心', '感情线'];
+
+const genreRules = [
+  ['修仙', /修仙|仙侠|玄幻/], ['都市', /都市|职场|商战/],
+  ['悬疑', /悬疑|侦探/], ['治愈', /治愈|轻松/], ['科幻', /科幻|星际|太空/],
+  ['末日丧尸', /末日|丧尸/], ['机甲', /机甲/], ['体育', /体育|足球|篮球/],
+];
+const themeRules = [
+  ['逆袭', /逆袭|爽剧|打脸|翻盘/], ['复仇', /复仇|报仇/],
+  ['成长', /成长/], ['冒险', /冒险/], ['推理', /推理|破案/],
+  ['反转', /反转/], ['温暖', /温暖|温柔|暖心/], ['日常', /日常|生活/],
+];
+const unique = (values) => [...new Set(values)];
+
+function parsePreferences(query) {
+  const text = String(query ?? '').trim();
+  const excludedText = [];
+  const positive = text.replace(/(?:不要|不想看|不喜欢|不看|拒绝|排除|避开|别来)([^，。；！!?？\n]*)/g, (_, content) => {
+    excludedText.push(content);
+    return '';
+  }).replace(/无后宫|无感情线|无恋爱|不虐(?:心)?/g, (content) => {
+    excludedText.push(content);
+    return '';
+  });
+  const negative = excludedText.join(' ');
+  const exclude = [];
+  if (/后宫/.test(negative)) exclude.push('后宫');
+  if (/虐/.test(negative)) exclude.push('虐心');
+  if (/感情|恋爱|爱情/.test(negative)) exclude.push('感情线');
+  const excludedGenres = genreRules.filter(([, rule]) => rule.test(negative)).map(([name]) => name);
+  const genres = genreRules.filter(([, rule]) => rule.test(positive)).map(([name]) => name);
+  const themes = themeRules.filter(([, rule]) => rule.test(positive)).map(([name]) => name);
+  const fast = /节奏快|快一点|快节奏|紧凑|明快/.test(positive);
+  const slow = /舒缓|慢节奏|慢一点|慢热/.test(positive);
+  const conflicts = [];
+  if (fast && slow) conflicts.push('同时选择了快节奏和舒缓节奏，请保留一种。');
+  if (genres.some((genre) => excludedGenres.includes(genre))) conflicts.push('同一题材同时被喜欢和排除，请调整后重试。');
+  return { genres: unique(genres), themes: unique(themes), pace: fast ? '快' : slow ? '舒缓' : null, exclude, excludedGenres, conflicts };
+}
+
+function describePreferences(preferences) {
+  return [
+    ...preferences.genres.map((value) => ({ value, kind: 'genre' })),
+    ...preferences.themes.map((value) => ({ value, kind: 'theme' })),
+    ...(preferences.pace ? [{ value: preferences.pace === '快' ? '节奏快' : '节奏舒缓', kind: 'pace' }] : []),
+    ...preferences.exclude.map((value) => ({ value: `不要${value}`, kind: 'exclude' })),
+    ...preferences.excludedGenres.map((value) => ({ value: `不看${value}`, kind: 'exclude' })),
+  ];
+}
+
+function recommend(catalog, preferences, limit = 3) {
+  if (preferences.conflicts.length) return { status: 'conflict', items: [], message: preferences.conflicts.join(' ') };
+  if (!describePreferences(preferences).length) return { status: 'clarify', items: [], message: '可以补充题材、剧情特点，或明确不想看的内容。' };
+  const fields = { 后宫: 'harem', 虐心: 'angst', 感情线: 'romance' };
+  const candidates = catalog.filter((drama) => {
+    if (preferences.genres.length && !preferences.genres.includes(drama.genre)) return false;
+    if (preferences.excludedGenres.includes(drama.genre)) return false;
+    // 缺失值不等同于“没有”，明确排除条件仅接受已知的 false。
+    return preferences.exclude.every((value) => drama[fields[value]] === false);
+  });
+  const ranked = candidates.map((drama) => {
+    const reasons = [];
+    if (preferences.genres.includes(drama.genre)) reasons.push(`${drama.genre}题材`);
+    for (const theme of preferences.themes) if (drama.themes.includes(theme)) reasons.push(theme);
+    if (preferences.pace === drama.pace) reasons.push(drama.pace === '快' ? '节奏快' : '节奏舒缓');
+    const caveats = [];
+    if (preferences.pace && preferences.pace !== drama.pace) caveats.push(`节奏${drama.pace === '快' ? '较快' : '偏舒缓'}`);
+    const missingThemes = preferences.themes.filter((theme) => !drama.themes.includes(theme));
+    if (missingThemes.length) caveats.push(`简介未体现${missingThemes.join('、')}`);
+    const score = (preferences.genres.includes(drama.genre) ? 4 : 0) + preferences.themes.filter((theme) => drama.themes.includes(theme)).length * 3 + (preferences.pace === drama.pace ? 2 : 0);
+    return { ...drama, reasons, caveats, score };
+  }).filter((drama) => !preferences.themes.length || drama.reasons.length > 0);
+  // 同分按固定标识排序，便于重复演示和测试；先按作品标识去重。
+  const byId = new Map();
+  for (const drama of ranked.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))) {
+    if (!byId.has(drama.id)) byId.set(drama.id, drama);
+  }
+  const deduped = [...byId.values()];
+  return { status: deduped.length ? 'success' : 'empty', items: deduped.slice(0, Math.max(0, limit)), total: deduped.length, message: deduped.length ? '' : '当前示例片库里没有满足这些条件的作品。可以主动调整题材或排除项，再找一次。' };
+}
+
+
+// 原创代码绘制的 SVG 插画。所有封面均为虚构作品的演示素材。
+function posterArt(type = 'sword', color = 'amber', prefix = 'poster') {
+  const palettes = {
+    amber: ['#172b31', '#daa86a', '#f9d795', '#344c4c'],
+    red: ['#251e30', '#a94f49', '#f3ad86', '#593b50'],
+    jade: ['#173a3b', '#7aa891', '#e9dca5', '#426b62'],
+    violet: ['#29273d', '#9a87b4', '#f0c29e', '#514c70'],
+    teal: ['#112e35', '#537c82', '#bfcea8', '#28505c'],
+    peach: ['#484957', '#d2a38c', '#f3ddb1', '#9b7770'],
+    blue: ['#17283f', '#596a99', '#d1c6e0', '#344765'],
+  };
+  const [dark, mid, light, back] = palettes[color] || palettes.amber;
+  const defs = `<defs><linearGradient id="${prefix}-bg" x2="0.8" y2="1"><stop stop-color="${mid}"/><stop offset="1" stop-color="${dark}"/></linearGradient><linearGradient id="${prefix}-fade" x2="0" y2="1"><stop stop-color="${dark}" stop-opacity="0"/><stop offset="1" stop-color="${dark}"/></linearGradient><filter id="${prefix}-noise"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".09"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter></defs>`;
+  const star = (x, y, r = 1.3) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${light}" opacity=".65"/>`;
+  const stars = [[25,35],[67,74],[240,37],[184,96],[268,122],[43,144],[121,28],[214,165],[96,109]].map(([x,y]) => star(x,y)).join('');
+  const figure = (x, y, scale = 1) => `<g transform="translate(${x} ${y}) scale(${scale})" fill="${dark}"><path d="M-7-45Q-15-59-6-68Q4-76 12-64L14-44L7-40L18-27L32 8L15 5L25 70L-26 70L-17 3L-31 10L-16-29Z"/><path d="M2-65Q22-63 22-42L12-50Z"/><path d="M-10-35L-65 28L-70 25L-22-33Z"/><path d="M9-38Q60-22 65 36Q28 5 8 9Z" opacity=".7"/></g>`;
+  let scene = '';
+  if (type === 'sword' || type === 'moon') {
+    scene = `<circle cx="182" cy="115" r="80" fill="${light}" opacity=".85"/><circle cx="182" cy="115" r="93" fill="none" stroke="${light}" opacity=".24"/>${type === 'moon' ? `<circle cx="204" cy="91" r="67" fill="${mid}"/>` : ''}<path d="M0 251L59 148L91 186L129 118L172 214L212 162L300 237V420H0Z" fill="${back}"/><path d="M0 294L67 223L110 287L170 204L211 270L266 218L300 280V420H0Z" fill="${dark}" opacity=".62"/><path d="M0 342Q69 287 138 324T300 309V420H0Z" fill="${dark}"/>${figure(158, 275, 0.9)}<path d="M153 245L230 135L235 137L167 258Z" fill="${light}" opacity=".8"/><path d="M0 279Q93 263 148 283M142 205Q199 192 300 213M0 202Q41 188 79 195" fill="none" stroke="${light}" stroke-width="2" opacity=".17"/><g fill="${dark}"><path d="M0 46Q47 45 68 88L37 72L57 105L13 77Z"/><path d="M300 18Q252 41 249 92L272 63L266 105L298 64Z"/></g>`;
+  } else if (type === 'city') {
+    scene = `<circle cx="198" cy="114" r="64" fill="${light}" opacity=".72"/><path d="M0 235H25V153H60V208H77V121H108V196H124V86H147V184H176V139H204V205H227V109H254V178H278V135H300V420H0Z" fill="${back}"/><path d="M0 301H38V234H75V259H99V204H136V268H169V214H202V253H234V185H271V240H300V420H0Z" fill="${dark}" opacity=".8"/>${[45,85,130,180,240,280].map((x,i)=>`<path d="M${x} ${170+i*11}v35m-6-28v20" stroke="${light}" opacity=".4" stroke-width="3"/>`).join('')}<path d="M128 420L157 266L185 420" fill="${mid}" opacity=".55"/><path d="M0 358L300 305M0 382L300 329" stroke="${light}" opacity=".2"/>${figure(155, 302, 0.55)}<path d="M20 53L144 53M20 58L98 58" stroke="${light}" opacity=".35"/>`;
+  } else if (type === 'door') {
+    scene = `<path d="M0 0L69 65V420H0M300 0L231 65V420H300" fill="${dark}" opacity=".55"/><path d="M89 420V105Q89 42 150 42T211 105V420Z" fill="${dark}"/><path d="M108 398V114Q108 66 150 66T192 114V398Z" fill="${mid}"/><path d="M120 398V116Q120 80 150 80T180 116V398Z" fill="${light}" opacity=".4"/><path d="M150 83L180 116V398L150 348Z" fill="${dark}"/><path d="M150 348L48 420H268L180 398Z" fill="${light}" opacity=".4"/>${figure(141, 287, 0.58)}<path d="M0 347Q89 321 160 343T300 324M0 368Q133 344 300 365" fill="none" stroke="${light}" stroke-width="18" opacity=".08"/><circle cx="166" cy="241" r="3" fill="${light}"/>`;
+  } else if (type === 'shop') {
+    scene = `<circle cx="219" cy="94" r="47" fill="${light}" opacity=".7"/><path d="M0 257Q69 183 166 231T300 209V420H0Z" fill="${back}"/><path d="M35 198L139 145L250 198V337H35Z" fill="${dark}"/><path d="M18 206L139 135L265 203L253 215L139 157L29 220Z" fill="${light}"/><path d="M53 213H232V260H53Z" fill="${mid}"/><path d="M58 216H227V249H58Z" fill="${light}" opacity=".7"/><path d="M57 270H103V318H57ZM118 270H164V337H118ZM179 270H225V318H179Z" fill="${light}" opacity=".82"/><path d="M80 270V318M202 270V318M141 270V337M57 294H103M179 294H225" stroke="${dark}" stroke-width="4"/><path d="M0 338H300V420H0Z" fill="${dark}" opacity=".8"/><path d="M120 339L89 420H221L161 339Z" fill="${light}" opacity=".15"/><g fill="${dark}"><path d="M253 288Q277 265 277 303V354H253Z"/><circle cx="264" cy="281" r="16"/><path d="M250 271L249 253L262 267M269 267L283 255L278 277"/><path d="M273 345Q300 329 289 312" fill="none" stroke="${dark}" stroke-width="9"/></g><path d="M24 80V115M16 93H32" stroke="${light}" stroke-width="2"/>`;
+  } else {
+    scene = `${stars}<circle cx="171" cy="158" r="88" fill="${back}"/><path d="M95 116Q167 70 234 133M88 141Q176 98 252 165M89 178Q163 139 254 187M104 211Q172 174 243 213" stroke="${mid}" stroke-width="12" fill="none" opacity=".8"/><ellipse cx="171" cy="158" rx="139" ry="29" fill="none" stroke="${light}" stroke-width="13" transform="rotate(-25 171 158)" opacity=".65"/><circle cx="49" cy="75" r="16" fill="${light}" opacity=".7"/><path d="M124 321L155 277L187 321L155 310Z" fill="${light}"/><path d="M148 320L156 360L164 320" fill="${mid}"/><path d="M0 388Q89 311 151 355T300 337V420H0Z" fill="${dark}"/>`;
+  }
+  return `<svg class="poster-art" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${defs}<g filter="url(#${prefix}-noise)"><path fill="url(#${prefix}-bg)" d="M0 0H300V420H0Z"/>${stars}${scene}<path fill="url(#${prefix}-fade)" d="M0 180H300V420H0Z" opacity=".8"/></g></svg>`;
+}
+
+
+
+const $ = (selector) => document.querySelector(selector);
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const query = $('#query');
+const state = { preferences: parsePreferences(query.value), manual: false, result: null, busy: false, failNext: false, view: 'discover', category: '全部' };
+
+$('#hero-art').innerHTML = [dramas[6], dramas[0], dramas[4]].map((drama, index) => `<div class="hero-poster">${posterArt(drama.art, drama.color, `hero-${index}`)}<span class="hero-poster-title">${drama.title}</span></div>`).join('');
+$('#example-buttons').innerHTML = examples.map((example, index) => `<button class="example-button" data-example="${index}" aria-pressed="false">${example.label}</button>`).join('');
+
+function renderPreferences() {
+  const chips = describePreferences(state.preferences);
+  $('#preference-chips').innerHTML = chips.length ? chips.map((chip) => `<span class="taste-chip ${chip.kind === 'exclude' ? 'exclude' : ''}">${escapeHtml(chip.value)}</span>`).join('') : '<span class="empty-preferences">等你说说想看的故事…</span>';
+  $('#preference-note').textContent = state.preferences.conflicts.length ? state.preferences.conflicts.join(' ') : state.manual ? '已使用手动调整的偏好；重新输入需求会重新识别。' : '根据你的描述整理，明确不想看的会优先排除。';
+  $('#character-count').textContent = `${query.value.length} / 300`;
+  document.querySelectorAll('[data-example]').forEach((button) => button.setAttribute('aria-pressed', String(query.value === examples[Number(button.dataset.example)].query)));
+}
+
+function card(drama, context, index) {
+  const recommended = context === 'recommend';
+  const reasons = recommended ? drama.reasons : [];
+  const description = recommended ? reasons.length ? `这部作品的${reasons.join('、')}，符合你的偏好。` : '简介确认满足你设置的排除条件，可作为候选。' : drama.intro.split('。')[0] + '。';
+  return `<article class="drama-card"><button class="poster-button" data-drama-id="${drama.id}" data-context="${context}" aria-label="查看《${drama.title}》${recommended ? '的推荐依据' : '的模拟资料'}">${posterArt(drama.art, drama.color, `${context}-${drama.id}-${index}`)}<span class="poster-tag">${drama.genre}</span><span class="poster-demo">DEMO ORIGINAL</span><span class="poster-wordmark"><strong>${drama.title}</strong><small>${drama.subtitle}</small></span><span class="poster-arrow">↗</span></button><div class="card-body"><div class="card-heading"><h3>${drama.title}</h3><span class="card-meta">${drama.episodes} 集 · 模拟</span></div><div class="card-tags">${[...drama.themes, drama.pace === '快' ? '节奏快' : '节奏舒缓'].map((tag) => `<span class="card-tag">${tag}</span>`).join('')}</div><div class="match-box"><span class="match-label">${recommended ? '为什么推荐给你' : '故事一瞥'}</span><p>${escapeHtml(description)}</p>${recommended && drama.caveats.length ? `<div class="caveat">留意：${escapeHtml(drama.caveats.join('；'))}</div>` : ''}</div><div class="card-footer"><span>虚构作品 · 模拟资料</span><button class="evidence-button" data-drama-id="${drama.id}" data-context="${context}">${recommended ? '查看推荐依据' : '看看这个故事'} <span>↗</span></button></div></div></article>`;
+}
+
+function renderResults() {
+  const result = state.result;
+  $('#results-section').setAttribute('aria-busy', String(state.busy));
+  $('#results-message').innerHTML = '';
+  if (state.busy) {
+    $('#results-title').textContent = '正在整理你的片单';
+    $('#results-badge').textContent = '稍等一下';
+    $('#results-caption').textContent = '正在模拟筛选与生成过程';
+    $('#results-message').innerHTML = '<div class="loading-message"><span class="loading-dot"></span>筛选符合条件的作品，整理推荐理由…</div>';
+    $('#results-grid').innerHTML = Array.from({ length: 3 }, () => '<div class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line"></div><div class="skeleton-line long"></div><div class="skeleton-line long"></div></div>').join('');
+    return;
+  }
+  if (!result) {
+    $('#results-title').textContent = '先逛逛这些好故事';
+    $('#results-badge').textContent = '灵感片单';
+    $('#results-caption').textContent = '虚构作品 · 用于界面体验';
+    $('#results-grid').innerHTML = [dramas[0], dramas[4], dramas[6]].map((drama, index) => card(drama, 'inspiration', index)).join('');
+    return;
+  }
+  $('#results-badge').textContent = '本次推荐';
+  if (result.status === 'success') {
+    $('#results-title').textContent = `为你找到 ${result.items.length} 部对味好剧`;
+    $('#results-caption').innerHTML = `<button class="text-button" data-adjust>再调调口味 ↗</button>`;
+    $('#results-message').innerHTML = `<div class="result-status">✓ 已按本次偏好筛选${state.preferences.exclude.length || state.preferences.excludedGenres.length ? '，保留了你的明确排除条件' : ''}。${result.items.length < 3 ? '符合条件的候选不足 3 部，按实际数量展示。' : ''}<span>· 模拟结果</span></div>`;
+    $('#results-grid').innerHTML = result.items.map((drama, index) => card(drama, 'recommend', index)).join('');
+  } else {
+    const title = { empty: '这一种口味，还没有遇到', conflict: '有两个条件，需要你做个选择', clarify: '再具体一点，故事就近一点', error: '这次没生成成功，再试一次吧' }[result.status];
+    $('#results-title').textContent = result.status === 'error' ? '片单暂时没有生成' : '给偏好一点小调整';
+    $('#results-caption').textContent = '保留你的需求，由你决定如何调整';
+    $('#results-grid').innerHTML = `<div class="empty-state"><span class="empty-icon">${result.status === 'error' ? '↻' : '⌕'}</span><h3>${title}</h3><p>${escapeHtml(result.message)}</p>${result.status === 'error' ? '<button class="secondary-button" data-retry>重新生成 ↗</button>' : '<button class="secondary-button" data-adjust>调整我的偏好 ↗</button>'}<button class="secondary-button" data-back-input>修改描述</button></div>`;
+    $('#results-message').textContent = title;
+    $('#results-message').classList.add('sr-only');
+  }
+  if (result.status === 'success') $('#results-message').classList.remove('sr-only');
+}
+
+function clearResult() {
+  state.result = null;
+  $('#query-error').hidden = true;
+  $('#results-message').classList.remove('sr-only');
+  renderPreferences();
+  renderResults();
+}
+
+function setQuery(value) {
+  query.value = value;
+  state.preferences = parsePreferences(value);
+  state.manual = false;
+  clearResult();
+}
+
+function setBusy(busy) {
+  state.busy = busy;
+  query.disabled = busy;
+  $('#edit-preferences').disabled = busy;
+  $('#recommend-button').disabled = busy;
+  $('#recommend-button').innerHTML = busy ? '<span>正在为你挑选…</span><span>✦</span>' : '<span>生成我的片单</span><span>↗</span>';
+  document.querySelectorAll('[data-example], #empty-scenario, #error-scenario').forEach((button) => { button.disabled = busy; });
+}
+
+async function generate() {
+  if (state.busy) return;
+  $('#results-message').classList.remove('sr-only');
+  if (!query.value.trim() && !state.manual) {
+    $('#query-error').textContent = '先说说想看什么吧，或者点选一个灵感示例。';
+    $('#query-error').hidden = false;
+    query.focus();
+    return;
+  }
+  $('#query-error').hidden = true;
+  setBusy(true);
+  renderResults();
+  await new Promise((resolve) => window.setTimeout(resolve, 750));
+  if (state.failNext) {
+    state.result = { status: 'error', items: [], message: '这是特意模拟的失败状态。你的描述和偏好已保留，可以直接重新生成。' };
+    state.failNext = false;
+  } else state.result = recommend(dramas, state.preferences);
+  setBusy(false);
+  renderResults();
+  $('#results-section').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+}
+
+function renderCatalog() {
+  $('#catalog-filters').innerHTML = ['全部', ...genreOptions].map((genre) => `<button class="filter-button ${state.category === genre ? 'active' : ''}" data-category="${genre}" aria-pressed="${state.category === genre}">${genre}</button>`).join('');
+  const list = dramas.filter((drama) => state.category === '全部' || drama.genre === state.category);
+  $('#catalog-count').textContent = `${state.category === '全部' ? '全部题材' : state.category} · 共 ${list.length} 部模拟作品`;
+  $('#catalog-grid').innerHTML = list.map((drama, index) => card(drama, 'catalog', index)).join('');
+}
+
+function setView(view) {
+  state.view = view;
+  $('#discover-view').hidden = view !== 'discover';
+  $('#catalog-view').hidden = view !== 'catalog';
+  $('#breadcrumb-current').textContent = view === 'discover' ? '为你推荐' : '示例片库';
+  for (const [id, active] of [['discover-nav', view === 'discover'], ['catalog-nav', view === 'catalog']]) {
+    $(`#${id}`).classList.toggle('active', active);
+    if (active) $(`#${id}`).setAttribute('aria-current', 'page'); else $(`#${id}`).removeAttribute('aria-current');
+  }
+  if (view === 'catalog') renderCatalog();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function optionsHtml(values, name, selected) {
+  return values.map((value) => `<label class="option-label"><input type="checkbox" name="${name}" value="${value}" ${selected.includes(value) ? 'checked' : ''}><span>${value}</span></label>`).join('');
+}
+
+function editPreferences() {
+  if (state.busy) return;
+  const prefs = state.preferences;
+  const genres = [...new Set([...genreOptions, ...prefs.genres])];
+  $('#genre-select').innerHTML = '<option value="">不限题材</option>' + genres.map((genre) => `<option value="${genre}">${genre}${genreOptions.includes(genre) ? '' : '（片库未收录）'}</option>`).join('');
+  $('#genre-select').value = prefs.genres[0] || '';
+  $('#pace-select').value = prefs.pace || '';
+  $('#theme-options').innerHTML = optionsHtml(themeOptions, 'themes', prefs.themes);
+  $('#exclusion-options').innerHTML = optionsHtml(exclusionOptions, 'exclude', prefs.exclude);
+  $('#excluded-genre-options').innerHTML = optionsHtml([...new Set([...genreOptions, ...prefs.excludedGenres])], 'excludedGenres', prefs.excludedGenres);
+  $('#preference-form-error').hidden = true;
+  $('#preference-dialog').showModal();
+}
+
+function openDetail(id, context) {
+  const drama = dramas.find((item) => item.id === id);
+  if (!drama) return;
+  const recommended = context === 'recommend' ? state.result?.items.find((item) => item.id === id) : null;
+  const reasons = recommended?.reasons || [];
+  const exclusions = recommended ? state.preferences.exclude : [];
+  const factNames = { harem: '后宫', angst: '虐心情节', romance: '感情线' };
+  const facts = Object.entries(factNames).map(([field, label]) => drama[field] === null ? `${label}：资料未知` : `${drama[field] ? '有' : '无'}${label}`);
+  $('#detail-content').innerHTML = `<div class="detail-banner">${posterArt(drama.art, drama.color, 'detail-art')}<div class="detail-banner-text"><span>${drama.genre} / 虚构作品</span><h2 id="detail-title">${drama.title}</h2><span>${drama.subtitle}</span></div></div><div class="detail-main"><h3>${recommended ? '这些地方，符合你的口味' : '这个故事的特点'}</h3><div class="detail-labels">${(reasons.length ? reasons : drama.themes).map((value) => `<span class="detail-label">✓ ${escapeHtml(value)}</span>`).join('')}${exclusions.map((value) => `<span class="detail-label">✓ 无${escapeHtml(value)}</span>`).join('')}</div>${recommended?.caveats.length ? `<div class="notice">与你的偏好有一点差异：${escapeHtml(recommended.caveats.join('；'))}。是否观看，由你决定。</div>` : ''}<h3>原始简介 · 推荐依据</h3><blockquote class="evidence-quote">${drama.intro}</blockquote><h3>已知内容信息</h3><p>${facts.join('　·　')}</p><div class="detail-source"><span class="source-badge">来源：内置模拟资料 ${drama.id.toUpperCase()}</span><span>虚构作品，无真实播放或资料链接</span></div></div>`;
+  $('#detail-dialog').showModal();
+}
+
+query.addEventListener('input', () => setQuery(query.value));
+query.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); generate(); } });
+$('#recommend-button').addEventListener('click', generate);
+$('#recommend-button').setAttribute('title', '生成片单（Ctrl + Enter）');
+$('#edit-preferences').addEventListener('click', editPreferences);
+$('#example-buttons').addEventListener('click', (event) => { const button = event.target.closest('[data-example]'); if (button) setQuery(examples[Number(button.dataset.example)].query); });
+$('#discover-nav').addEventListener('click', () => setView('discover'));
+$('#catalog-nav').addEventListener('click', () => setView('catalog'));
+$('.brand').addEventListener('click', (event) => { event.preventDefault(); setView('discover'); });
+$('#catalog-filters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (button) { state.category = button.dataset.category; renderCatalog(); } });
+for (const id of ['guide-button', 'sidebar-guide']) $(`#${id}`).addEventListener('click', () => $('#guide-dialog').showModal());
+$('#empty-scenario').addEventListener('click', () => { $('#guide-dialog').close(); setView('discover'); setQuery('想看末日丧尸，节奏快，不要后宫。'); generate(); });
+$('#error-scenario').addEventListener('click', () => { $('#guide-dialog').close(); setView('discover'); if (!query.value.trim()) setQuery(examples[0].query); state.failNext = true; generate(); });
+
+$('#preference-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  const genres = $('#genre-select').value ? [$('#genre-select').value] : [];
+  const excludedGenres = data.getAll('excludedGenres');
+  if (genres.some((genre) => excludedGenres.includes(genre))) {
+    $('#preference-form-error').textContent = '同一题材不能同时被喜欢和排除，请调整后保存。';
+    $('#preference-form-error').hidden = false;
+    return;
+  }
+  state.preferences = { genres, themes: data.getAll('themes'), pace: $('#pace-select').value || null, exclude: data.getAll('exclude'), excludedGenres, conflicts: [] };
+  state.manual = true;
+  clearResult();
+  $('#preference-dialog').close();
+});
+
+document.addEventListener('click', (event) => {
+  const close = event.target.closest('[data-close]');
+  if (close) $(`#${close.dataset.close}`).close();
+  const detail = event.target.closest('[data-drama-id]');
+  if (detail) openDetail(detail.dataset.dramaId, detail.dataset.context);
+  if (event.target.closest('[data-adjust]')) editPreferences();
+  if (event.target.closest('[data-retry]')) generate();
+  if (event.target.closest('[data-back-input]')) { query.scrollIntoView({ block: 'center', behavior: 'smooth' }); query.focus({ preventScroll: true }); }
+});
+document.querySelectorAll('dialog').forEach((dialog) => dialog.addEventListener('click', (event) => {
+  const rect = dialog.getBoundingClientRect();
+  if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
+}));
+
+renderPreferences();
+renderResults();
+
+</script>
+</head>
+<body>
+  <a class="skip-link" href="#query">跳到观剧需求</a>
+  <aside class="sidebar">
+    <a class="brand" href="#" aria-label="漫游首页"><span class="brand-icon">✦</span><span>漫游<small>MANYOU</small></span></a>
+    <div class="nav-caption">你的漫剧指南</div>
+    <nav aria-label="主导航">
+      <button class="nav-item active" id="discover-nav" aria-current="page"><span class="nav-icon">✧</span>发现好剧<span class="nav-dot"></span></button>
+      <button class="nav-item" id="catalog-nav"><span class="nav-icon">▦</span>示例片库<span class="nav-count">12</span></button>
+    </nav>
+    <div class="sidebar-note"><span class="note-spark">✳</span><strong>好故事，值得被发现。</strong><p>从你的一点偏好出发，<br>找到下一部想追的漫剧。</p><span class="note-line"></span></div>
+    <button class="guide-link" id="sidebar-guide"><span>ⓘ</span> 体验说明 <span>↗</span></button>
+    <div class="sidebar-footer"><i></i> 界面体验版 <span>v0.1</span></div>
+  </aside>
+
+  <main>
+    <header class="topbar"><div class="breadcrumb">发现 <span>/</span> <strong id="breadcrumb-current">为你推荐</strong></div><button class="demo-badge" id="guide-button"><span></span> 模拟数据 Demo <span class="badge-info">ⓘ</span></button></header>
+    <section id="discover-view">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><div class="eyebrow"><span></span> FOLLOW YOUR TASTE</div><h1 id="hero-title">故事那么多，<br>总有一部<span>刚好对味。</span></h1><p>说说你想看的剧情，让下一次追剧少一点纠结。</p><div class="hero-footer"><span class="hero-stars">✦ ✧ ✦</span><span>懂一点你的口味，发现多一点惊喜</span></div></div>
+        <div class="hero-art" id="hero-art" aria-hidden="true"></div>
+        <span class="hero-corner">YOUR NEXT GOOD STORY ↗</span>
+      </section>
+
+      <section class="composer" aria-labelledby="composer-title">
+        <div class="section-top"><div><span class="mini-number">01</span><h2 id="composer-title">今天，想看点什么？</h2></div><span class="section-hint">从一句话开始，口味由你决定</span></div>
+        <div class="composer-grid">
+          <div class="query-column"><label class="sr-only" for="query">描述你的观剧需求</label><textarea id="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，节奏快一点，不要后宫……">想看修仙逆袭，节奏快一点，不要后宫。</textarea><div class="input-bottom"><span>题材、剧情特点、想避开的内容，都可以说</span><span id="character-count">0 / 300</span></div><div class="example-row"><span>试试这些</span><div id="example-buttons"></div></div><p id="query-error" class="field-error" role="alert" hidden></p></div>
+          <div class="taste-panel"><div class="taste-heading"><span>✦</span><strong>你的口味</strong><button id="edit-preferences" class="text-button">调整 <span>↗</span></button></div><div id="preference-chips" class="preference-chips" aria-live="polite"></div><p id="preference-note">根据你的描述整理，明确不想看的会优先排除。</p><button class="primary-button" id="recommend-button"><span>生成我的片单</span><span>↗</span></button></div>
+        </div>
+      </section>
+
+      <section class="results-section" aria-labelledby="results-title" aria-busy="false" id="results-section"><div class="section-top result-top"><div><span class="mini-number" id="result-number">02</span><h2 id="results-title">先逛逛这些好故事</h2><span class="subtle-pill" id="results-badge">灵感片单</span></div><span class="result-caption" id="results-caption">虚构作品 · 用于界面体验</span></div><div id="results-message" role="status" aria-live="polite"></div><div class="drama-grid" id="results-grid"></div></section>
+    </section>
+
+    <section id="catalog-view" hidden><div class="catalog-heading"><div class="eyebrow">THE STORY SHELF</div><h1>每一种口味，都有故事。</h1><p>这里是 Demo 的全部 12 部虚构作品，选个题材随意逛逛。</p></div><div class="catalog-filters" id="catalog-filters" aria-label="按题材筛选"></div><div class="catalog-count" id="catalog-count"></div><div class="drama-grid catalog-grid" id="catalog-grid"></div></section>
+    <footer class="page-footer"><span class="footer-brand">✦ 漫游</span><span>作品、剧情与推荐结果均为模拟，仅用于验证界面与操作流程。</span><span class="footer-end">MADE FOR YOUR NEXT STORY</span></footer>
+  </main>
+
+  <dialog id="preference-dialog" class="preference-dialog" aria-labelledby="preference-dialog-title"><form id="preference-form"><div class="dialog-heading"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="preference-dialog-title">把口味调得更对一点</h2></div><button type="button" class="icon-button" data-close="preference-dialog" aria-label="关闭偏好设置">×</button></div><p class="dialog-intro">这里的修改会作为本次推荐条件。重新输入需求时，会重新识别偏好。</p><div class="select-row"><label>偏好题材<select id="genre-select" aria-label="偏好题材"><option value="">不限题材</option></select></label><label>剧情节奏<select id="pace-select" aria-label="剧情节奏"><option value="">不限节奏</option><option value="快">节奏快</option><option value="舒缓">节奏舒缓</option></select></label></div><fieldset><legend>想看的剧情特色 <small>可多选</small></legend><div class="option-grid" id="theme-options"></div></fieldset><fieldset><legend>明确不想看 <small>会严格排除</small></legend><div class="option-grid" id="exclusion-options"></div></fieldset><fieldset><legend>不想看的题材</legend><div class="option-grid" id="excluded-genre-options"></div></fieldset><p id="preference-form-error" role="alert" class="field-error" hidden></p><div class="dialog-actions"><button type="button" class="secondary-button" data-close="preference-dialog">取消</button><button type="submit" class="primary-button">保存偏好 <span>✓</span></button></div></form></dialog>
+
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="icon-button detail-close" data-close="detail-dialog" aria-label="关闭推荐依据">×</button><div id="detail-content"></div></dialog>
+  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title"><div class="dialog-heading"><div><span class="eyebrow">A LITTLE GUIDE</span><h2 id="guide-title">先体验，再一起打磨。</h2></div><button class="icon-button" data-close="guide-dialog" aria-label="关闭体验说明">×</button></div><p class="dialog-intro">这是漫游的本地交互原型，所有作品和剧情均为虚构。推荐由浏览器内的简单规则模拟，不接入真实模型或推荐服务。</p><ol class="guide-steps"><li><span>01</span><div><strong>描述你的观剧偏好</strong><p>输入一句话，或点选一个灵感示例。</p></div></li><li><span>02</span><div><strong>检查并调整口味</strong><p>明确排除项会被保留，资料未知的作品也会被排除。</p></div></li><li><span>03</span><div><strong>生成片单，查看推荐依据</strong><p>比较推荐理由与原始简介，判断流程是否清晰。</p></div></li></ol><div class="guide-scenarios"><span>也可以体验边界情况</span><button id="empty-scenario" class="secondary-button">试试没有匹配结果 ↗</button><button id="error-scenario" class="secondary-button">试试生成失败 ↗</button></div></dialog>
+  <noscript>请在浏览器中启用 JavaScript 以体验这个 Demo。</noscript>
+</body>
+</html>

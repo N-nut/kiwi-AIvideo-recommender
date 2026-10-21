@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f4">
+  <meta name="description" content="漫游 · AI 漫剧智能推荐系统的模拟交互 Demo。">
+  <title>漫游 · 发现刚好对味的漫剧</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23ea613f'/%3E%3Cpath d='M32 12l6 14 14 6-14 6-6 14-6-14-14-6 14-6z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#query">跳到观剧需求</a>
+  <aside class="sidebar">
+    <a class="brand" href="#" aria-label="漫游首页"><span class="brand-icon">✦</span><span>漫游<small>MANYOU</small></span></a>
+    <div class="nav-caption">你的漫剧指南</div>
+    <nav aria-label="主导航">
+      <button class="nav-item active" id="discover-nav" aria-current="page"><span class="nav-icon">✧</span>发现好剧<span class="nav-dot"></span></button>
+      <button class="nav-item" id="catalog-nav"><span class="nav-icon">▦</span>示例片库<span class="nav-count">12</span></button>
+    </nav>
+    <div class="sidebar-note"><span class="note-spark">✳</span><strong>好故事，值得被发现。</strong><p>从你的一点偏好出发，<br>找到下一部想追的漫剧。</p><span class="note-line"></span></div>
+    <button class="guide-link" id="sidebar-guide"><span>ⓘ</span> 体验说明 <span>↗</span></button>
+    <div class="sidebar-footer"><i></i> 界面体验版 <span>v0.1</span></div>
+  </aside>
+
+  <main>
+    <header class="topbar"><div class="breadcrumb">发现 <span>/</span> <strong id="breadcrumb-current">为你推荐</strong></div><button class="demo-badge" id="guide-button"><span></span> 模拟数据 Demo <span class="badge-info">ⓘ</span></button></header>
+    <section id="discover-view">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><div class="eyebrow"><span></span> FOLLOW YOUR TASTE</div><h1 id="hero-title">故事那么多，<br>总有一部<span>刚好对味。</span></h1><p>说说你想看的剧情，让下一次追剧少一点纠结。</p><div class="hero-footer"><span class="hero-stars">✦ ✧ ✦</span><span>懂一点你的口味，发现多一点惊喜</span></div></div>
+        <div class="hero-art" id="hero-art" aria-hidden="true"></div>
+        <span class="hero-corner">YOUR NEXT GOOD STORY ↗</span>
+      </section>
+
+      <section class="composer" aria-labelledby="composer-title">
+        <div class="section-top"><div><span class="mini-number">01</span><h2 id="composer-title">今天，想看点什么？</h2></div><span class="section-hint">从一句话开始，口味由你决定</span></div>
+        <div class="composer-grid">
+          <div class="query-column"><label class="sr-only" for="query">描述你的观剧需求</label><textarea id="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，节奏快一点，不要后宫……">想看修仙逆袭，节奏快一点，不要后宫。</textarea><div class="input-bottom"><span>题材、剧情特点、想避开的内容，都可以说</span><span id="character-count">0 / 300</span></div><div class="example-row"><span>试试这些</span><div id="example-buttons"></div></div><p id="query-error" class="field-error" role="alert" hidden></p></div>
+          <div class="taste-panel"><div class="taste-heading"><span>✦</span><strong>你的口味</strong><button id="edit-preferences" class="text-button">调整 <span>↗</span></button></div><div id="preference-chips" class="preference-chips" aria-live="polite"></div><p id="preference-note">根据你的描述整理，明确不想看的会优先排除。</p><button class="primary-button" id="recommend-button"><span>生成我的片单</span><span>↗</span></button></div>
+        </div>
+      </section>
+
+      <section class="results-section" aria-labelledby="results-title" aria-busy="false" id="results-section"><div class="section-top result-top"><div><span class="mini-number" id="result-number">02</span><h2 id="results-title">先逛逛这些好故事</h2><span class="subtle-pill" id="results-badge">灵感片单</span></div><span class="result-caption" id="results-caption">虚构作品 · 用于界面体验</span></div><div id="results-message" role="status" aria-live="polite"></div><div class="drama-grid" id="results-grid"></div></section>
+    </section>
+
+    <section id="catalog-view" hidden><div class="catalog-heading"><div class="eyebrow">THE STORY SHELF</div><h1>每一种口味，都有故事。</h1><p>这里是 Demo 的全部 12 部虚构作品，选个题材随意逛逛。</p></div><div class="catalog-filters" id="catalog-filters" aria-label="按题材筛选"></div><div class="catalog-count" id="catalog-count"></div><div class="drama-grid catalog-grid" id="catalog-grid"></div></section>
+    <footer class="page-footer"><span class="footer-brand">✦ 漫游</span><span>作品、剧情与推荐结果均为模拟，仅用于验证界面与操作流程。</span><span class="footer-end">MADE FOR YOUR NEXT STORY</span></footer>
+  </main>
+
+  <dialog id="preference-dialog" class="preference-dialog" aria-labelledby="preference-dialog-title"><form id="preference-form"><div class="dialog-heading"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="preference-dialog-title">把口味调得更对一点</h2></div><button type="button" class="icon-button" data-close="preference-dialog" aria-label="关闭偏好设置">×</button></div><p class="dialog-intro">这里的修改会作为本次推荐条件。重新输入需求时，会重新识别偏好。</p><div class="select-row"><label>偏好题材<select id="genre-select" aria-label="偏好题材"><option value="">不限题材</option></select></label><label>剧情节奏<select id="pace-select" aria-label="剧情节奏"><option value="">不限节奏</option><option value="快">节奏快</option><option value="舒缓">节奏舒缓</option></select></label></div><fieldset><legend>想看的剧情特色 <small>可多选</small></legend><div class="option-grid" id="theme-options"></div></fieldset><fieldset><legend>明确不想看 <small>会严格排除</small></legend><div class="option-grid" id="exclusion-options"></div></fieldset><fieldset><legend>不想看的题材</legend><div class="option-grid" id="excluded-genre-options"></div></fieldset><p id="preference-form-error" role="alert" class="field-error" hidden></p><div class="dialog-actions"><button type="button" class="secondary-button" data-close="preference-dialog">取消</button><button type="submit" class="primary-button">保存偏好 <span>✓</span></button></div></form></dialog>
+
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"><button class="icon-button detail-close" data-close="detail-dialog" aria-label="关闭推荐依据">×</button><div id="detail-content"></div></dialog>
+  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title"><div class="dialog-heading"><div><span class="eyebrow">A LITTLE GUIDE</span><h2 id="guide-title">先体验，再一起打磨。</h2></div><button class="icon-button" data-close="guide-dialog" aria-label="关闭体验说明">×</button></div><p class="dialog-intro">这是漫游的本地交互原型，所有作品和剧情均为虚构。推荐由浏览器内的简单规则模拟，不接入真实模型或推荐服务。</p><ol class="guide-steps"><li><span>01</span><div><strong>描述你的观剧偏好</strong><p>输入一句话，或点选一个灵感示例。</p></div></li><li><span>02</span><div><strong>检查并调整口味</strong><p>明确排除项会被保留，资料未知的作品也会被排除。</p></div></li><li><span>03</span><div><strong>生成片单，查看推荐依据</strong><p>比较推荐理由与原始简介，判断流程是否清晰。</p></div></li></ol><div class="guide-scenarios"><span>也可以体验边界情况</span><button id="empty-scenario" class="secondary-button">试试没有匹配结果 ↗</button><button id="error-scenario" class="secondary-button">试试生成失败 ↗</button></div></dialog>
+  <noscript>请在浏览器中启用 JavaScript 以体验这个 Demo。</noscript>
+</body>
+</html>
