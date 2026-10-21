@@ -9,10 +9,12 @@
 项目的独立 Python 环境、前端依赖和编译结果均已准备，可在项目目录执行：
 
 ```powershell
-npm start
+npm.cmd start
 ```
 
-打开 [本地产品](http://127.0.0.1:8000/)，保持终端运行。也可右键运行项目内 `启动产品.ps1`。端口冲突时执行 `npm start -- --port 8001`。重复启动会跳过已入库内容。
+打开 [本地产品](http://127.0.0.1:8000/)，保持终端运行。也可直接双击项目内 `启动产品.cmd`。端口冲突时执行 `npm.cmd start -- --port 8001`。重复启动会跳过已入库内容。
+
+Windows PowerShell 可能因执行策略拦截 `npm.ps1`，因此这里明确使用 `npm.cmd`，无需修改系统执行策略。
 
 本机通过 SQLite 保存真实资料和真实向量，在 Python 中执行精确余弦排序；必须条件和三态排除仍由 SQL 执行。正式部署路径采用 PostgreSQL + pgvector，在数据库内执行约束和精确向量排序。不会在服务出错后切到虚构作品。
 
@@ -24,21 +26,21 @@ npm start
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
 .\.venv\Scripts\python.exe -m pip install --no-deps -e backend
-npm ci
-npm --prefix frontend ci
-npm run build:app
+npm.cmd ci
+npm.cmd --prefix frontend ci
+npm.cmd run build:app
 Copy-Item .env.example .env
 ```
 
-在 `.env` 填写 `DEEPSEEK_API_KEY`、`DASHSCOPE_API_KEY` 后运行 `npm start`。也支持系统环境变量。密钥只由后端读取。百炼密钥的地域须与 `EMBEDDING_BASE_URL` 一致。默认 DeepSeek 模型为 `deepseek-chat`，可配置 `DEEPSEEK_MODEL`。
+在 `.env` 填写 `DEEPSEEK_API_KEY`、`DASHSCOPE_API_KEY` 后运行 `npm.cmd start`。也支持系统环境变量。密钥只由后端读取。百炼密钥的地域须与 `EMBEDDING_BASE_URL` 一致。默认 DeepSeek 模型为 `deepseek-chat`，可配置 `DEEPSEEK_MODEL`。
 
-无密钥时可**显式**执行 `npm start -- --baseline`，使用同一真实作品库的标签基线和证据模板；页面会标记基线模式，不调用模型。它不是服务失败时的自动降级。
+无密钥时可**显式**执行 `npm.cmd start -- --baseline`，使用同一真实作品库的标签基线和证据模板；页面会标记基线模式，不调用模型。它不是服务失败时的自动降级。
 
 前端开发分别运行：
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn kiwi.main:app --host 127.0.0.1 --port 8000
-npm --prefix frontend run dev
+npm.cmd --prefix frontend run dev
 ```
 
 打开 Vite 输出的地址（默认 5173），`/api`、`/health` 代理到后端。
@@ -66,12 +68,12 @@ JSON 结构见 [作品数据](data/works.json)。非空摘要、标签或三态�
 ## 测试与评测
 
 ```powershell
-npm run check
-npm test
-npm run build
+npm.cmd run check
+npm.cmd test
+npm.cmd run build
 .\.venv\Scripts\python.exe -m pytest backend -q
-npm --prefix frontend test
-npm run build:app
+npm.cmd --prefix frontend test
+npm.cmd run build:app
 node scripts/test-postgres.mjs
 .\.venv\Scripts\python.exe scripts/evaluate.py
 ```
@@ -117,6 +119,6 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 - [实现与验收记录](docs/实现与验收.md)、[数据审核说明](data/审核说明.md)
 - [标签基线评测](docs/evaluation-baseline.json)、[真实向量评测](docs/evaluation-live.json)
 - [后端 OpenAPI](http://127.0.0.1:8000/docs)；`/health/live` 检查存活，`/health/ready` 检查配置、资料和向量版本。
-- 原有 `Demo.html` 保留：双击离线体验 12 部虚构作品和原创模拟视频。单独服务命令改为 `npm run demo`。修改 `demo/` 后运行 `npm run build` 重新打包。
+- 原有 `Demo.html` 保留：双击离线体验 12 部虚构作品和原创模拟视频。单独服务命令改为 `npm.cmd run demo`。修改 `demo/` 后运行 `npm.cmd run build` 重新打包。
 
 正式页面不混入原型的虚构作品。账号认证、服务端收藏、真实视频、跨设备同步、多轮对话、协同过滤及重排序属于后续范围。
