@@ -1,6 +1,6 @@
 // 仅模拟本机账号和收藏，不承担身份认证。
 export function createDemoLibrary(storage, validIds) {
-  const key = 'manyou-demo-library-v1';
+  const key = 'manyou-demo-library-v1'; // 沿用已有键名，品牌改名后仍能恢复原收藏。
   const allowed = new Set(validIds);
   const collections = new Map();
   let user = null;

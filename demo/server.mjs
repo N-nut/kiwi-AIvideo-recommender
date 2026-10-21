@@ -44,4 +44,4 @@ const server = createServer(async (request, response) => {
   }
 });
 server.on('error', (error) => { console.error(`Demo 启动失败：${error.message}`); process.exitCode = 1; });
-server.listen(port, '127.0.0.1', () => console.log(`漫游 Demo: http://127.0.0.1:${server.address().port}`));
+server.listen(port, '127.0.0.1', () => console.log(`奇维 Demo: http://127.0.0.1:${server.address().port}`));

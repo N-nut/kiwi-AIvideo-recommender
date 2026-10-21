@@ -41,7 +41,7 @@ document.querySelector('#record').onclick = async () => {
         const shade=ctx.createLinearGradient(0,200,0,360);shade.addColorStop(0,'transparent');shade.addColorStop(1,'rgba(10,18,24,.9)');ctx.fillStyle=shade;ctx.fillRect(0,180,640,180);
         ctx.fillStyle='#f6e8cf';ctx.textAlign='center';ctx.font='24px Microsoft YaHei, sans-serif';
         ctx.globalAlpha=Math.min(1,t*2, (6-t)*2);ctx.fillText(t<3?line1:line2,320,315);ctx.globalAlpha=1;
-        ctx.textAlign='left';ctx.font='10px sans-serif';ctx.fillStyle='#ffffff90';ctx.fillText('MANYOU ORIGINAL  /  DEMO ANIMATION',23,27);
+        ctx.textAlign='left';ctx.font='10px sans-serif';ctx.fillStyle='#ffffff90';ctx.fillText('KIWI ORIGINAL  /  DEMO ANIMATION',23,27);
         if(t<6) requestAnimationFrame(frame);else resolve();
       }
       requestAnimationFrame(frame);

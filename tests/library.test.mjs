@@ -7,6 +7,16 @@ function memoryStorage(initial = null) {
   return { getItem: () => value, setItem: (_, next) => { value = next; } };
 }
 
+test('品牌改名后仍恢复旧版本的登录和个人收藏', () => {
+  const entries = new Map([['manyou-demo-library-v1', JSON.stringify({ version: 1, user: 'nut', collections: [{ name: 'nut', ids: ['d01'] }] })]]);
+  const storage = { getItem: (key) => entries.get(key), setItem: (key, value) => entries.set(key, value) };
+  const library = createDemoLibrary(storage, ['d01', 'd02']);
+  assert.equal(library.user, 'nut');
+  assert.deepEqual(library.ids, ['d01']);
+  library.setFavorite('d02', true);
+  assert.deepEqual(createDemoLibrary(storage, ['d01', 'd02']).ids, ['d01', 'd02']);
+});
+
 test('未登录不能收藏；登录后收藏去重、取消及刷新恢复', () => {
   const storage = memoryStorage();
   const library = createDemoLibrary(storage, ['d01', 'd02']);
