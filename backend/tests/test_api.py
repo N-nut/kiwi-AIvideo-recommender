@@ -82,4 +82,3 @@ def test_packaged_install_can_find_external_project_data():
     external=ROOT/'.local/package-data-test'
     process=subprocess.run([sys.executable,'-X','utf8','-c','from kiwi.config import ROOT; print(ROOT)'],env={**os.environ,'KIWI_PROJECT_ROOT':str(external)},capture_output=True,text=True,encoding='utf-8',check=True)
     assert process.stdout.strip()==str(external.resolve())
-

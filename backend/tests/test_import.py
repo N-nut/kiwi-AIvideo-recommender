@@ -87,4 +87,3 @@ async def test_vector_update_and_full_rebuild(record, database):
     with database() as s: assert s.get(Work, record["id"]).content_hash != old_hash
     with pytest.raises(ValueError, match="整库"):
         await import_works([], database, FakeAI(), settings, reembed=True)
-

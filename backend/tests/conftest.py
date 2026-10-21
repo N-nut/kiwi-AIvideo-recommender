@@ -52,4 +52,3 @@ def client():
     app = create_app(Settings(ai_mode="baseline", database_url="sqlite:///:memory:"))
     with TestClient(app) as client:
         yield client
-

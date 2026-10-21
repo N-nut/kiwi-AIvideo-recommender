@@ -73,4 +73,3 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
                         embedded_at=utc_now() if vector is not None else None)
             session.merge(Work(**data))
     return {"imported": len(staged), "skipped": skipped, "failed": 0}
-

@@ -109,4 +109,3 @@ class BaselineAI:
 
     async def reasons(self, preferences, works):
         raise ProviderError("baseline_mode", "标签基线使用证据模板")
-

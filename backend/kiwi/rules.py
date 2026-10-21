@@ -75,4 +75,3 @@ def soft_matches(work, prefs):
         else:
             caveats.append("资料无法确认符合节奏偏好" if work.pace is None else f"作品节奏为{work.pace}")
     return matches, caveats
-

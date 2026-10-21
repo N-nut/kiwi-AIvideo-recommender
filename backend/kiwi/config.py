@@ -30,4 +30,3 @@ class Settings(BaseSettings):
         return self.ai_mode == "baseline" or bool(
             self.deepseek_api_key.get_secret_value() and self.dashscope_api_key.get_secret_value()
         )
-

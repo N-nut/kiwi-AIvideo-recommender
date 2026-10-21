@@ -62,4 +62,3 @@ def public_work(work):
 
 def utc_now():
     return datetime.now(timezone.utc)
-

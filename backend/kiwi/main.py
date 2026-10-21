@@ -144,4 +144,3 @@ def create_app(settings=None, provider_factory=None):
 
 
 app = create_app()
-

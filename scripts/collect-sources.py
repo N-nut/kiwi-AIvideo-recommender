@@ -33,4 +33,3 @@ while queue and len(rows) < 36:
         print(f"Failed {sid}: {type(exc).__name__}", flush=True)
     (target / "official.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 print(f"Collected {len(rows)} official descriptions; review before importing.")
-

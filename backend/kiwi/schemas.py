@@ -148,4 +148,3 @@ class GeneratedReason(StrictModel):
 
 class ReasonBatch(StrictModel):
     items: list[GeneratedReason] = Field(max_length=3)
-

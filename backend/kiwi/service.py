@@ -117,4 +117,3 @@ async def recommend(request, sessions, provider, settings, request_id):
     result["timings_ms"]["total"] = round((time.perf_counter() - start) * 1000, 2)
     result["usage"] = {"calls": provider.calls, "tokens": provider.tokens}
     return result
-

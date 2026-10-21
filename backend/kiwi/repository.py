@@ -47,4 +47,3 @@ def retrieve(session, prefs, vector, settings):
         return [(w, 1.0 - float(d)) for w, d in rows]
     rows = [(w, cosine(w.embedding, vector)) for w in session.scalars(query)]
     return sorted(rows, key=lambda pair: (-pair[1], pair[0].id))[:10]
-

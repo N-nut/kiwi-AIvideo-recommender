@@ -124,4 +124,3 @@ async def test_semantically_weak_unmatched_candidates_are_not_filler(record,data
         async def embed(self,texts): return [[0.55,(1-0.55**2)**0.5]+[0.0]*1022]
     result=await recommend(request(soft_preferences={"genres":["科幻"]}),database,Middling(),settings,'r')
     assert result['status']=='empty' and not result['items']
-
