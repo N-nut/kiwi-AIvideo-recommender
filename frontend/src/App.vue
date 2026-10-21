@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { api, latestRequest, APIError } from './api';
 import type { Preferences, Recommendation, Work } from './types';
 import { emptyPreferences, genres, fieldNames } from './types';
 import { useLibrary } from './library';
 import WorkCard from './components/WorkCard.vue';
+import WorkPreview from './components/WorkPreview.vue';
 import PreferenceEditor from './components/PreferenceEditor.vue';
 import logo from '../../demo/assets/kiwi-logo.svg';
 import { posterArt } from '../../demo/art.mjs';
@@ -16,6 +17,9 @@ const view = ref('discover'); const category = ref('全部'); const catalog = re
 const catalogLoading = ref(false); const catalogError = ref(''); const result = ref<Recommendation|null>(null);
 const health = ref<{mode?:string;status?:string;storage?:string;works?:number;configured?:boolean}>({});
 const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>(); const login = ref<HTMLDialogElement>(); const guide = ref<HTMLDialogElement>();
+const preview = ref<InstanceType<typeof WorkPreview>>();
+const detailScroll = ref<HTMLElement>();
+let backdropPressed = false;
 const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const nickname = ref(''); const pendingFavorite = ref('');
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const library = useLibrary(); const lane = latestRequest(); const catalogLane = latestRequest();
@@ -57,9 +61,26 @@ async function loadCatalog() {
   catch(exc) { if(request.current()) catalogError.value=exc instanceof Error?exc.message:'片库加载失败'; }
   finally { if(request.current()) catalogLoading.value=false; }
 }
-function setView(value:string) { view.value=value; }
-function showDetail(work:Work) { selected.value=work; detail.value?.showModal(); }
-function favorite(id:string) { if(!library.user.value) { pendingFavorite.value=id; login.value?.showModal(); return; } library.toggle(id); message(library.has(id)?'已加入本机收藏':'已取消收藏'); }
+function setView(value:string) { preview.value?.close(); view.value=value; }
+function showDetail(work:Work) {
+  preview.value?.close();
+  selected.value=work;
+  detail.value?.showModal();
+  void nextTick(() => { if(detailScroll.value) detailScroll.value.scrollTop=0; });
+}
+function openPreview(work: Work, anchor: HTMLElement, immediate: boolean) { preview.value?.enter(work,anchor,immediate); }
+function outsideDetail(event: MouseEvent | PointerEvent) {
+  const dialog=event.currentTarget as HTMLDialogElement;
+  if(event.target!==dialog) return false;
+  const bounds=dialog.getBoundingClientRect();
+  return event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom;
+}
+function startDetailClick(event: PointerEvent) { backdropPressed=outsideDetail(event); }
+function finishDetailClick(event: MouseEvent) {
+  if(backdropPressed&&outsideDetail(event)) detail.value?.close();
+  backdropPressed=false;
+}
+function favorite(id:string) { if(!library.user.value) { preview.value?.close(); pendingFavorite.value=id; login.value?.showModal(); return; } library.toggle(id); message(library.has(id)?'已加入本机收藏':'已取消收藏'); }
 function loginSubmit() { if(library.login(nickname.value)) { if(pendingFavorite.value) library.toggle(pendingFavorite.value); pendingFavorite.value=''; login.value?.close(); message('演示昵称已登录，收藏仅保存在本机'); } }
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
@@ -86,15 +107,27 @@ onUnmounted(()=>{lane.cancel();catalogLane.cancel();clearTimeout(toastTimer);});
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
         <div v-else-if="result&&!result.items.length" class="empty-state"><span class="empty-icon">⌕</span><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':'这一种口味，还没有遇到'}}</h3><p>不会自动放宽条件，也不会为凑足数量推荐无关作品。</p><button class="secondary-button" @click="edit">调整我的偏好 ↗</button></div>
-        <div v-else class="drama-grid"><WorkCard v-for="(work,i) in result?.items || catalog.slice(0,3)" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" /></div>
+        <div v-else class="drama-grid"><WorkCard v-for="(work,i) in result?.items || catalog.slice(0,3)" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave()" /></div>
         <div v-if="!result&&!busy&&catalogLoading" class="loading-message" role="status">正在打开真实片库…</div><div v-if="catalogError&&!result" class="empty-state" role="alert"><p>{{catalogError}}</p><button class="secondary-button" @click="loadCatalog">重新加载片库 ↻</button></div><div v-if="!result&&!busy&&!catalogLoading&&!catalog.length&&!catalogError" class="empty-state">片库尚无已审核资料，请先按运行文档完成导入与审核。</div>
       </section>
     </section>
-    <section v-else><div class="catalog-heading"><div class="eyebrow">{{view==='favorites'?'YOUR STORY COLLECTION':'THE STORY SHELF'}}</div><h1>{{view==='favorites'?'喜欢的故事，留在这里。':'每一种口味，都有故事。'}}</h1><p>{{view==='favorites'?'演示昵称与收藏只保存在当前浏览器，不代表真实账号。':'真实动态漫作品 · 官方简介 · 原创插画封面'}}</p></div><div v-if="view==='catalog'" class="catalog-filters" aria-label="题材筛选"><button v-for="g in ['全部',...genres]" :key="g" :class="['filter-button',{active:category===g}]" :aria-pressed="category===g" @click="category=g">{{g}}</button></div><div class="catalog-count">{{view==='favorites'?'我的收藏':category}} · {{visibleWorks.length}} 部</div><p v-if="catalogError" role="alert">{{catalogError}} <button class="text-button" @click="loadCatalog">重试</button></p><div class="drama-grid catalog-grid"><WorkCard v-for="(work,i) in visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" /></div><div v-if="!visibleWorks.length&&!catalogLoading" class="empty-state"><span class="empty-icon">♡</span><h3>{{view==='favorites'?'收藏夹，等一个心动的故事':'这个题材还没有收录作品'}}</h3><button class="secondary-button" @click="view='discover'">回到发现 ↗</button></div></section>
+    <section v-else><div class="catalog-heading"><div class="eyebrow">{{view==='favorites'?'YOUR STORY COLLECTION':'THE STORY SHELF'}}</div><h1>{{view==='favorites'?'喜欢的故事，留在这里。':'每一种口味，都有故事。'}}</h1><p>{{view==='favorites'?'演示昵称与收藏只保存在当前浏览器，不代表真实账号。':'真实动态漫作品 · 官方简介 · 原创插画封面'}}</p></div><div v-if="view==='catalog'" class="catalog-filters" aria-label="题材筛选"><button v-for="g in ['全部',...genres]" :key="g" :class="['filter-button',{active:category===g}]" :aria-pressed="category===g" @click="category=g">{{g}}</button></div><div class="catalog-count">{{view==='favorites'?'我的收藏':category}} · {{visibleWorks.length}} 部</div><p v-if="catalogError" role="alert">{{catalogError}} <button class="text-button" @click="loadCatalog">重试</button></p><div class="drama-grid catalog-grid"><WorkCard v-for="(work,i) in visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave()" /></div><div v-if="!visibleWorks.length&&!catalogLoading" class="empty-state"><span class="empty-icon">♡</span><h3>{{view==='favorites'?'收藏夹，等一个心动的故事':'这个题材还没有收录作品'}}</h3><button class="secondary-button" @click="view='discover'">回到发现 ↗</button></div></section>
     <footer class="page-footer"><span class="footer-brand"><img :src="logo" alt="" width="18" height="18">奇维 Kiwi</span><span>推荐范围限于已入库资料 · 剧情特征未知时如实保留</span><span class="footer-end">MADE FOR YOUR NEXT STORY</span></footer>
   </main>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="editor-title">把口味调得更对一点</h2></div><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
-  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title"><template v-if="selected"><div class="dialog-heading"><div><span class="eyebrow">EVERY STORY HAS A SOURCE</span><h2 id="detail-title">{{selected.title}}</h2></div><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></div><p class="detail-intro">{{selected.original_intro}}</p><div class="facts"><span>后宫：{{featureText(selected.harem)}}</span><span>感情线：{{featureText(selected.romance)}}</span><span>虐心：{{featureText(selected.tragic)}}</span></div><h3>资料依据</h3><div class="evidence" v-for="e in selected.evidence" :key="e.id"><small>{{fieldNames[e.field]}} · {{e.id}}</small><blockquote>{{e.quote}}</blockquote></div><p class="source-note">采集于 {{selected.collected_at}}<br>{{selected.review_note}}</p><div class="dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">查看官方资料 ↗</a><button class="primary-button" @click="favorite(selected.id)">{{library.has(selected.id)?'♥ 已收藏':'♡ 加入本机收藏'}}</button></div></template></dialog>
+  <WorkPreview ref="preview" :saved="library.has" @favorite="favorite" @detail="showDetail" />
+  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false">
+    <template v-if="selected">
+      <header class="dialog-heading work-dialog-header"><div><span class="eyebrow">EVERY STORY HAS A SOURCE</span><h2 id="detail-title">{{selected.title}}</h2></div><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></header>
+      <div ref="detailScroll" class="work-dialog-scroll" tabindex="0" role="region" aria-label="作品资料内容">
+        <p class="detail-intro">{{selected.original_intro}}</p>
+        <div class="facts"><span>后宫：{{featureText(selected.harem)}}</span><span>感情线：{{featureText(selected.romance)}}</span><span>虐心：{{featureText(selected.tragic)}}</span></div>
+        <h3>资料依据</h3><div class="evidence" v-for="e in selected.evidence" :key="e.id"><small>{{fieldNames[e.field]}} · {{e.id}}</small><blockquote>{{e.quote}}</blockquote></div>
+        <p class="source-note">采集于 {{selected.collected_at}}<br>{{selected.review_note}}</p>
+      </div>
+      <footer class="dialog-actions work-dialog-actions"><span class="dialog-dismiss-hint">点击空白处或按 Esc 关闭</span><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">查看官方资料 ↗</a><button class="primary-button" @click="favorite(selected.id)">{{library.has(selected.id)?'♥ 已收藏':'♡ 加入本机收藏'}}</button></footer>
+    </template>
+  </dialog>
   <dialog ref="login" aria-labelledby="login-title" @close="pendingFavorite='' "><form @submit.prevent="loginSubmit"><div class="dialog-heading"><div><span class="eyebrow">SAVE YOUR NEXT STORY</span><h2 id="login-title">给喜欢的故事，留个位置。</h2></div><button type="button" class="icon-button" @click="login?.close()" aria-label="关闭登录">×</button></div><p class="dialog-intro">填写演示昵称，无需密码。同一昵称可恢复当前浏览器的收藏，不创建真实账号。</p><label class="login-label">演示昵称<input v-model="nickname" maxlength="20" required placeholder="你的昵称"></label><div class="dialog-actions"><button class="primary-button" type="submit">登录体验 ↗</button></div></form></dialog>
   <dialog ref="guide" aria-labelledby="guide-title"><div class="dialog-heading"><h2 id="guide-title">每一份推荐，都有来处。</h2><button class="icon-button" @click="guide?.close()" aria-label="关闭说明">×</button></div><p class="dialog-intro">先理解需求，检查或调整偏好，再确认生成片单。明确的排除和必须条件优先执行。</p><p class="dialog-intro">当前{{modeLabel}}。仅推荐已入库的真实动态漫，作品不保证均由 AI 制作；封面为原创插画。资料没有说明的感情线、后宫、节奏等保持未知，因此严格条件下可能没有结果。</p><p class="dialog-intro">昵称登录与收藏为本机演示功能。真实片段、真实账号和跨设备同步属于后续范围。</p><a href="/demo/" target="_blank" rel="noopener noreferrer" class="text-button">打开原有模拟视频 Demo ↗</a></dialog>
   <div class="toast" role="status" aria-live="polite" v-if="toast">{{toast}}</div>
