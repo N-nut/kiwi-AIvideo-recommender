@@ -1,0 +1,1274 @@
+{
+  "generated_at": "2026-10-21T09:38:07.672692+00:00",
+  "mode": "live",
+  "preference_input": "fixed-confirmed-structure",
+  "dataset_version": "2026-10-21-v1",
+  "data_sha256": "514d08ccf0066ef02671bd0e2787b13390678d15293d4c64268f56603023b45e",
+  "evaluation_sha256": "5e7f3275223762007fe6aced9295fd1fec8911e005b586076b3b47a8483a8dbf",
+  "prompt_version": "kiwi-2026-10-21-v1",
+  "model": "deepseek-chat",
+  "embedding_model": "text-embedding-v4",
+  "embedding_dimension": 1024,
+  "min_similarity": 0.4,
+  "storage": "sqlite",
+  "annotation_notice": "AI reference labels only. Independent human relevance and claim-support evaluation pending.",
+  "summary": {
+    "queries": 24,
+    "errors": 0,
+    "hard_violations": 0,
+    "invalid_evidence": 0,
+    "mean_reference_recall_at_10": 0.7427083333333333,
+    "mean_reference_precision": 0.8222222222222222,
+    "latency_p50_ms": 7713.365,
+    "latency_p95_ms": 13550.28,
+    "calls": 37,
+    "tokens": 35668
+  },
+  "results": [
+    {
+      "id": "q01",
+      "text": "想看修仙穿越",
+      "status": "success",
+      "returned_ids": [
+        "bili-102894",
+        "bili-102998",
+        "bili-102867"
+      ],
+      "candidate_ids": [
+        "bili-102894",
+        "bili-102867",
+        "bili-102995",
+        "bili-102892",
+        "bili-45128",
+        "bili-28092",
+        "bili-102888",
+        "bili-102887",
+        "bili-102999",
+        "bili-102998"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 0.3333333333333333,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8130.48,
+        "retrieval": 21.26,
+        "generation": 8077.92,
+        "total": 16229.75
+      },
+      "end_to_end_ms": 16232.35,
+      "usage": {
+        "calls": 2,
+        "tokens": 2398
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q02",
+      "text": "想看都市修仙",
+      "status": "success",
+      "returned_ids": [
+        "bili-102867",
+        "bili-102892",
+        "bili-102894"
+      ],
+      "candidate_ids": [
+        "bili-102867",
+        "bili-102894",
+        "bili-102892",
+        "bili-45128",
+        "bili-102887",
+        "bili-102995",
+        "bili-102888",
+        "bili-103017",
+        "bili-102999",
+        "bili-32556"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4771.33,
+        "retrieval": 40.25,
+        "generation": 2736.59,
+        "total": 7548.98
+      },
+      "end_to_end_ms": 7553.34,
+      "usage": {
+        "calls": 2,
+        "tokens": 2348
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙",
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q03",
+      "text": "只看末世，想要系统",
+      "status": "success",
+      "returned_ids": [
+        "bili-149520"
+      ],
+      "candidate_ids": [
+        "bili-149520",
+        "bili-102872"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 10512.57,
+        "retrieval": 3.57,
+        "generation": 1478.75,
+        "total": 11995.33
+      },
+      "end_to_end_ms": 11997.5,
+      "usage": {
+        "calls": 2,
+        "tokens": 1187
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q04",
+      "text": "想看武侠穿越",
+      "status": "success",
+      "returned_ids": [
+        "bili-28092",
+        "bili-103000",
+        "bili-102995"
+      ],
+      "candidate_ids": [
+        "bili-28092",
+        "bili-102894",
+        "bili-45128",
+        "bili-102995",
+        "bili-32556",
+        "bili-103000",
+        "bili-102888",
+        "bili-42977",
+        "bili-33874",
+        "bili-102887"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 5155.24,
+        "retrieval": 14.71,
+        "generation": 6340.96,
+        "total": 11511.01
+      },
+      "end_to_end_ms": 11513.56,
+      "usage": {
+        "calls": 2,
+        "tokens": 2573
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "武侠"
+          ],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q05",
+      "text": "想看经营做生意的故事",
+      "status": "success",
+      "returned_ids": [
+        "bili-45128",
+        "bili-102999",
+        "bili-45991"
+      ],
+      "candidate_ids": [
+        "bili-45128",
+        "bili-102995",
+        "bili-32556",
+        "bili-102894",
+        "bili-33874",
+        "bili-102999",
+        "bili-102888",
+        "bili-102887",
+        "bili-45991",
+        "bili-42977"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 10400.48,
+        "retrieval": 46.3,
+        "generation": 6215.99,
+        "total": 16662.85
+      },
+      "end_to_end_ms": 16664.97,
+      "usage": {
+        "calls": 2,
+        "tokens": 3322
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "经营"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q06",
+      "text": "想看重生复仇",
+      "status": "success",
+      "returned_ids": [
+        "bili-102894",
+        "bili-88987",
+        "bili-111618"
+      ],
+      "candidate_ids": [
+        "bili-102894",
+        "bili-88987",
+        "bili-111618",
+        "bili-102892",
+        "bili-45128",
+        "bili-102888",
+        "bili-102995",
+        "bili-102887",
+        "bili-149531",
+        "bili-102872"
+      ],
+      "reference_recall_at_10": 0.6666666666666666,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 5522.3,
+        "retrieval": 13.16,
+        "generation": 2334.96,
+        "total": 7870.51
+      },
+      "end_to_end_ms": 7873.39,
+      "usage": {
+        "calls": 2,
+        "tokens": 2466
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "复仇",
+            "重生"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q07",
+      "text": "想看系统升级",
+      "status": "success",
+      "returned_ids": [
+        "bili-149531",
+        "bili-32556",
+        "bili-103003"
+      ],
+      "candidate_ids": [
+        "bili-45128",
+        "bili-102894",
+        "bili-32556",
+        "bili-149531",
+        "bili-103003",
+        "bili-149530",
+        "bili-102888",
+        "bili-102887",
+        "bili-102995",
+        "bili-103007"
+      ],
+      "reference_recall_at_10": 0.25,
+      "reference_precision": 0.3333333333333333,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8287.7,
+        "retrieval": 26.22,
+        "generation": 2630.47,
+        "total": 10944.52
+      },
+      "end_to_end_ms": 10952.13,
+      "usage": {
+        "calls": 2,
+        "tokens": 2747
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "成长",
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q08",
+      "text": "想看成长冒险",
+      "status": "success",
+      "returned_ids": [
+        "bili-32556",
+        "bili-33874",
+        "bili-102888"
+      ],
+      "candidate_ids": [
+        "bili-45128",
+        "bili-32556",
+        "bili-102894",
+        "bili-102888",
+        "bili-102995",
+        "bili-33874",
+        "bili-102887",
+        "bili-88987",
+        "bili-42977",
+        "bili-149531"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4599.61,
+        "retrieval": 58.56,
+        "generation": 6382.82,
+        "total": 11041.07
+      },
+      "end_to_end_ms": 11043.15,
+      "usage": {
+        "calls": 2,
+        "tokens": 3147
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "冒险",
+            "成长"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q09",
+      "text": "只看恋爱，想有修仙",
+      "status": "success",
+      "returned_ids": [
+        "bili-102864"
+      ],
+      "candidate_ids": [
+        "bili-102864",
+        "bili-32556",
+        "bili-33874"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8221.02,
+        "retrieval": 2.6,
+        "generation": 1672.83,
+        "total": 9896.54
+      },
+      "end_to_end_ms": 9898.09,
+      "usage": {
+        "calls": 2,
+        "tokens": 1353
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "恋爱"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q10",
+      "text": "只看末世",
+      "status": "success",
+      "returned_ids": [
+        "bili-149520",
+        "bili-102872"
+      ],
+      "candidate_ids": [
+        "bili-149520",
+        "bili-102872"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4336.66,
+        "retrieval": 2.1,
+        "generation": 5101.89,
+        "total": 9440.73
+      },
+      "end_to_end_ms": 9444.57,
+      "usage": {
+        "calls": 2,
+        "tokens": 1728
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q11",
+      "text": "只看都市",
+      "status": "success",
+      "returned_ids": [
+        "bili-102867",
+        "bili-102892",
+        "bili-102829"
+      ],
+      "candidate_ids": [
+        "bili-102867",
+        "bili-102892",
+        "bili-102829",
+        "bili-102893"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 7901.9,
+        "retrieval": 2.31,
+        "generation": 5643.96,
+        "total": 13548.23
+      },
+      "end_to_end_ms": 13550.28,
+      "usage": {
+        "calls": 2,
+        "tokens": 2634
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "都市"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q12",
+      "text": "只看玄幻，必须有系统",
+      "status": "success",
+      "returned_ids": [
+        "bili-149530",
+        "bili-149531",
+        "bili-148585"
+      ],
+      "candidate_ids": [
+        "bili-149530",
+        "bili-149531",
+        "bili-148585",
+        "bili-113970",
+        "bili-121468",
+        "bili-149529"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4409.44,
+        "retrieval": 3.6,
+        "generation": 1795.27,
+        "total": 6208.4
+      },
+      "end_to_end_ms": 6211.44,
+      "usage": {
+        "calls": 2,
+        "tokens": 2990
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "玄幻"
+          },
+          {
+            "field": "themes",
+            "value": "系统"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q13",
+      "text": "想看修仙，不要后宫",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 10764.64,
+        "retrieval": 1.23,
+        "total": 10765.91
+      },
+      "end_to_end_ms": 10766.0,
+      "usage": {
+        "calls": 1,
+        "tokens": 9
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "harem"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q14",
+      "text": "想看都市，不要感情线",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 3701.95,
+        "retrieval": 2.0,
+        "total": 3704.01
+      },
+      "end_to_end_ms": 3704.08,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "romance"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q15",
+      "text": "想看玄幻，不要虐心",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 6783.82,
+        "retrieval": 1.36,
+        "total": 6785.23
+      },
+      "end_to_end_ms": 6785.31,
+      "usage": {
+        "calls": 1,
+        "tokens": 9
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "tragic"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q16",
+      "text": "只看末世，不要修仙",
+      "status": "success",
+      "returned_ids": [
+        "bili-149520",
+        "bili-102872"
+      ],
+      "candidate_ids": [
+        "bili-149520",
+        "bili-102872"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 6812.3,
+        "retrieval": 4.29,
+        "generation": 3640.42,
+        "total": 10457.2
+      },
+      "end_to_end_ms": 10460.7,
+      "usage": {
+        "calls": 2,
+        "tokens": 1743
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [
+          "修仙"
+        ],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q17",
+      "text": "想看逆袭，必须快节奏",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 3695.16,
+        "retrieval": 1.64,
+        "total": 3696.87
+      },
+      "end_to_end_ms": 3696.97,
+      "usage": {
+        "calls": 1,
+        "tokens": 11
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "pace",
+            "value": "快"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q18",
+      "text": "只看已经完结的修仙剧",
+      "status": "needs_confirmation",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "只看完结"
+      ],
+      "timings_ms": {},
+      "end_to_end_ms": 0.08,
+      "usage": {
+        "calls": 0,
+        "tokens": 0
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [
+          "只看完结"
+        ],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q19",
+      "text": "只看修仙，不要修仙",
+      "status": "needs_confirmation",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "必须包含且排除了题材：修仙"
+      ],
+      "timings_ms": {},
+      "end_to_end_ms": 0.05,
+      "usage": {
+        "calls": 0,
+        "tokens": 0
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "修仙"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [
+          "修仙"
+        ],
+        "unresolved_constraints": [],
+        "conflicts": [
+          "必须包含且排除了题材：修仙"
+        ]
+      }
+    },
+    {
+      "id": "q20",
+      "text": "只看科幻",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 6802.73,
+        "retrieval": 1.02,
+        "total": 6803.8
+      },
+      "end_to_end_ms": 6803.85,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "科幻"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q21",
+      "text": "只看悬疑",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 6419.34,
+        "retrieval": 1.17,
+        "total": 6420.65
+      },
+      "end_to_end_ms": 6420.8,
+      "usage": {
+        "calls": 1,
+        "tokens": 9
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "悬疑"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q22",
+      "text": "想看温暖治愈的奶爸故事",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [
+        "bili-102867",
+        "bili-102894",
+        "bili-45128",
+        "bili-32556",
+        "bili-102888",
+        "bili-88987",
+        "bili-102887",
+        "bili-149531",
+        "bili-102892",
+        "bili-102872"
+      ],
+      "reference_recall_at_10": 0.0,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 5737.55,
+        "retrieval": 11.8,
+        "total": 5749.44
+      },
+      "end_to_end_ms": 5749.58,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "治愈"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q23",
+      "text": "想看弱者逆袭",
+      "status": "success",
+      "returned_ids": [
+        "bili-45128",
+        "bili-102887",
+        "bili-103003"
+      ],
+      "candidate_ids": [
+        "bili-45128",
+        "bili-88987",
+        "bili-102894",
+        "bili-102995",
+        "bili-103007",
+        "bili-102887",
+        "bili-103003",
+        "bili-103000",
+        "bili-102888",
+        "bili-102893"
+      ],
+      "reference_recall_at_10": 0.8,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 2745.52,
+        "retrieval": 12.47,
+        "generation": 2772.94,
+        "total": 5531.02
+      },
+      "end_to_end_ms": 5533.29,
+      "usage": {
+        "calls": 2,
+        "tokens": 2474
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "q24",
+      "text": "想看修仙，但不要都市",
+      "status": "success",
+      "returned_ids": [
+        "bili-102894",
+        "bili-102864",
+        "bili-103007"
+      ],
+      "candidate_ids": [
+        "bili-102894",
+        "bili-45128",
+        "bili-102864",
+        "bili-102887",
+        "bili-103017",
+        "bili-102888",
+        "bili-102995",
+        "bili-103007",
+        "bili-28092",
+        "bili-102999"
+      ],
+      "reference_recall_at_10": 0.6666666666666666,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 2758.85,
+        "retrieval": 12.43,
+        "generation": 2780.57,
+        "total": 5551.93
+      },
+      "end_to_end_ms": 5554.15,
+      "usage": {
+        "calls": 2,
+        "tokens": 2496
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [
+          "都市"
+        ],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    }
+  ],
+  "semantic_only_threshold": 0.65
+}

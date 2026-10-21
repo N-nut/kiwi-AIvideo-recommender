@@ -1,0 +1,443 @@
+{
+  "version": "2026-10-21-v1",
+  "cases": [
+    {
+      "id": "q01",
+      "text": "想看修仙穿越",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [
+            "穿越"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-102998",
+        "bili-149529"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q02",
+      "text": "想看都市修仙",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "都市",
+            "修仙"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-102867",
+        "bili-102892",
+        "bili-102829",
+        "bili-102893"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q03",
+      "text": "只看末世，想要系统",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "soft_preferences": {
+          "themes": [
+            "系统"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-149520"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q04",
+      "text": "想看武侠穿越",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "武侠"
+          ],
+          "themes": [
+            "穿越"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-28092",
+        "bili-103000"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q05",
+      "text": "想看经营做生意的故事",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "经营"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-45128",
+        "bili-45991",
+        "bili-102999"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q06",
+      "text": "想看重生复仇",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "重生",
+            "复仇"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-102894",
+        "bili-111618",
+        "bili-102829"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q07",
+      "text": "想看系统升级",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "系统",
+            "成长"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-149531",
+        "bili-121468",
+        "bili-148585",
+        "bili-113970"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q08",
+      "text": "想看成长冒险",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "成长",
+            "冒险"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-32556",
+        "bili-33874",
+        "bili-43048",
+        "bili-121468"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q09",
+      "text": "只看恋爱，想有修仙",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "恋爱"
+          }
+        ],
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-102864"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q10",
+      "text": "只看末世",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ]
+      },
+      "relevant_ids": [
+        "bili-102872",
+        "bili-149520"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q11",
+      "text": "只看都市",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "都市"
+          }
+        ]
+      },
+      "relevant_ids": [
+        "bili-102867",
+        "bili-102892",
+        "bili-102829",
+        "bili-102893"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q12",
+      "text": "只看玄幻，必须有系统",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "玄幻"
+          },
+          {
+            "field": "themes",
+            "value": "系统"
+          }
+        ]
+      },
+      "relevant_ids": [
+        "bili-149531",
+        "bili-121468",
+        "bili-149530",
+        "bili-148585",
+        "bili-149529",
+        "bili-113970"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q13",
+      "text": "想看修仙，不要后宫",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ]
+        },
+        "excluded_features": [
+          "harem"
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q14",
+      "text": "想看都市，不要感情线",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ]
+        },
+        "excluded_features": [
+          "romance"
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q15",
+      "text": "想看玄幻，不要虐心",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ]
+        },
+        "excluded_features": [
+          "tragic"
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q16",
+      "text": "只看末世，不要修仙",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_genres": [
+          "修仙"
+        ]
+      },
+      "relevant_ids": [
+        "bili-102872",
+        "bili-149520"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q17",
+      "text": "想看逆袭，必须快节奏",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "逆袭"
+          ]
+        },
+        "required": [
+          {
+            "field": "pace",
+            "value": "快"
+          }
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q18",
+      "text": "只看已经完结的修仙剧",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ]
+        },
+        "unresolved_constraints": [
+          "只看完结"
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q19",
+      "text": "只看修仙，不要修仙",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "修仙"
+          }
+        ],
+        "excluded_genres": [
+          "修仙"
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q20",
+      "text": "只看科幻",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "科幻"
+          }
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q21",
+      "text": "只看悬疑",
+      "preferences": {
+        "required": [
+          {
+            "field": "genres",
+            "value": "悬疑"
+          }
+        ]
+      },
+      "relevant_ids": [],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q22",
+      "text": "想看温暖治愈的奶爸故事",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "治愈"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-149526"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q23",
+      "text": "想看弱者逆袭",
+      "preferences": {
+        "soft_preferences": {
+          "themes": [
+            "逆袭"
+          ]
+        }
+      },
+      "relevant_ids": [
+        "bili-102887",
+        "bili-103017",
+        "bili-45128",
+        "bili-103000",
+        "bili-103003"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    },
+    {
+      "id": "q24",
+      "text": "想看修仙，但不要都市",
+      "preferences": {
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ]
+        },
+        "excluded_genres": [
+          "都市"
+        ]
+      },
+      "relevant_ids": [
+        "bili-102998",
+        "bili-102894",
+        "bili-149529",
+        "bili-103007",
+        "bili-102864",
+        "bili-102999"
+      ],
+      "annotation_method": "AI source-based reference; independent human relevance grading pending"
+    }
+  ]
+}

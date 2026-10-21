@@ -6,3 +6,11 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+.venv/
+.local/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+frontend/dist/
+data/source-cache/
