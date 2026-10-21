@@ -6,7 +6,7 @@ import { resolve, extname, sep } from 'node:path';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 4173);
-const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webm': 'video/webm' };
 const server = createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
@@ -21,6 +21,22 @@ const server = createServer(async (request, response) => {
       response.writeHead(404).end('Not found'); return;
     }
     const content = await readFile(target);
+    if (extname(target) === '.webm') {
+      const headers = { 'Content-Type': types['.webm'], 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+      if (request.headers.range) {
+        const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range);
+        let start = range?.[1] ? Number(range[1]) : Math.max(0, content.length - Number(range?.[2]));
+        let end = range?.[1] && range[2] ? Math.min(Number(range[2]), content.length - 1) : content.length - 1;
+        if (!range || (!range[1] && !range[2]) || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= content.length) {
+          response.writeHead(416, { ...headers, 'Content-Range': `bytes */${content.length}` }).end(); return;
+        }
+        const slice = content.subarray(start, end + 1);
+        response.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${content.length}`, 'Content-Length': slice.length });
+        response.end(request.method === 'HEAD' ? undefined : slice); return;
+      }
+      response.writeHead(200, { ...headers, 'Content-Length': content.length });
+      response.end(request.method === 'HEAD' ? undefined : content); return;
+    }
     response.writeHead(200, { 'Content-Type': types[extname(target)], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
     response.end(content);
   } catch {

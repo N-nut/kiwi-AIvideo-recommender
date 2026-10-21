@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>原创预览动画制作工具</title>
+<style>body{background:#20262b;color:#fff;font:16px system-ui;padding:25px}canvas{display:block;margin:20px 0;width:640px;max-width:100%}button{padding:12px 20px}textarea{width:95%;height:80px}</style>
+<h1>原创模拟片段制作工具</h1><p>将项目自己的 SVG 插画录制为静音 WebM。每段 6 秒，不使用外部素材。</p>
+<button id="record">生成五段模拟预览</button><p id="status" role="status">等待生成</p><canvas width="640" height="360"></canvas><div id="outputs"></div>
+<script type="module">
+import { posterArt } from './art.mjs';
+const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
+const scenes = [['sword','amber','一剑破晓，逆风而行','这一次，由我问苍天'],['city','violet','命运的齿轮，再次转动','下一步，由自己决定'],['shop','peach','雨后的长街，灯还亮着','总有温暖，在等你回来'],['door','teal','第七封信，来自谁的过去','真相，藏在下一道门后'],['space','blue','穿过星河，送一封信','让远方，也有回音']];
+document.querySelector('#record').onclick = async () => {
+  document.querySelector('#record').disabled = true;
+  for (const [type,color,line1,line2] of scenes) {
+    document.querySelector('#status').textContent = `正在录制 ${type}…`;
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(posterArt(type,color,'clip-'+type));
+    await img.decode();
+    const stream = canvas.captureStream(24);
+    const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t => MediaRecorder.isTypeSupported(t));
+    const recorder = new MediaRecorder(stream, {mimeType, videoBitsPerSecond:550000});
+    const chunks = [];
+    recorder.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(resolve => recorder.onstop = resolve);
+    const start = performance.now();
+    recorder.start();
+    await new Promise(resolve => {
+      function frame(now) {
+        const t = Math.min((now-start)/1000,6);
+        ctx.fillStyle='#16282d'; ctx.fillRect(0,0,640,360);
+        const zoom = 2.18 + .025*t;
+        const w=300*zoom,h=420*zoom;
+        ctx.drawImage(img,(640-w)/2+Math.sin(t*.6)*12,-135-t*6,w,h);
+        for(let i=0;i<28;i++) {
+          const x=(i*103+t*(8+i%5))%680-20, y=(i*57-t*11+720)%360;
+          ctx.fillStyle=`rgba(255,224,165,${.15+.2*Math.sin(t+i)**2})`;
+          ctx.beginPath();ctx.arc(x,y,1+i%2,0,Math.PI*2);ctx.fill();
+        }
+        const glow=ctx.createRadialGradient(450+Math.sin(t)*40,70,0,450,70,270);
+        glow.addColorStop(0,'rgba(255,219,158,.15)');glow.addColorStop(1,'rgba(255,219,158,0)');
+        ctx.fillStyle=glow;ctx.fillRect(0,0,640,360);
+        const shade=ctx.createLinearGradient(0,200,0,360);shade.addColorStop(0,'transparent');shade.addColorStop(1,'rgba(10,18,24,.9)');ctx.fillStyle=shade;ctx.fillRect(0,180,640,180);
+        ctx.fillStyle='#f6e8cf';ctx.textAlign='center';ctx.font='24px Microsoft YaHei, sans-serif';
+        ctx.globalAlpha=Math.min(1,t*2, (6-t)*2);ctx.fillText(t<3?line1:line2,320,315);ctx.globalAlpha=1;
+        ctx.textAlign='left';ctx.font='10px sans-serif';ctx.fillStyle='#ffffff90';ctx.fillText('MANYOU ORIGINAL  /  DEMO ANIMATION',23,27);
+        if(t<6) requestAnimationFrame(frame);else resolve();
+      }
+      requestAnimationFrame(frame);
+    });
+    recorder.stop(); await stopped; stream.getTracks().forEach(track=>track.stop());
+    const blob = new Blob(chunks,{type:'video/webm'});
+    const data = await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob);});
+    const output=document.createElement('textarea');output.id='clip-'+type;output.setAttribute('aria-label',type+' 视频数据');output.value=data;document.querySelector('#outputs').append(output);
+  }
+  document.querySelector('#status').textContent='五段原创模拟预览已生成';
+};
+</script></html>

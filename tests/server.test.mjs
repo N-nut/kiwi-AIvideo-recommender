@@ -31,6 +31,23 @@ test('静态预览提供页面、模块和独立 Demo，并拒绝访问项目配
     assert.match(html, /漫游/);
     assert.doesNotMatch(html, /<script[^>]+src=/i);
     assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"/i);
+    assert.equal((html.match(/data:video\/webm;base64,/g) || []).length, 5);
+    assert.doesNotMatch(html, /\.\/assets\/\w+\.webm/);
+    for (const type of ['sword', 'city', 'shop', 'door', 'space']) {
+      const media = await fetch(`${url}/assets/${type}.webm`);
+      assert.equal(media.status, 200);
+      assert.equal(media.headers.get('content-type'), 'video/webm');
+      const bytes = Buffer.from(await media.arrayBuffer());
+      assert.equal(bytes.subarray(0, 4).toString('hex'), '1a45dfa3');
+      assert.ok(bytes.length > 10000);
+      const range = await fetch(`${url}/assets/${type}.webm`, { headers: { Range: 'bytes=0-15' } });
+      assert.equal(range.status, 206);
+      assert.deepEqual(Buffer.from(await range.arrayBuffer()), bytes.subarray(0, 16));
+    }
+    assert.equal((await fetch(`${url}/assets/sword.webm`, { headers: { Range: 'bytes=999999999-' } })).status, 416);
+    const suffix = await fetch(`${url}/assets/sword.webm`, { headers: { Range: 'bytes=-10' } });
+    assert.equal((await suffix.arrayBuffer()).byteLength, 10);
+    assert.equal((await fetch(`${url}/assets/sword.webm`, { headers: { Range: 'bytes=5-1' } })).status, 416);
     assert.equal((await fetch(`${url}/package.json`)).status, 404);
     assert.equal((await fetch(`${url}/%2e%2e%5cpackage.json`)).status, 404);
   } finally {
