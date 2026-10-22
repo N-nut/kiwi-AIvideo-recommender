@@ -6,7 +6,7 @@ from kiwi.crawler import collect_hongguo
 
 
 async def main():
-    rows, sources = await collect_hongguo(print)
+    rows, summary = await collect_hongguo(progress=lambda data: print(data['message']))
     target = ROOT/'data/source-cache/hongguo.json'
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(rows, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')

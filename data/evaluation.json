@@ -1,5 +1,975 @@
 {
-  "version": "hongguo-pending-review",
-  "cases": [],
-  "notice": "旧 36 部参考集已停用。请针对当前红果库重新标注后评测。"
+  "version": "hongguo-192-20261022-v1",
+  "catalog_sha256": "859c76c024ce9609a14c0651b08cdeaf2fcec0525ff442e880986164db60341e",
+  "catalog_count": 192,
+  "annotation_notice": "AI-prepared source-tag rule references only. Not independent human relevance ratings; do not claim recommendation accuracy gains.",
+  "annotation_status": "pending_independent_human_review",
+  "cases": [
+    {
+      "id": "HG-01",
+      "text": "想看修仙题材的故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7675288927619533886",
+        "hongguo-7687961499481934910",
+        "hongguo-7690155535936539710",
+        "hongguo-7694229733453614104",
+        "hongguo-7696063528179878937",
+        "hongguo-7696095984266251326",
+        "hongguo-7696437705822981182"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-02",
+      "text": "想看玄幻世界的故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7687961499481934910",
+        "hongguo-7688651092246154264",
+        "hongguo-7690155535936539710",
+        "hongguo-7696095984266251326",
+        "hongguo-7696437705822981182",
+        "hongguo-7696923205193174040",
+        "hongguo-7698294694886788121",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7160928015310916648",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7181346369288801292",
+        "hongguo-comic-7185470494701784067",
+        "hongguo-comic-7220733774017858618",
+        "hongguo-comic-7224407648978865163"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-03",
+      "text": "偏好都市题材。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7672595482966772760",
+        "hongguo-7684559889913351193",
+        "hongguo-7686433880127048728",
+        "hongguo-7686526638665763865",
+        "hongguo-7686769629137488958",
+        "hongguo-7688352674999176254",
+        "hongguo-7688680481499384894",
+        "hongguo-7690596204589091864",
+        "hongguo-7690876049193700377",
+        "hongguo-7690939470450805785",
+        "hongguo-7691319031415966745",
+        "hongguo-7693516944581872664",
+        "hongguo-7693584971348331545",
+        "hongguo-7693869499447004185",
+        "hongguo-7694196748998151230",
+        "hongguo-7694225107375377433",
+        "hongguo-7694243659176217662",
+        "hongguo-7694291604915358744",
+        "hongguo-7694560624101035070",
+        "hongguo-7694948718188973080",
+        "hongguo-7694959546460015641",
+        "hongguo-7694988917589691417",
+        "hongguo-7695001285317119000",
+        "hongguo-7695341450141109272",
+        "hongguo-7695347627382017048",
+        "hongguo-7695625941778697241",
+        "hongguo-7695766670103170072",
+        "hongguo-7696023326375808024",
+        "hongguo-7696091370296970265",
+        "hongguo-7696412960813485081",
+        "hongguo-7696705177721523225",
+        "hongguo-7696822712345299993",
+        "hongguo-7696861393403776025",
+        "hongguo-7696903115634658329",
+        "hongguo-7696923205193174040",
+        "hongguo-7697148947701189657",
+        "hongguo-7697155137097190462",
+        "hongguo-7697209252699442201",
+        "hongguo-7697298944568593470",
+        "hongguo-7697516930667646014",
+        "hongguo-7697518496296471576",
+        "hongguo-7697612795184958489",
+        "hongguo-7697852455970671678",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111943588446997534",
+        "hongguo-comic-7111944514343799844",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7111950882832387104",
+        "hongguo-comic-7111952216503618596",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-comic-7161319271472040999",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7174597530431261708",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7180206402361625632",
+        "hongguo-comic-7213240589079284736",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7226738406963809313"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-04",
+      "text": "想看恋爱故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "恋爱"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7672595482966772760",
+        "hongguo-7685699444766952473",
+        "hongguo-7686526638665763865",
+        "hongguo-7686713195246930968",
+        "hongguo-7686783287322233880",
+        "hongguo-7687919221593885758",
+        "hongguo-7688352674999176254",
+        "hongguo-7689322645132692542",
+        "hongguo-7691231671529524249",
+        "hongguo-7691530085832068121",
+        "hongguo-7692824244719193150",
+        "hongguo-7693823855940357144",
+        "hongguo-7694289518328810521",
+        "hongguo-7694490520436886552",
+        "hongguo-7694560624101035070",
+        "hongguo-7694896136963755032",
+        "hongguo-7694948718188973080",
+        "hongguo-7694981696852085822",
+        "hongguo-7695246350543227928",
+        "hongguo-7695408183099018302",
+        "hongguo-7695625941778697241",
+        "hongguo-7695692940227644441",
+        "hongguo-7695704798418439193",
+        "hongguo-7696031301438016574",
+        "hongguo-7696071240036928537",
+        "hongguo-7696102168046095384",
+        "hongguo-7696405989787978814",
+        "hongguo-7696737673263713304",
+        "hongguo-7696806194794466329",
+        "hongguo-7697155137097190462",
+        "hongguo-7697297371822050328",
+        "hongguo-7697298944568593470",
+        "hongguo-7697612795184958489",
+        "hongguo-comic-7111948213132725260",
+        "hongguo-comic-7111962555320372254",
+        "hongguo-comic-7158294849144228875",
+        "hongguo-comic-7160883719199263752",
+        "hongguo-comic-7160928015310916648",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7174443260503395368",
+        "hongguo-comic-7176121414561303587",
+        "hongguo-comic-7179534808995859467",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7180256554455665668",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7222899607884270653"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-05",
+      "text": "想看古风故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "古风"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7671966197985856536",
+        "hongguo-7675932141238111256",
+        "hongguo-7685699444766952473",
+        "hongguo-7686713195246930968",
+        "hongguo-7687919221593885758",
+        "hongguo-7688646466708966462",
+        "hongguo-7689001554073881624",
+        "hongguo-7689365421811584062",
+        "hongguo-7690480481220955160",
+        "hongguo-7691615145977449496",
+        "hongguo-7694229733453614104",
+        "hongguo-7694240569924537368",
+        "hongguo-7694651843879652376",
+        "hongguo-7694939439503510590",
+        "hongguo-7695408183099018302",
+        "hongguo-7695729542152866841",
+        "hongguo-7696061988836756505",
+        "hongguo-7696066629439867966",
+        "hongguo-7696102168046095384",
+        "hongguo-7696737673263713304",
+        "hongguo-7696850776739564568",
+        "hongguo-7698331769279351833",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-comic-7174443260503395368",
+        "hongguo-comic-7179534808995859467",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7185470494701784067",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7212528436227607564"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-06",
+      "text": "想看搞笑题材。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "搞笑"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7672595482966772760",
+        "hongguo-7686526638665763865",
+        "hongguo-7693516944581872664",
+        "hongguo-7694653385668037657",
+        "hongguo-7696066629439867966",
+        "hongguo-7698003995750583320"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-07",
+      "text": "想看武侠故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "武侠"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7675932141238111256",
+        "hongguo-7695341442876574744",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7160928015310916648",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7181346369288801292",
+        "hongguo-comic-7185470494701784067"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-08",
+      "text": "想看末世题材。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "末世"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7695700156041137214",
+        "hongguo-7696822712345299993",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7213287822646578188"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-09",
+      "text": "偏好悬疑题材。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "悬疑"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7694194940422655000",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7214016287368809529",
+        "hongguo-comic-7222871258482871351"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-10",
+      "text": "想看穿越的故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7671966197985856536",
+        "hongguo-7688646466708966462",
+        "hongguo-7688666572499471422",
+        "hongguo-7690494161551625241",
+        "hongguo-7691615145977449496",
+        "hongguo-7692043430955863102",
+        "hongguo-7692463987333532697",
+        "hongguo-7692805707552279576",
+        "hongguo-7694211210132081688",
+        "hongguo-7694939439503510590",
+        "hongguo-7695347627382017048",
+        "hongguo-7695700156041137214",
+        "hongguo-7695754334847388696",
+        "hongguo-7695766670103170072",
+        "hongguo-7695791392928304190",
+        "hongguo-7696061988836756505",
+        "hongguo-7696063528179878937",
+        "hongguo-7696066629439867966",
+        "hongguo-7696071263730551870",
+        "hongguo-7696095984266251326",
+        "hongguo-7696102168046095384",
+        "hongguo-7696136213681425432",
+        "hongguo-7696412960813485081",
+        "hongguo-7696419143196609561",
+        "hongguo-7696522747056229438",
+        "hongguo-7696822712345299993",
+        "hongguo-7696923205193174040",
+        "hongguo-7697209252699442201",
+        "hongguo-7697297371822050328",
+        "hongguo-7697453551529774105",
+        "hongguo-7697516930667646014",
+        "hongguo-7697909665815874585",
+        "hongguo-7698625577502116889",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-comic-7174443260503395368",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7179534808995859467",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7180256554455665668",
+        "hongguo-comic-7181346369288801292",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7214012556652842023",
+        "hongguo-comic-7215173341039037479"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-11",
+      "text": "想看重生后重新开始。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "重生"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7686008653844859966",
+        "hongguo-7687944734748199960",
+        "hongguo-7689393278562602009",
+        "hongguo-7691675438472498200",
+        "hongguo-7691938290202577944",
+        "hongguo-7693447411011701785",
+        "hongguo-7694648775943392280",
+        "hongguo-7694651843879652376",
+        "hongguo-7696092906897034265",
+        "hongguo-7696825791434214462",
+        "hongguo-7696903115634658329",
+        "hongguo-comic-7111944514343799844",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7158294849144228875",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7185470494701784067",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7211428121621302304",
+        "hongguo-comic-7212575202486520891",
+        "hongguo-comic-7213287822646578188",
+        "hongguo-comic-7215147238979275779",
+        "hongguo-comic-7221825013723171896",
+        "hongguo-comic-7222871258482871351"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-12",
+      "text": "想看主角逆袭。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7686008653844859966",
+        "hongguo-7687903763129961497",
+        "hongguo-7688646466708966462",
+        "hongguo-7688651092246154264",
+        "hongguo-7688666572499471422",
+        "hongguo-7689111871411981374",
+        "hongguo-7689393278562602009",
+        "hongguo-7690155535936539710",
+        "hongguo-7690494161551625241",
+        "hongguo-7690596204589091864",
+        "hongguo-7691675438472498200",
+        "hongguo-7692043430955863102",
+        "hongguo-7692463987333532697",
+        "hongguo-7692805707552279576",
+        "hongguo-7693447411011701785",
+        "hongguo-7693860194454866969",
+        "hongguo-7693869499447004185",
+        "hongguo-7694211210132081688",
+        "hongguo-7694229733453614104",
+        "hongguo-7694240569924537368",
+        "hongguo-7694291604915358744",
+        "hongguo-7694560624101035070",
+        "hongguo-7694648775943392280",
+        "hongguo-7694651843879652376",
+        "hongguo-7694959546460015641",
+        "hongguo-7694988917589691417",
+        "hongguo-7695341442876574744",
+        "hongguo-7695624411923090457",
+        "hongguo-7695652257643121689",
+        "hongguo-7695791392928304190",
+        "hongguo-7696061988836756505",
+        "hongguo-7696092906897034265",
+        "hongguo-7696095984266251326",
+        "hongguo-7696136213681425432",
+        "hongguo-7696437705822981182",
+        "hongguo-7696539751641271320",
+        "hongguo-7696825791434214462",
+        "hongguo-7696903115634658329",
+        "hongguo-7697297371822050328",
+        "hongguo-7697453551529774105",
+        "hongguo-7697852455970671678",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7111948213132725260",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7111950882832387104",
+        "hongguo-comic-7158294849144228875",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7180206402361625632",
+        "hongguo-comic-7180256554455665668",
+        "hongguo-comic-7212528436227607564"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-13",
+      "text": "想看带系统的故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7690494161551625241",
+        "hongguo-7692463987333532697",
+        "hongguo-7694648775943392280",
+        "hongguo-7694959546460015641",
+        "hongguo-7695754334847388696",
+        "hongguo-7696023326375808024",
+        "hongguo-7696063528179878937",
+        "hongguo-7696066629439867966",
+        "hongguo-7696071263730551870",
+        "hongguo-7696092906897034265",
+        "hongguo-7696136213681425432",
+        "hongguo-7696419143196609561",
+        "hongguo-7696705177721523225",
+        "hongguo-7697516930667646014",
+        "hongguo-7698003995750583320",
+        "hongguo-7698294694886788121",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7161319271472040999",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-comic-7174443260503395368",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7180206402361625632",
+        "hongguo-comic-7181346369288801292",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7214012556652842023"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-14",
+      "text": "想看复仇主题。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "复仇"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-comic-7111943588446997534",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7160928015310916648",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7185470494701784067",
+        "hongguo-comic-7212528436227607564"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-15",
+      "text": "偏好战斗主题。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "战斗"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7690155535936539710",
+        "hongguo-7696066629439867966",
+        "hongguo-7697148947701189657",
+        "hongguo-7697852455970671678"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-16",
+      "text": "想看人物成长的故事。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "成长"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7682794121647377470",
+        "hongguo-7683196130645003288",
+        "hongguo-7687919221593885758",
+        "hongguo-7687944734748199960",
+        "hongguo-7691564616895171608",
+        "hongguo-7691715630537395262",
+        "hongguo-7695822045820505150",
+        "hongguo-7696351358173072409"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-17",
+      "text": "偏好修仙，想看逆袭。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7690155535936539710",
+        "hongguo-7694229733453614104",
+        "hongguo-7696095984266251326",
+        "hongguo-7696437705822981182"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-18",
+      "text": "偏好都市，想看系统。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7694959546460015641",
+        "hongguo-7696023326375808024",
+        "hongguo-7696705177721523225",
+        "hongguo-7697516930667646014",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7161319271472040999",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7180206402361625632"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-19",
+      "text": "偏好玄幻，想看战斗。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ],
+          "themes": [
+            "战斗"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7690155535936539710"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-20",
+      "text": "偏好古风，想看穿越。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "古风"
+          ],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7671966197985856536",
+        "hongguo-7688646466708966462",
+        "hongguo-7691615145977449496",
+        "hongguo-7694939439503510590",
+        "hongguo-7696061988836756505",
+        "hongguo-7696066629439867966",
+        "hongguo-7696102168046095384",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-comic-7174443260503395368",
+        "hongguo-comic-7179534808995859467",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7187590216511654969"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-21",
+      "text": "只看修仙，不看都市。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "修仙"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [
+          "都市"
+        ],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-7675288927619533886",
+        "hongguo-7687961499481934910",
+        "hongguo-7690155535936539710",
+        "hongguo-7694229733453614104",
+        "hongguo-7696063528179878937",
+        "hongguo-7696095984266251326",
+        "hongguo-7696437705822981182"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-22",
+      "text": "必须是末世题材，希望有重生。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "末世"
+          ],
+          "themes": [
+            "重生"
+          ],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7213287822646578188"
+      ],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-23",
+      "text": "偏好修仙，不要后宫。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "harem"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-24",
+      "text": "偏好都市，不要感情线。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "romance"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    },
+    {
+      "id": "HG-25",
+      "text": "偏好恋爱，但不要虐心。",
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "恋爱"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "tragic"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      },
+      "relevant_ids": [],
+      "reference_criteria": "全部软偏好标签均被源站标签规则命中，且通过已确认硬条件；不是人工语义相关性标注。"
+    }
+  ]
 }

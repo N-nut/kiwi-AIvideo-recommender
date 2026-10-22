@@ -45,3 +45,37 @@
 .detail-intro {white-space:pre-line}
 @media(max-width:620px) {.sync-scope{margin-left:0;width:100%}.catalog-update-button{padding:8px 10px;font-size:11px}.topbar-actions{gap:6px}}
 @media(prefers-reduced-motion:reduce) {.spinning{animation:none}}
+
+/* Portrait artwork uses the same proportions on discovery, catalog and favorites. */
+.drama-grid {grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px;align-items:stretch}
+.drama-card {min-width:0;display:flex;flex-direction:column}
+.poster-button {aspect-ratio:2 / 3;flex:none;width:100%;overflow:hidden}
+.source-cover {object-fit:cover;object-position:center}
+.poster-wordmark strong {font-size:18px}
+.card-body {flex:1;display:flex;flex-direction:column;padding:16px}
+.card-heading {align-items:flex-start}
+.card-heading h3 {font-size:15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
+.card-favorite {flex:none}
+.card-tags {flex-wrap:wrap}
+.card-body .match-box p {-webkit-line-clamp:3}
+.card-footer {margin-top:auto;padding-top:14px;gap:6px;flex-wrap:wrap}
+.card-actions {gap:9px;flex-wrap:wrap}
+.card-footer,.card-actions .text-button {font-size:10px}
+.source-rank {margin-top:6px;font-size:10px}
+.skeleton-poster {aspect-ratio:2 / 3;height:auto}
+.content-type-filters {margin-bottom:12px}
+.catalog-pagination {display:flex;align-items:center;justify-content:center;gap:20px;margin:30px 0;font-size:12px;color:#76816d}
+.catalog-pagination button {padding:9px 14px}
+.sync-counts {flex-basis:100%;font-size:10px;color:#7c856f}
+.collection-dialog {max-width:480px;width:calc(100vw - 32px)}
+.collection-options {display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px;border:1px solid var(--line);border-radius:12px}
+.collection-options legend {font-size:12px;color:#78836d;padding:0 6px}
+.collection-options label,.rank-option {display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.collection-options input,.rank-option input {accent-color:#608035;width:16px;height:16px}
+.rank-option {margin:18px 0}
+.preview-reading {height:250px;background:#263334;position:relative;text-align:center}
+.preview-reading img {height:100%;max-width:100%;object-fit:contain}
+.preview-reading span {position:absolute;bottom:0;left:0;right:0;background:#17241edb;color:#fff;padding:9px;font-size:11px}
+@media(min-width:1600px) {.drama-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
+@media(max-width:760px) {.drama-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card-body{padding:13px}.poster-button{aspect-ratio:2 / 3}}
+@media(max-width:480px) {.drama-grid{grid-template-columns:minmax(0,1fr);max-width:320px;margin-inline:auto}.catalog-pagination{gap:12px}.sync-scope{font-size:10px}.collection-dialog{padding:20px}.catalog-filters{gap:6px;flex-wrap:wrap}.filter-button{padding:7px 10px}}

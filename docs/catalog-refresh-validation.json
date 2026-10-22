@@ -1,0 +1,98 @@
+{
+  "validated_at": "2026-10-22",
+  "validation_scope": "Four categories and hot ranking, two pages per source; runtime validation override only. Default remains five pages.",
+  "scope": {
+    "categories": [
+      "comic-drama",
+      "ai-drama",
+      "real-drama",
+      "comic"
+    ],
+    "include_hot_rank": true
+  },
+  "limits_used": {
+    "pages_per_source": 2,
+    "max_pages": 25,
+    "max_works": 500
+  },
+  "status": "succeeded",
+  "result": {
+    "imported": 192,
+    "skipped": 0,
+    "failed": 0,
+    "new": 151,
+    "updated": 41,
+    "unchanged": 0,
+    "embedded": 166,
+    "review_held": 0,
+    "same_title_groups": 0,
+    "removed": 0,
+    "sources": [
+      {
+        "category": "comic-drama",
+        "label": "漫剧",
+        "url": "https://hongguoduanju.com/category/comic-drama",
+        "pages": 2,
+        "records": 48,
+        "coverage": "limited"
+      },
+      {
+        "category": "ai-drama",
+        "label": "AI剧",
+        "url": "https://hongguoduanju.com/category/ai-drama",
+        "pages": 2,
+        "records": 48,
+        "coverage": "limited"
+      },
+      {
+        "category": "real-drama",
+        "label": "真人剧",
+        "url": "https://hongguoduanju.com/category/real-drama",
+        "pages": 2,
+        "records": 48,
+        "coverage": "limited"
+      },
+      {
+        "category": "comic",
+        "label": "漫画",
+        "url": "https://hongguoduanju.com/category/comic",
+        "pages": 2,
+        "records": 48,
+        "coverage": "limited"
+      },
+      {
+        "category": "rank",
+        "label": "红果热播榜",
+        "url": "https://hongguoduanju.com/rank/hot-drama",
+        "pages": 2,
+        "records": 40,
+        "coverage": "limited"
+      }
+    ],
+    "coverage": "limited",
+    "pages_done": 10,
+    "raw_count": 232,
+    "unique_count": 192,
+    "total": 192,
+    "catalog_total": 192,
+    "indexed_total": 192,
+    "indexing_enabled": true,
+    "elapsed_ms": 103257
+  },
+  "health": {
+    "status": "ready",
+    "mode": "live",
+    "storage": "sqlite",
+    "works": 192,
+    "embedded_works": 192,
+    "configured": true,
+    "model": "deepseek-chat",
+    "embedding_model": "text-embedding-v4",
+    "embedding_dimension": 1024
+  },
+  "comparison_before": {
+    "works": 41,
+    "backup": ".local/kiwi-before-pagination-20261022.db"
+  },
+  "note": "Development-authorized automatically collected data, pending independent human review. This is not a full-site crawl or deployment acceptance."
+}

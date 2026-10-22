@@ -27,12 +27,16 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch):
         initialize(engine)
         rows=[]
         for i,value in enumerate([False,True,None]):
-            row=copy.deepcopy(record);row.update(id=f'work-{i}',title=f'Test {i}',harem=value);rows.append(row)
+            row=copy.deepcopy(record);row.update(id=f'work-{i}',title=f'Test {i}',harem=value)
+            row['source_meta']={'provider':'hongguo','content_type':'漫画' if i%2 else '漫剧','tags':[],'pages':['https://hongguoduanju.com/category/comic']}
+            rows.append(row)
         settings=Settings(ai_mode='live',database_url=url)
         await import_works(rows,sessions,FakeAI(),settings)
         with sessions() as session:
             found=retrieve(session,Preferences(excluded_features=['harem'],required=[{'field':'genres','value':'修仙'}],excluded_genres=['都市']),[1.0]+[0.0]*1023,settings)
             assert [w.id for w,_ in found]==['work-0']
+            comics=session.scalars(select(Work).where(Work.source_meta['content_type'].as_string()=='漫画').order_by(Work.id).offset(0).limit(12))
+            assert [w.id for w in comics]==['work-1']
         class Fail(FakeAI):
             async def embed(self,texts): raise RuntimeError('upstream failure')
         changed=copy.deepcopy(rows[0]);changed['title']='updated'

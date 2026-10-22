@@ -1,0 +1,1429 @@
+{
+  "generated_at": "2026-10-22T11:29:33.346879+00:00",
+  "mode": "live",
+  "preference_input": "fixed-confirmed-structure",
+  "dataset_version": "hongguo-192-20261022-v1",
+  "data_sha256": "859c76c024ce9609a14c0651b08cdeaf2fcec0525ff442e880986164db60341e",
+  "catalog_count": 192,
+  "evaluation_sha256": "0cd550af1a315ba19ecd2de28f873941e3ac613cf1fdd506a88d1b9b7d8d0d55",
+  "prompt_version": "kiwi-2026-10-21-v1",
+  "model": "deepseek-chat",
+  "embedding_model": "text-embedding-v4",
+  "embedding_dimension": 1024,
+  "min_similarity": 0.4,
+  "semantic_only_threshold": 0.65,
+  "storage": "sqlite",
+  "annotation_notice": "AI-prepared source-tag rule references only. Not independent human relevance ratings; do not claim recommendation accuracy gains.",
+  "summary": {
+    "queries": 25,
+    "errors": 0,
+    "hard_violations": 0,
+    "invalid_evidence": 0,
+    "mean_reference_recall_at_10": 0.3829275432079361,
+    "mean_reference_precision": 0.8888888888888888,
+    "latency_p50_ms": 10878.92,
+    "latency_p95_ms": 15529.71,
+    "calls": 46,
+    "tokens": 62389
+  },
+  "results": [
+    {
+      "id": "HG-01",
+      "text": "想看修仙题材的故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7695341442876574744",
+        "hongguo-7698003995750583320",
+        "hongguo-7696437705822981182"
+      ],
+      "candidate_ids": [
+        "hongguo-7695341442876574744",
+        "hongguo-7698003995750583320",
+        "hongguo-7696437705822981182",
+        "hongguo-7694229733453614104",
+        "hongguo-7696923205193174040",
+        "hongguo-7697209252699442201",
+        "hongguo-7687961499481934910",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7675288927619533886"
+      ],
+      "reference_recall_at_10": 0.5714285714285714,
+      "reference_precision": 0.3333333333333333,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8714.87,
+        "retrieval": 104.94,
+        "generation": 6773.2,
+        "total": 15593.11
+      },
+      "end_to_end_ms": 15596.37,
+      "usage": {
+        "calls": 2,
+        "tokens": 3393
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-02",
+      "text": "想看玄幻世界的故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7696923205193174040"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7695341442876574744",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7696923205193174040",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-7697148947701189657",
+        "hongguo-comic-7215173341039037479"
+      ],
+      "reference_recall_at_10": 0.25,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4599.48,
+        "retrieval": 85.82,
+        "generation": 3019.16,
+        "total": 7704.6
+      },
+      "end_to_end_ms": 7711.9,
+      "usage": {
+        "calls": 2,
+        "tokens": 2984
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-03",
+      "text": "偏好都市题材。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-comic-7215173341039037479"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-7697516930667646014",
+        "hongguo-7697148947701189657",
+        "hongguo-comic-7174597530431261708",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-7696923205193174040",
+        "hongguo-comic-7111949315903327244"
+      ],
+      "reference_recall_at_10": 0.15517241379310345,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 7831.63,
+        "retrieval": 119.09,
+        "generation": 2592.73,
+        "total": 10543.57
+      },
+      "end_to_end_ms": 10549.5,
+      "usage": {
+        "calls": 2,
+        "tokens": 2975
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-04",
+      "text": "想看恋爱故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7222899607884270653",
+        "hongguo-7695692940227644441",
+        "hongguo-7694896136963755032"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7222899607884270653",
+        "hongguo-7695692940227644441",
+        "hongguo-7698003995750583320",
+        "hongguo-7694896136963755032",
+        "hongguo-7689322645132692542",
+        "hongguo-7697155137097190462",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-7672595482966772760",
+        "hongguo-7695704798418439193",
+        "hongguo-comic-7208444481031375933"
+      ],
+      "reference_recall_at_10": 0.15217391304347827,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4349.55,
+        "retrieval": 155.61,
+        "generation": 6370.18,
+        "total": 10875.44
+      },
+      "end_to_end_ms": 10878.92,
+      "usage": {
+        "calls": 2,
+        "tokens": 3436
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "恋爱"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-05",
+      "text": "想看古风故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7187590216511654969"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7179843900528397345",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-7695692940227644441",
+        "hongguo-7689365421811584062"
+      ],
+      "reference_recall_at_10": 0.20588235294117646,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8153.7,
+        "retrieval": 101.89,
+        "generation": 5648.45,
+        "total": 13904.15
+      },
+      "end_to_end_ms": 13907.75,
+      "usage": {
+        "calls": 2,
+        "tokens": 3037
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "古风"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-06",
+      "text": "想看搞笑题材。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-7696066629439867966"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7695341442876574744",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-7696066629439867966",
+        "hongguo-7695754334847388696",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-7696136213681425432",
+        "hongguo-7694291604915358744",
+        "hongguo-comic-7222899607884270653"
+      ],
+      "reference_recall_at_10": 0.3333333333333333,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4105.29,
+        "retrieval": 102.11,
+        "generation": 1712.85,
+        "total": 5920.37
+      },
+      "end_to_end_ms": 5923.33,
+      "usage": {
+        "calls": 2,
+        "tokens": 2412
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "搞笑"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-07",
+      "text": "想看武侠故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7695341442876574744",
+        "hongguo-7675932141238111256",
+        "hongguo-comic-7180193154753104935"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-7695341442876574744",
+        "hongguo-7675932141238111256",
+        "hongguo-7696066629439867966",
+        "hongguo-7694229733453614104",
+        "hongguo-7687903763129961497",
+        "hongguo-7696347753672084542",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7168386208265931791"
+      ],
+      "reference_recall_at_10": 0.5555555555555556,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8513.5,
+        "retrieval": 111.35,
+        "generation": 2720.58,
+        "total": 11345.55
+      },
+      "end_to_end_ms": 11347.88,
+      "usage": {
+        "calls": 2,
+        "tokens": 3233
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "武侠"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-08",
+      "text": "想看末世题材。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7213287822646578188",
+        "hongguo-7696822712345299993",
+        "hongguo-7695700156041137214"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7213287822646578188",
+        "hongguo-7696822712345299993",
+        "hongguo-7695700156041137214",
+        "hongguo-7691938290202577944",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7696522747056229438",
+        "hongguo-7697516930667646014",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7215173341039037479"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4596.26,
+        "retrieval": 87.37,
+        "generation": 6439.76,
+        "total": 11123.47
+      },
+      "end_to_end_ms": 11126.42,
+      "usage": {
+        "calls": 2,
+        "tokens": 3363
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "末世"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-09",
+      "text": "偏好悬疑题材。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7222871258482871351"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7698003995750583320",
+        "hongguo-7696522747056229438",
+        "hongguo-7697148947701189657",
+        "hongguo-7697516930667646014",
+        "hongguo-7694959546460015641",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7222871258482871351",
+        "hongguo-7688199338417196056",
+        "hongguo-comic-7215173341039037479"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8115.77,
+        "retrieval": 155.39,
+        "generation": 2787.05,
+        "total": 11058.34
+      },
+      "end_to_end_ms": 11062.13,
+      "usage": {
+        "calls": 2,
+        "tokens": 2260
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "悬疑"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-10",
+      "text": "想看穿越的故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7697516930667646014",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7168402452792740872"
+      ],
+      "candidate_ids": [
+        "hongguo-7697516930667646014",
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7690494161551625241",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-7694211210132081688",
+        "hongguo-comic-7111947670620474409"
+      ],
+      "reference_recall_at_10": 0.15217391304347827,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4458.76,
+        "retrieval": 85.83,
+        "generation": 5967.41,
+        "total": 10512.09
+      },
+      "end_to_end_ms": 10514.65,
+      "usage": {
+        "calls": 2,
+        "tokens": 3165
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-11",
+      "text": "想看重生后重新开始。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7111944514343799844",
+        "hongguo-comic-7211428121621302304"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7111944514343799844",
+        "hongguo-comic-7211428121621302304",
+        "hongguo-7694648775943392280",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-7689671827777408025",
+        "hongguo-7686008653844859966",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7173535094202698752",
+        "hongguo-7689393278562602009"
+      ],
+      "reference_recall_at_10": 0.3333333333333333,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 6577.52,
+        "retrieval": 89.83,
+        "generation": 2236.83,
+        "total": 8904.33
+      },
+      "end_to_end_ms": 8907.49,
+      "usage": {
+        "calls": 2,
+        "tokens": 2769
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "重生"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-12",
+      "text": "想看主角逆袭。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7694291604915358744",
+        "hongguo-7694229733453614104",
+        "hongguo-7695652257643121689"
+      ],
+      "candidate_ids": [
+        "hongguo-7694291604915358744",
+        "hongguo-7694229733453614104",
+        "hongguo-7689671827777408025",
+        "hongguo-7695652257643121689",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-7695341442876574744"
+      ],
+      "reference_recall_at_10": 0.12,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 3396.07,
+        "retrieval": 92.3,
+        "generation": 5847.92,
+        "total": 9336.37
+      },
+      "end_to_end_ms": 9341.02,
+      "usage": {
+        "calls": 2,
+        "tokens": 3589
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-13",
+      "text": "想看带系统的故事。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7174706926398213154"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-7696066629439867966",
+        "hongguo-comic-7168386208265931791",
+        "hongguo-7694959546460015641",
+        "hongguo-comic-7168402452792740872"
+      ],
+      "reference_recall_at_10": 0.28125,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8618.74,
+        "retrieval": 96.19,
+        "generation": 6811.67,
+        "total": 15526.72
+      },
+      "end_to_end_ms": 15529.71,
+      "usage": {
+        "calls": 2,
+        "tokens": 2968
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-14",
+      "text": "想看复仇主题。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7111943588446997534",
+        "hongguo-comic-7179906436711844901"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7111943588446997534",
+        "hongguo-7690876049193700377",
+        "hongguo-comic-7179906436711844901",
+        "hongguo-7698003995750583320",
+        "hongguo-7696522747056229438",
+        "hongguo-7694196748998151230",
+        "hongguo-7686769629137488958",
+        "hongguo-7697516930667646014"
+      ],
+      "reference_recall_at_10": 0.3333333333333333,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 5014.11,
+        "retrieval": 89.21,
+        "generation": 2100.06,
+        "total": 7203.52
+      },
+      "end_to_end_ms": 7205.93,
+      "usage": {
+        "calls": 2,
+        "tokens": 1985
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "复仇"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-15",
+      "text": "偏好战斗主题。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7697148947701189657"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7697148947701189657",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-7695341442876574744",
+        "hongguo-7697516930667646014",
+        "hongguo-7696522747056229438",
+        "hongguo-7696347753672084542"
+      ],
+      "reference_recall_at_10": 0.25,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 9018.7,
+        "retrieval": 124.24,
+        "generation": 6494.52,
+        "total": 15637.58
+      },
+      "end_to_end_ms": 15639.04,
+      "usage": {
+        "calls": 2,
+        "tokens": 1421
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "战斗"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-16",
+      "text": "想看人物成长的故事。",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7174597530431261708",
+        "hongguo-7696023326375808024",
+        "hongguo-7695341442876574744",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-7694291604915358744"
+      ],
+      "reference_recall_at_10": 0.0,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 4532.57,
+        "retrieval": 98.17,
+        "total": 4630.83
+      },
+      "end_to_end_ms": 4631.02,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [],
+          "themes": [
+            "成长"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-17",
+      "text": "偏好修仙，想看逆袭。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7694229733453614104",
+        "hongguo-7695341442876574744",
+        "hongguo-7696437705822981182"
+      ],
+      "candidate_ids": [
+        "hongguo-7695341442876574744",
+        "hongguo-7698003995750583320",
+        "hongguo-7694229733453614104",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-7696437705822981182",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7696923205193174040",
+        "hongguo-7697209252699442201"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4921.62,
+        "retrieval": 118.47,
+        "generation": 6181.27,
+        "total": 11221.51
+      },
+      "end_to_end_ms": 11236.84,
+      "usage": {
+        "calls": 2,
+        "tokens": 3739
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [
+            "逆袭"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-18",
+      "text": "偏好都市，想看系统。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-7697516930667646014"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7111960053963295758",
+        "hongguo-7697516930667646014",
+        "hongguo-comic-7168402452792740872",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-7694959546460015641"
+      ],
+      "reference_recall_at_10": 0.5,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 9652.05,
+        "retrieval": 101.35,
+        "generation": 2609.17,
+        "total": 12362.67
+      },
+      "end_to_end_ms": 12365.85,
+      "usage": {
+        "calls": 2,
+        "tokens": 3067
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [
+            "系统"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-19",
+      "text": "偏好玄幻，想看战斗。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7697148947701189657",
+        "hongguo-comic-7111947670620474409"
+      ],
+      "candidate_ids": [
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7695341442876574744",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-7697148947701189657",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7111949315903327244",
+        "hongguo-comic-7215173341039037479",
+        "hongguo-7696923205193174040",
+        "hongguo-comic-7111960053963295758"
+      ],
+      "reference_recall_at_10": 0.0,
+      "reference_precision": 0.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4924.6,
+        "retrieval": 124.66,
+        "generation": 5880.94,
+        "total": 10930.31
+      },
+      "end_to_end_ms": 10932.74,
+      "usage": {
+        "calls": 2,
+        "tokens": 3022
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "玄幻"
+          ],
+          "themes": [
+            "战斗"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-20",
+      "text": "偏好古风，想看穿越。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7179843900528397345"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7187590216511654969",
+        "hongguo-comic-7111947670620474409",
+        "hongguo-comic-7111948647381601280",
+        "hongguo-comic-7180193154753104935",
+        "hongguo-comic-7174706926398213154",
+        "hongguo-comic-7207337028814375968",
+        "hongguo-7698003995750583320",
+        "hongguo-comic-7208444481031375933",
+        "hongguo-7689001554073881624",
+        "hongguo-comic-7179843900528397345"
+      ],
+      "reference_recall_at_10": 0.23076923076923078,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 7673.31,
+        "retrieval": 97.51,
+        "generation": 6551.13,
+        "total": 14322.04
+      },
+      "end_to_end_ms": 14333.29,
+      "usage": {
+        "calls": 2,
+        "tokens": 3071
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "古风"
+          ],
+          "themes": [
+            "穿越"
+          ],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-21",
+      "text": "只看修仙，不看都市。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-7696437705822981182",
+        "hongguo-7694229733453614104",
+        "hongguo-7687961499481934910"
+      ],
+      "candidate_ids": [
+        "hongguo-7696437705822981182",
+        "hongguo-7694229733453614104",
+        "hongguo-7687961499481934910",
+        "hongguo-7675288927619533886",
+        "hongguo-7696095984266251326",
+        "hongguo-7690155535936539710",
+        "hongguo-7696063528179878937"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 1.0,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 4365.19,
+        "retrieval": 17.52,
+        "generation": 2398.69,
+        "total": 6781.53
+      },
+      "end_to_end_ms": 6784.88,
+      "usage": {
+        "calls": 2,
+        "tokens": 3290
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "修仙"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [
+          "都市"
+        ],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-22",
+      "text": "必须是末世题材，希望有重生。",
+      "status": "success",
+      "returned_ids": [
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7213287822646578188",
+        "hongguo-7696822712345299993"
+      ],
+      "candidate_ids": [
+        "hongguo-comic-7179906436711844901",
+        "hongguo-comic-7213287822646578188",
+        "hongguo-7696822712345299993",
+        "hongguo-7695700156041137214"
+      ],
+      "reference_recall_at_10": 1.0,
+      "reference_precision": 0.6666666666666666,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [
+        "model",
+        "model",
+        "model"
+      ],
+      "warnings": [],
+      "timings_ms": {
+        "embedding": 8408.13,
+        "retrieval": 12.79,
+        "generation": 4573.91,
+        "total": 12994.91
+      },
+      "end_to_end_ms": 12997.35,
+      "usage": {
+        "calls": 2,
+        "tokens": 3177
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "末世"
+          ],
+          "themes": [
+            "重生"
+          ],
+          "pace": null
+        },
+        "required": [
+          {
+            "field": "genres",
+            "value": "末世"
+          }
+        ],
+        "excluded_features": [],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-23",
+      "text": "偏好修仙，不要后宫。",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 4364.1,
+        "retrieval": 2.2,
+        "total": 4366.36
+      },
+      "end_to_end_ms": 4366.46,
+      "usage": {
+        "calls": 1,
+        "tokens": 9
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "修仙"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "harem"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-24",
+      "text": "偏好都市，不要感情线。",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 8978.09,
+        "retrieval": 3.38,
+        "total": 8981.53
+      },
+      "end_to_end_ms": 8981.63,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "都市"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "romance"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    },
+    {
+      "id": "HG-25",
+      "text": "偏好恋爱，但不要虐心。",
+      "status": "empty",
+      "returned_ids": [],
+      "candidate_ids": [],
+      "reference_recall_at_10": null,
+      "reference_precision": null,
+      "hard_violations": [],
+      "invalid_evidence": [],
+      "reason_modes": [],
+      "warnings": [
+        "作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"
+      ],
+      "timings_ms": {
+        "embedding": 4530.04,
+        "retrieval": 1.31,
+        "total": 4531.4
+      },
+      "end_to_end_ms": 4531.48,
+      "usage": {
+        "calls": 1,
+        "tokens": 8
+      },
+      "preferences": {
+        "schema_version": 1,
+        "soft_preferences": {
+          "genres": [
+            "恋爱"
+          ],
+          "themes": [],
+          "pace": null
+        },
+        "required": [],
+        "excluded_features": [
+          "tragic"
+        ],
+        "excluded_genres": [],
+        "unresolved_constraints": [],
+        "conflicts": []
+      }
+    }
+  ]
+}

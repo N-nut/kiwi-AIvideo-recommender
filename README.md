@@ -2,7 +2,7 @@
 
 已实现可本地运行的 RAG MVP：**输入需求 → AI 解析 → 编辑确认 → 硬条件筛选与语义检索 → 带资料依据的推荐**。前端采用 Vue 3 / TypeScript，后端采用 FastAPI / SQLAlchemy / LangChain 模型适配，真实调用 DeepSeek 与百炼 text-embedding-v4（1024 维）。最多返回 3 部，不足时按实际数量返回。
 
-首页右上角提供 **更新漫剧库**：后台读取指定红果分类页与热播榜当前页，采集真实标题、封面、简介、标签、集数及榜单信息，去重并原子更新。原 36 部 Bilibili 资料已停用。自动采集资料按用户授权用于开发验证，待人工复核。详见 [数据审核说明](data/审核说明.md)。
+首页右上角提供 **更新漫剧库**：选择真人剧、漫剧、AI剧、漫画及可选热播榜，后台自动翻页，采集真实标题、封面、简介、标签、集数或章节与榜单信息，按来源标识增量入库。原 36 部 Bilibili 资料已停用。自动采集资料按用户授权用于开发验证，待人工复核。详见 [数据审核说明](data/审核说明.md)。
 
 ## 在这台电脑上启动
 
@@ -47,17 +47,25 @@ npm.cmd --prefix frontend run dev
 
 ## 使用与数据导入
 
-点击首页“更新漫剧库”即可开始更新，页面显示采集/索引进度和最近成功时间，完成后自动刷新卡片。刷新网页后可继续查看运行中的任务。30 秒内重复点击复用最近结果，运行中不会重复发起任务。
+点击首页“更新漫剧库”，默认勾选漫剧、AI剧，可增加真人剧、漫画和热播榜。页面显示实际类别、当前页、已读取页数、原始条数、去重数量和索引进度，完成后自动刷新卡片。刷新网页后继续查看同一任务；运行中不重复发起，结束后 30 秒内复用最近结果。
 
-固定来源仅为 [真人剧分类首页](https://hongguoduanju.com/category/real-drama) 和 [红果热播榜首页](https://hongguoduanju.com/rank/hot-drama)。当前同步这两个页面展示的片单，不遍历后续分页或下载视频。真人剧按来源标注，榜单未明确标注类型的作品显示“未标注”。
+后端固定来源为 [真人剧](https://hongguoduanju.com/category/real-drama)、[漫剧](https://hongguoduanju.com/category/comic-drama)、[AI剧](https://hongguoduanju.com/category/ai-drama)、[漫画](https://hongguoduanju.com/category/comic) 和 [热播榜](https://hongguoduanju.com/rank/hot-drama)。默认每来源最多 **5 页**，整个任务最多 **25 页、500 部**；达到上限明确显示限定范围。每次从第一页开始，按来源分页信息停止，不承诺全站全量。漫画独立保存标识、章节与阅读链接；分类信息优先于榜单缺失标签。
 
-两个页面均成功读取、字段校验和向量化完成后才覆盖本次红果片单；其他手工导入资料保留。页面/模型失败时保留原库。热度、封面或日期变化复用原有向量，简介变化才重新索引。更新状态存入数据库；本版按本地单进程服务设计，多实例调度与后台审核留待后续实现。
+本次限定范围的页面、字段校验和向量化全部成功后，一次事务新增或更新；**不会删除本次未出现的作品**。同名不同来源 ID 保留，人工拒绝状态不会被自动批准。页面、模型或超时失败保留原库。仅热度、封面或日期变化复用向量，检索文本变化才重新索引。状态存入数据库；本版按本地单进程服务设计，多实例调度与后台审核留待后续实现。
 
-`POST /api/v1/catalog/refresh` 启动任务，`GET /api/v1/catalog/refresh` 查看状态。来源由后端固定，不接受外部爬取 URL。已有 SQLite 安装会原位增加来源字段并移除指定旧种子；PostgreSQL 由 Alembic 0002 迁移。
+`POST /api/v1/catalog/refresh` 提交范围，`GET /api/v1/catalog/refresh` 查看状态。请求示例：
+
+```json
+{"categories":["comic-drama","ai-drama"],"include_hot_rank":false}
+```
+
+来源由后端固定，不接受外部爬取 URL。`.env.example` 提供页数、作品数和时间预算配置；请求串行间隔至少 0.5 秒，采集/索引/全任务默认分别最多 300/600/900 秒。已有 SQLite 原位升级；PostgreSQL 沿用 Alembic 0002，本轮只扩展 JSON 字段，无需新增实体列。
 
 - 点击“理解我的口味”后检查识别结果；可调整题材、主题、节奏、排除项和必须条件，再点击确认生成。修改描述会重置本轮偏好，旧请求的迟到结果不能覆盖新输入。
 - 不要后宫时，只有 `harem=false` 能通过，`true` 和未知均排除；来源未说明的特征不会推断为“没有”。
 - 作品详情展示原始简介、证据、资料日期和官方链接。名称、链接和简介来自数据库；生成的 ID、证据和引用经过校验。生成失败时使用证据模板并标识。
+- 片库按内容类别和题材筛选，通过服务端分页每页加载 12 部；收藏按保存的 ID 独立加载，不随片库翻页丢失。失效资料单独提示，浏览器里的 ID 保留。
+- 卡片采用 2:3 竖版海报，桌面约 200～280px，窄屏减少列数；图片失败使用同尺寸占位图。漫画展示阅读资料预览。
 - 悬停卡片约 260ms 弹出视频预览，静音循环播放原创模拟氛围动画，按题材复用，非真实作品片段。移出、关闭或切换页面会停止并卸载视频；浏览器禁止自动播放或设置减少动态效果时，可手动播放。手机和键盘也可使用卡片上的“预览”按钮。
 - 详情弹窗只滚动正文，隐藏可见滚动条，标题、关闭按钮及底部操作保持可见；点击旁边空白处或按 Esc 可关闭。
 - 完结、时长等未支持的明确条件需要用户主动调整或移除；冲突条件不直接推荐。
@@ -73,7 +81,7 @@ npm.cmd --prefix frontend run dev
 .\.venv\Scripts\python.exe -m kiwi import --file data/source-cache/hongguo.json --update --reembed
 ```
 
-重复且一致的 ID 跳过，同批冲突或疑似同名作品报错。整批校验或向量化失败时不提交部分更新。将 `approved` 改回 `pending` 也需显式 `--update`。
+手工导入中重复且一致的 ID 跳过，同批冲突或疑似同名作品报错；网页来源同步按来源 ID 保留同名条目，不自动合并。整批校验或向量化失败时不提交部分更新。将 `approved` 改回 `pending` 也需显式 `--update`。
 
 ## 测试与评测
 
@@ -100,7 +108,7 @@ node scripts/test-postgres.mjs
 .\.venv\Scripts\python.exe scripts/evaluate.py --live --parse --concurrency 2
 ```
 
-旧 36 部作品对应的 24 条参考需求已停用；现存评测报告仅记录 2026-10-21 历史结果，不适用于红果库。`scripts/evaluate.py` 会拒绝空的参考集，需先针对新库重新标注，不能将历史指标当作新库效果。
+旧 36 部对应的 24 条需求和报告保留为历史记录。当前 [25 条固定需求](data/evaluation.json) 基于 192 部红果资料的源站标签建立规则参考，**待独立人工相关性标注**。标签基线和真实向量模式读取相同本机库，报告保存为 `docs/evaluation-hongguo-*.json`；不覆盖历史报告，也不把规则命中率称为推荐准确率。脚本校验检索内容指纹；后续片库变化后须复核并更新参考集，旧指标不能直接沿用。
 
 ## Docker Compose 与备份
 
@@ -128,6 +136,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 - [产品设计](产品设计文档.md)、[技术方案](docs/技术方案.md)
 - [实现与验收记录](docs/实现与验收.md)、[数据审核说明](data/审核说明.md)
 - 历史评测（旧作品库）：[标签基线](docs/evaluation-baseline.json)、[真实向量](docs/evaluation-live.json)
+- 当前库自动检查：[标签基线](docs/evaluation-hongguo-baseline.json)、[真实向量](docs/evaluation-hongguo-live.json)；参考标注仍待人工复核。
 - [后端 OpenAPI](http://127.0.0.1:8000/docs)；`/health/live` 检查存活，`/health/ready` 检查配置、资料和向量版本。
 - 原有 `Demo.html` 保留：双击离线体验 12 部虚构作品和原创模拟视频。单独服务命令改为 `npm.cmd run demo`。修改 `demo/` 后运行 `npm.cmd run build` 重新打包。
 

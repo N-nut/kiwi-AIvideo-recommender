@@ -18,7 +18,7 @@ from .catalog import CatalogManager
 from .database import Work, initialize, make_database, public_work
 from .providers import BaselineAI, LiveAI, ProviderError
 from .repository import array_has
-from .schemas import ParseRequest, RecommendationRequest
+from .schemas import ContentType, ParseRequest, RecommendationRequest, RefreshRequest
 from .service import recommend
 
 log = logging.getLogger("kiwi")
@@ -124,21 +124,23 @@ def create_app(settings=None, provider_factory=None, collector=None):
         return catalog.state()
 
     @app.post("/api/v1/catalog/refresh", status_code=202)
-    async def refresh_catalog(request: Request):
+    async def refresh_catalog(body: RefreshRequest, request: Request):
         origin = request.headers.get("origin")
         if origin:
             host = urlsplit(origin).hostname
             local = {"localhost", "127.0.0.1", "::1"}
             if host != request.url.hostname and not (host in local and request.url.hostname in local):
                 raise HTTPException(403, "请从奇维页面发起更新")
-        return catalog.start()
+        return await catalog.start(body)
 
     @app.get("/api/v1/works")
-    def works(page: int = Query(1, ge=1), page_size: int = Query(12, ge=1, le=50), genre: str | None = Query(None, max_length=30)):
+    def works(page: int = Query(1, ge=1), page_size: int = Query(12, ge=1, le=50), genre: str | None = Query(None, max_length=30), content_type: ContentType | None = None):
         with sessions() as session:
             statement = select(Work).where(Work.review_status == "approved")
             if genre:
                 statement = statement.where(array_has(Work.genres, genre, engine.dialect.name))
+            if content_type:
+                statement = statement.where(Work.source_meta["content_type"].as_string() == content_type)
             total = session.scalar(select(func.count()).select_from(statement.subquery()))
             rows = session.scalars(statement.order_by(Work.id).offset((page-1)*page_size).limit(page_size))
             return {"items": [public_work(w) for w in rows], "total": total, "page": page, "page_size": page_size}

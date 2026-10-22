@@ -7,6 +7,8 @@ GENRES = ["修仙", "玄幻", "都市", "末世", "科幻", "悬疑", "恋爱", 
 THEMES = ["逆袭", "复仇", "重生", "穿越", "系统", "成长", "冒险", "经营", "治愈", "战斗"]
 Feature = Literal["harem", "romance", "tragic"]
 Pace = Literal["快", "舒缓"]
+CategoryCode = Literal["real-drama", "comic-drama", "ai-drama", "comic"]
+ContentType = Literal["真人剧", "漫剧", "AI剧", "漫画", "未标注"]
 
 
 class StrictModel(BaseModel):
@@ -98,12 +100,27 @@ class Evidence(StrictModel):
 
 class SourceMetadata(StrictModel):
     provider: Literal["hongguo"] = "hongguo"
-    content_type: Literal["真人剧", "漫剧", "AI剧", "未标注"] = "未标注"
+    content_type: ContentType = "未标注"
     tags: list[str] = Field(default_factory=list, max_length=40)
-    pages: list[HttpUrl] = Field(min_length=1, max_length=2)
+    pages: list[HttpUrl] = Field(min_length=1, max_length=100)
+    categories: list[CategoryCode] = Field(default_factory=list, max_length=4)
     rank: int | None = Field(default=None, ge=1, le=100)
     heat: str | None = Field(default=None, max_length=40)
     episode_count: int | None = Field(default=None, ge=1, le=10000)
+    chapter_count: int | None = Field(default=None, ge=1, le=10000)
+    classification_note: str = Field(default="", max_length=200)
+
+
+class RefreshRequest(StrictModel):
+    categories: list[CategoryCode] = Field(default_factory=lambda: ["comic-drama", "ai-drama"], max_length=4)
+    include_hot_rank: StrictBool = False
+
+    @model_validator(mode="after")
+    def scope(self):
+        self.categories = list(dict.fromkeys(self.categories))
+        if not self.categories and not self.include_hot_rank:
+            raise ValueError("请至少选择一个类别或榜单")
+        return self
 
 
 class WorkInput(StrictModel):

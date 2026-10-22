@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     max_retries: int = Field(default=1, ge=0, le=2)
     min_similarity: float = Field(default=0.40, ge=0, le=1)
     semantic_only_threshold: float = Field(default=0.65, ge=0, le=1)
+    crawl_pages_per_source: int = Field(default=5, ge=1, le=20)
+    crawl_max_pages: int = Field(default=25, ge=1, le=25)
+    crawl_max_works: int = Field(default=500, ge=1, le=500)
+    crawl_interval: float = Field(default=0.5, ge=0.5, le=5)
+    crawl_timeout: float = Field(default=300, ge=1, le=300)
+    index_timeout: float = Field(default=600, ge=1, le=600)
+    refresh_timeout: float = Field(default=900, ge=1, le=900)
 
     @property
     def configured(self):

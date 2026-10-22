@@ -6,7 +6,7 @@ import type { Work } from '../src/types';
 import { workClip } from '../src/presentation';
 import { workFixture } from './work-fixture';
 
-type PreviewAPI = { enter: (work: Work, anchor: HTMLElement, immediate?: boolean) => void; leave: () => void; close: () => void };
+type PreviewAPI = { enter: (work: Work, anchor: HTMLElement, immediate?: boolean) => void; leave: (anchor?: HTMLElement) => void; close: () => void };
 let wrapper: ReturnType<typeof mount> | undefined;
 let anchor: HTMLElement;
 let play: ReturnType<typeof vi.spyOn>;
@@ -94,6 +94,15 @@ describe('shared hover video preview', () => {
     panel().querySelector<HTMLButtonElement>('.preview-close')!.click();
     await vi.advanceTimersByTimeAsync(300); expect(video()).toBeNull();
   });
+  it('stays closed when the close button exposes the hovered card, then allows a new hover', async () => {
+    const api=mountPreview();api.enter(workFixture(),anchor);await vi.advanceTimersByTimeAsync(270);
+    const previousVideo=video()!;
+    panel().querySelector<HTMLButtonElement>('.preview-close')!.click();
+    api.enter(workFixture(),anchor);await vi.advanceTimersByTimeAsync(300);
+    expect(video()).toBeNull();expect(previousVideo.hasAttribute('src')).toBe(false);
+    api.leave(anchor);api.enter(workFixture(),anchor);await vi.advanceTimersByTimeAsync(270);
+    expect(video()).not.toBeNull();
+  });
   it('unloads active media before its component is removed', async () => {
     const api = mountPreview(); api.enter(workFixture(), anchor); await vi.advanceTimersByTimeAsync(270);
     const activeVideo = video()!; const previousPauses = pause.mock.calls.length;
@@ -109,5 +118,13 @@ describe('shared hover video preview', () => {
   it('maps all available atmospheres to video assets', () => {
     for (const genre of ['修仙', '都市', '末世', '科幻', '悬疑']) expect(workClip(workFixture({ genres: [genre] }))).toMatch(/\.webm/);
     expect(workClip(workFixture({ genres: [], themes: ['经营'] }))).toContain('shop');
+  });
+  it('shows reading material for a comic without loading or playing video', async () => {
+    const api=mountPreview();api.enter(workFixture({source_meta:{provider:'hongguo',content_type:'漫画',tags:[],pages:[],rank:null,heat:null,episode_count:null,chapter_count:30}}),anchor,true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(panel().getAttribute('aria-label')).toBe('漫画资料预览');expect(video()).toBeNull();
+    expect(play).not.toHaveBeenCalled();expect(panel().textContent).toContain('30 话');
+    panel().querySelector<HTMLButtonElement>('.preview-close')!.click();await vi.advanceTimersByTimeAsync(0);
+    expect(panel().querySelector('.preview-reading')).toBeNull();
   });
 });
