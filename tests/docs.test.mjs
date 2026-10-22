@@ -17,11 +17,20 @@ test('README、产品设计和技术方案中的本地文档链接指向实际�
   }
 });
 
-test('技术方案中的 JSON 示例可解析，代码块完整闭合', async () => {
-  const source = await readFile(documents[1], 'utf8');
-  const fences = source.match(/^```.*$/gm) || [];
-  assert.equal(fences.length % 2, 0, '存在未闭合代码块');
-  for (const [, json] of source.matchAll(/^```json\r?\n([\s\S]*?)^```\s*$/gm)) {
-    assert.doesNotThrow(() => JSON.parse(json), 'JSON 示例必须可直接解析');
+test('项目文档的代码块成对闭合，JSON 示例可直接解析', async () => {
+  for (const document of documents) {
+    const source = await readFile(document, 'utf8');
+    let block;
+    for (const [index, line] of source.split(/\r?\n/).entries()) {
+      const fence = line.match(/^```([a-zA-Z0-9_-]*)\s*$/);
+      if (!fence) { if (block) block.lines.push(line); continue; }
+      if (!block) { block = { language: fence[1], start: index + 1, lines: [] }; continue; }
+      assert.equal(fence[1], '', `${document.pathname}:${index + 1} 前一个代码块尚未闭合`);
+      if (block.language === 'json') {
+        assert.doesNotThrow(() => JSON.parse(block.lines.join('\n')), `${document.pathname}:${block.start} 的 JSON 示例无效`);
+      }
+      block = undefined;
+    }
+    assert.equal(block, undefined, `${document.pathname} 存在未闭合代码块`);
   }
 });
