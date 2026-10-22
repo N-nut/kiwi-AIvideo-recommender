@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
-const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url)];
+const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url)];
 
-test('README 和技术方案中的本地文档链接指向实际文件', async () => {
+test('README、产品设计和技术方案中的本地文档链接指向实际文件', async () => {
   for (const document of documents) {
     const source = await readFile(document, 'utf8');
     for (const [, target] of source.matchAll(/\[[^\]\n]+\]\(([^)\s]+)\)/g)) {
