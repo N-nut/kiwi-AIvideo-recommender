@@ -68,14 +68,9 @@ def test_shared_timeout():
         assert response.status_code==504
 
 
-def test_real_dataset_is_bounded_and_source_grounded():
+def test_old_seed_is_no_longer_loaded_on_startup():
     rows=json.loads((ROOT/'data/works.json').read_text(encoding='utf-8'))
-    assert 30<=len(rows)<=50 and len({r['id'] for r in rows})==len(rows)
-    for raw in rows:
-        row=WorkInput.model_validate(raw)
-        assert row.source_url.host=='www.bilibili.com'
-        assert 'AI' in row.review_note and '人工' in row.review_note
-        assert row.harem is None and row.pace is None
+    assert rows == []
 
 
 def test_packaged_install_can_find_external_project_data():

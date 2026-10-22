@@ -23,7 +23,7 @@ def normalized_title(title):
     return "".join(c for c in unicodedata.normalize("NFKC", title).casefold() if c.isalnum())
 
 
-async def import_works(raw, sessions, provider, settings, update=False, reembed=False):
+async def import_works(raw, sessions, provider, settings, update=False, reembed=False, replace_hongguo=False, progress=None):
     """Validate the complete batch and embed before a single atomic transaction."""
     items = [WorkInput.model_validate(row) for row in raw]
     unique, titles = {}, {}
@@ -35,7 +35,9 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
             raise ValueError(f"疑似同名作品需人工确认：{item.title}")
         unique[item.id] = item
         titles[title] = item.id
-    staged, skipped = [], 0
+    staged, vectors, timestamps, skipped = [], [], [], 0
+    if replace_hongguo and (not unique or any(not i.startswith("hongguo-") for i in unique)):
+        raise ValueError("来源同步必须是非空红果作品批次")
     with sessions() as session:
         existing = {w.id: w for w in session.scalars(select(Work))}
         for item in unique.values():
@@ -50,12 +52,23 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
                 skipped += 1
                 continue
             staged.append(item)
-    vectors = [None] * len(staged)
+            # Heat, collection date and cover changes do not require new embeddings.
+            reusable = not reembed and old and vector_current and search_text(old) == search_text(item)
+            vectors.append(old.embedding if reusable else None)
+            timestamps.append(old.embedded_at if reusable else None)
     if settings.ai_mode == "live" and staged:
-        for start in range(0, len(staged), 8):
-            batch = staged[start:start + 8]
+        pending = [i for i, vector in enumerate(vectors) if vector is None]
+        for start in range(0, len(pending), 8):
+            indexes = pending[start:start + 8]
+            batch = [staged[i] for i in indexes]
+            if progress:
+                progress(f"正在建立检索索引 {start}/{len(pending)}…")
             try:
-                vectors[start:start + 8] = await asyncio.wait_for(provider.embed([search_text(w) for w in batch]), settings.request_timeout)
+                embedded = await asyncio.wait_for(provider.embed([search_text(w) for w in batch]), settings.request_timeout)
+                if len(embedded) != len(indexes):
+                    raise ValueError("向量数量错误，未写入任何资料")
+                for index, vector in zip(indexes, embedded, strict=True):
+                    vectors[index] = vector
             except TimeoutError as exc:
                 raise ProviderError("embedding_timeout", "入库向量化超时，未写入任何资料") from exc
         if len(vectors) != len(staged) or any(v is None or len(v) != settings.embedding_dimension or not all(type(x) in (int,float) and math.isfinite(x) for x in v) or not any(v) for v in vectors):
@@ -65,11 +78,17 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
             db_ids = set(session.scalars(select(Work.id)))
             if db_ids - set(unique):
                 raise ValueError("--reembed 必须包含整库作品，避免模型版本混用")
-        for item, vector in zip(staged, vectors, strict=True):
+        removed = 0
+        if replace_hongguo:
+            removed = session.query(Work).filter(Work.id.startswith("hongguo-"), Work.id.not_in(unique)).delete(synchronize_session=False)
+        for item, vector, embedded_at in zip(staged, vectors, timestamps, strict=True):
             data = item.model_dump(mode="json")
             data.update(content_hash=content_hash(item), embedding=vector,
                         embedding_model=settings.embedding_model if vector is not None else None,
                         embedding_dimension=settings.embedding_dimension if vector is not None else None,
-                        embedded_at=utc_now() if vector is not None else None)
+                        embedded_at=(embedded_at or utc_now()) if vector is not None else None)
             session.merge(Work(**data))
-    return {"imported": len(staged), "skipped": skipped, "failed": 0}
+    result = {"imported": len(staged), "skipped": skipped, "failed": 0}
+    if replace_hongguo:
+        result["removed"] = removed
+    return result

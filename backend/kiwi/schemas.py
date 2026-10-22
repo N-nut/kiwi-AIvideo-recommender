@@ -96,6 +96,16 @@ class Evidence(StrictModel):
     quote: str = Field(min_length=1, max_length=1000)
 
 
+class SourceMetadata(StrictModel):
+    provider: Literal["hongguo"] = "hongguo"
+    content_type: Literal["真人剧", "漫剧", "AI剧", "未标注"] = "未标注"
+    tags: list[str] = Field(default_factory=list, max_length=40)
+    pages: list[HttpUrl] = Field(min_length=1, max_length=2)
+    rank: int | None = Field(default=None, ge=1, le=100)
+    heat: str | None = Field(default=None, max_length=40)
+    episode_count: int | None = Field(default=None, ge=1, le=10000)
+
+
 class WorkInput(StrictModel):
     id: str = Field(pattern=r"^[a-z0-9_-]{1,80}$")
     title: str = Field(min_length=1, max_length=150)
@@ -108,6 +118,8 @@ class WorkInput(StrictModel):
     romance: StrictBool | None = None
     tragic: StrictBool | None = None
     source_url: HttpUrl
+    cover_url: HttpUrl | None = None
+    source_meta: SourceMetadata | None = None
     collected_at: date
     evidence: list[Evidence] = Field(min_length=1)
     review_status: Literal["approved", "pending", "rejected"] = "pending"

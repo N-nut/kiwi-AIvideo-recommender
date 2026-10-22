@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(100, 100, 600, 500));
   vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(new Response(JSON.stringify(url.startsWith('/health')
     ? { status: 'ready', mode: 'live' }
+    : url.includes('/catalog/refresh') ? {status:'idle',message:'尚未同步'}
     : { items: [workFixture({ original_intro: '很长的作品简介。'.repeat(100) })], total: 1 })))));
 });
 afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });

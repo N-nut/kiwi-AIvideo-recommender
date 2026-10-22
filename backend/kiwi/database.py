@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, select, text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, inspect, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -25,6 +25,8 @@ class Work(Base):
     romance: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     tragic: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     source_url: Mapped[str] = mapped_column(Text)
+    cover_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_meta: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     collected_at: Mapped[str] = mapped_column(String(10))
     evidence: Mapped[list] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
     review_status: Mapped[str] = mapped_column(String(16), index=True)
@@ -34,6 +36,19 @@ class Work(Base):
     embedding_dimension: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content_hash: Mapped[str] = mapped_column(String(64))
     embedded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CatalogRefresh(Base):
+    __tablename__ = "catalog_refresh"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    payload: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+
+
+# Only the explicitly retired seed IDs; other manually imported data is preserved.
+RETIRED_IDS = tuple(f"bili-{i}" for i in (
+    45128,102888,42977,102887,28092,103017,102867,32556,32430,102998,100171,102872,
+    102894,43048,113970,102999,149531,102892,149526,45991,121468,88987,102829,149530,
+    102864,148585,149529,33874,103000,102995,103003,111618,112207,102893,149520,103007))
 
 
 def make_database(url):
@@ -52,11 +67,23 @@ def initialize(engine):
     if engine.dialect.name == "postgresql":
         with engine.begin() as connection:
             connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    # Local SQLite installs predate Alembic startup. Upgrade these two nullable
+    # columns in place; PostgreSQL uses the matching explicit 0002 migration.
+    if engine.dialect.name == "sqlite" and inspect(engine).has_table("works"):
+        columns = {c["name"] for c in inspect(engine).get_columns("works")}
+        with engine.begin() as connection:
+            for name, sqltype in [("cover_url", "TEXT"), ("source_meta", "JSON")]:
+                if name not in columns:
+                    connection.execute(text(f"ALTER TABLE works ADD COLUMN {name} {sqltype}"))
     Base.metadata.create_all(engine)
+    with engine.begin() as connection:
+        if connection.execute(select(CatalogRefresh.id).where(CatalogRefresh.id == "seed-retired")).first() is None:
+            connection.execute(Work.__table__.delete().where(Work.id.in_(RETIRED_IDS)))
+            connection.execute(CatalogRefresh.__table__.insert().values(id="seed-retired", payload={"count": 36}))
 
 
 def public_work(work):
-    fields = ["id", "title", "original_intro", "summary", "genres", "themes", "pace", "harem", "romance", "tragic", "source_url", "collected_at", "evidence", "review_note"]
+    fields = ["id", "title", "original_intro", "summary", "genres", "themes", "pace", "harem", "romance", "tragic", "source_url", "cover_url", "source_meta", "collected_at", "evidence", "review_note"]
     return {key: getattr(work, key) for key in fields}
 
 

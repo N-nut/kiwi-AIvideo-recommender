@@ -4,6 +4,7 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -13,6 +14,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from .config import ROOT, Settings
+from .catalog import CatalogManager
 from .database import Work, initialize, make_database, public_work
 from .providers import BaselineAI, LiveAI, ProviderError
 from .repository import array_has
@@ -25,21 +27,25 @@ if not log.handlers:
     log.addHandler(logging.StreamHandler())
 
 
-def create_app(settings=None, provider_factory=None):
+def create_app(settings=None, provider_factory=None, collector=None):
     settings = settings or Settings()
     engine, sessions = make_database(settings.database_url)
     provider_factory = provider_factory or (lambda: LiveAI(settings) if settings.ai_mode == "live" else BaselineAI())
+    catalog = CatalogManager(sessions, settings, provider_factory, collector)
 
     @asynccontextmanager
     async def lifespan(app):
         # Production schema changes are applied by Alembic before startup.
         if engine.dialect.name == "sqlite":
             initialize(engine)
+        catalog.recover()
         yield
+        await catalog.close()
         engine.dispose()
 
     app = FastAPI(title="Kiwi AI 漫剧推荐", version="1.0.0", lifespan=lifespan)
     app.state.sessions, app.state.engine, app.state.settings = sessions, engine, settings
+    app.state.catalog = catalog
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -112,6 +118,20 @@ def create_app(settings=None, provider_factory=None):
         result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id), settings.request_timeout)
         log.info(json.dumps({"request_id": result["request_id"], "stage_ms": result["timings_ms"], "candidates": len(result["candidate_ids"]), "mode": settings.ai_mode, "usage": result["usage"]}))
         return result
+
+    @app.get("/api/v1/catalog/refresh")
+    async def refresh_state():
+        return catalog.state()
+
+    @app.post("/api/v1/catalog/refresh", status_code=202)
+    async def refresh_catalog(request: Request):
+        origin = request.headers.get("origin")
+        if origin:
+            host = urlsplit(origin).hostname
+            local = {"localhost", "127.0.0.1", "::1"}
+            if host != request.url.hostname and not (host in local and request.url.hostname in local):
+                raise HTTPException(403, "请从奇维页面发起更新")
+        return catalog.start()
 
     @app.get("/api/v1/works")
     def works(page: int = Query(1, ge=1), page_size: int = Query(12, ge=1, le=50), genre: str | None = Query(None, max_length=30)):

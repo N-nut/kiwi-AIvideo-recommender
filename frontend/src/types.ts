@@ -10,9 +10,12 @@ export interface Work {
   id: string; title: string; summary: string; original_intro: string; genres: string[]; themes: string[];
   pace: string | null; harem: boolean | null; romance: boolean | null; tragic: boolean | null;
   source_url: string; collected_at: string; evidence: Evidence[]; review_note: string;
+  cover_url?: string | null;
+  source_meta?: { provider: 'hongguo'; content_type: '真人剧' | '漫剧' | 'AI剧' | '未标注'; tags: string[]; pages: string[]; rank: number | null; heat: string | null; episode_count: number | null } | null;
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }
 export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string }
+export interface CatalogRefresh { status: 'idle' | 'running' | 'succeeded' | 'failed'; message: string; started_at?: string; last_success_at?: string; cooldown?: boolean; result?: { total: number; imported: number; skipped: number; removed: number; indexed: boolean } | null }
 export const genres = ['修仙','玄幻','都市','末世','科幻','悬疑','恋爱','古风','搞笑','武侠'];
 export const themes = ['逆袭','复仇','重生','穿越','系统','成长','冒险','经营','治愈','战斗'];
 export const featureNames: Record<string, string> = { harem: '后宫', romance: '感情线', tragic: '虐心' };

@@ -45,6 +45,8 @@ async def main(args):
     source=(ROOT/'data/works.json').read_bytes()
     dataset=(ROOT/'data/evaluation.json').read_bytes()
     cases=json.loads(dataset)['cases']
+    if not cases:
+        raise SystemExit('旧 36 部参考集已停用，请先针对当前红果作品库重新标注 data/evaluation.json。')
     settings=Settings(ai_mode='live' if args.live else 'baseline')
     if args.live:
         engine,sessions=make_database(settings.database_url)

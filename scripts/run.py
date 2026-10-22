@@ -17,15 +17,14 @@ parser.add_argument('--skip-import',action='store_true')
 args=parser.parse_args()
 if args.baseline:os.environ['AI_MODE']='baseline'
 settings=Settings()
-if not settings.configured:
-    raise SystemExit('请配置 DEEPSEEK_API_KEY 和 DASHSCOPE_API_KEY，或使用 --baseline 显式启动标签基线。')
 if not (ROOT/'frontend/dist/index.html').is_file():
     raise SystemExit('请先运行 npm --prefix frontend ci 和 npm --prefix frontend run build')
 engine,sessions=make_database(settings.database_url)
 if engine.dialect.name=='sqlite':initialize(engine)
 if not args.skip_import:
     raw=json.loads((ROOT/'data/works.json').read_text(encoding='utf-8'))
-    print(asyncio.run(import_works(raw,sessions,LiveAI(settings) if settings.ai_mode=='live' else BaselineAI(),settings)))
+    if raw:
+        print(asyncio.run(import_works(raw,sessions,LiveAI(settings) if settings.ai_mode=='live' else BaselineAI(),settings)))
 engine.dispose()
 import uvicorn
 print(f'Kiwi: http://127.0.0.1:{args.port} ({settings.ai_mode})',flush=True)
