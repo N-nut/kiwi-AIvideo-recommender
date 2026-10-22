@@ -7,7 +7,7 @@ import unicodedata
 from sqlalchemy import select
 
 from .database import Work, utc_now
-from .crawler import merge_source_metadata
+from .crawler import CATEGORY_LABELS, merge_source_metadata
 from .providers import ProviderError
 from .schemas import WorkInput
 
@@ -27,6 +27,13 @@ def normalized_title(title):
 async def import_works(raw, sessions, provider, settings, update=False, reembed=False, source_sync=False, progress=None):
     """Validate the complete batch and embed before a single atomic transaction."""
     items = [WorkInput.model_validate(row) for row in raw]
+    filtered_unclassified=0
+    if source_sync:
+        if any(not item.id.startswith('hongguo-') or not item.source_meta or item.source_meta.provider!='hongguo' for item in items):
+            raise ValueError('来源同步仅允许红果作品')
+        cleaned=[item for item in items if item.source_meta and item.source_meta.content_type in CATEGORY_LABELS.values()]
+        filtered_unclassified=len(items)-len(cleaned)
+        items=cleaned
     unique, titles = {}, {}
     for item in items:
         if item.id in unique and content_hash(unique[item.id]) != content_hash(item):
@@ -38,8 +45,6 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
         titles[title] = item.id
     staged, vectors, timestamps, skipped = [], [], [], 0
     new_count, updated_count, held_count, same_titles = 0, 0, 0, set()
-    if source_sync and any(not i.startswith("hongguo-") or not w.source_meta or w.source_meta.provider != "hongguo" for i,w in unique.items()):
-        raise ValueError("来源同步仅允许红果作品")
     with sessions() as session:
         existing = {w.id: w for w in session.scalars(select(Work))}
         for item in unique.values():
@@ -121,5 +126,6 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
             names.setdefault(normalized_title(item.title), set()).add(item.id)
         same_titles.update(key for key, ids in names.items() if len(ids)>1)
         result.update(new=new_count, updated=updated_count, unchanged=skipped, embedded=len(pending),
-                      review_held=held_count, same_title_groups=len(same_titles), removed=0)
+                      review_held=held_count, same_title_groups=len(same_titles), removed=0,
+                      filtered_unclassified=filtered_unclassified)
     return result

@@ -22,6 +22,15 @@ beforeEach(() => {
 afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('long work details', () => {
+  it('shows readable content and groups duplicate evidence without exposing internal IDs',async()=>{
+    const tagQuote='来源标签：玄幻、穿越';
+    vi.stubGlobal('fetch',vi.fn((url:string)=>Promise.resolve(new Response(JSON.stringify(url.startsWith('/health')?{}:url.includes('/catalog/refresh')?{status:'idle'}:{items:[workFixture({original_intro:`完整故事简介。\n\n${tagQuote}`,evidence:[{id:'summary-1',field:'summary',quote:'完整故事简介。'},{id:'genres-1',field:'genres',quote:tagQuote},{id:'themes-1',field:'themes',quote:tagQuote}]})],total:1})))));
+    const dialog=await openDetail();
+    expect(dialog.find('.detail-intro').text()).toBe('完整故事简介。');
+    expect(dialog.text()).not.toMatch(/EVERY STORY|summary-1|genres-1|themes-1/);
+    expect(dialog.find('.detail-evidence').attributes('open')).toBeUndefined();
+    expect(dialog.findAll('.evidence')).toHaveLength(2);expect(dialog.findAll('.facts span')).toHaveLength(0);
+  });
   it('closes when the blank backdrop is clicked after scrolling', async () => {
     const dialog = await openDetail(); expect(dialog.attributes()).toHaveProperty('open');
     (dialog.find('.work-dialog-scroll').element as HTMLElement).scrollTop = 600;

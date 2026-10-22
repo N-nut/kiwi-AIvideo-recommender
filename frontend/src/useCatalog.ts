@@ -15,14 +15,14 @@ export function useCatalog(library: ReturnType<typeof useLibrary>) {
   const pages=computed(()=>Math.max(1,Math.ceil(displayTotal.value/12)));
   const visibleWorks=computed(()=>view.value==='favorites'
     ? favoriteIds.value.slice((page.value-1)*12,page.value*12).flatMap(id=>cache.value.get(id)?[cache.value.get(id)!]:[])
-    : works.value);
+    : view.value==='discover'?works.value.slice(0,3):works.value);
 
   async function load() {
     const request=lane.begin();
     if(view.value==='favorites') {loading.value=false;await loadFavorites();return;}
     loading.value=true;error.value='';
     const currentView=view.value, currentPage=page.value;
-    const params=new URLSearchParams({page_size:currentView==='discover'?'3':'12',page:String(currentView==='discover'?1:currentPage)});
+    const params=new URLSearchParams({page_size:currentView==='discover'?'6':'12',page:String(currentView==='discover'?1:currentPage)});
     if(currentView==='catalog') {
       if(genre.value!=='全部') params.set('genre',genre.value);
       if(contentType.value!=='全部') params.set('content_type',contentType.value);

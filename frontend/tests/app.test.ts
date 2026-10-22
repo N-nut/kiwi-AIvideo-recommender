@@ -10,6 +10,16 @@ const findButton=(wrapper:ReturnType<typeof mount>,text:string)=>wrapper.findAll
 beforeEach(()=>{localStorage.clear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>vi.unstubAllGlobals());
 describe('preference confirmation flow',()=>{
+  it('opens the nearby usage guide without changing input or submitting a recommendation',async()=>{
+    const fetcher=vi.fn(initial);vi.stubGlobal('fetch',fetcher);
+    const w=mount(App);await flushPromises();const text=(w.find('textarea').element as HTMLTextAreaElement).value;
+    await w.find('[aria-label="如何生成片单"]').trigger('click');
+    const guide=w.find('#guide-dialog');expect(guide.attributes('open')).toBeDefined();
+    expect(guide.findAll('.generation-steps li')).toHaveLength(3);expect(guide.text()).toContain('明确排除项');
+    expect(fetcher.mock.calls.some(([url])=>url.includes('/recommendations')||url.includes('/parse'))).toBe(false);
+    await guide.find('[aria-label="关闭使用指引"]').trigger('click');expect(guide.attributes('open')).toBeUndefined();
+    expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe(text);w.unmount();
+  });
   it('requires a separate confirmation before recommendation',async()=>{
     const fetcher=vi.fn((url:string)=>url.includes('/parse')?response({preferences:prefs()}):url.includes('/recommendations')?response({status:'empty',items:[],warnings:[],timings_ms:{},request_id:'test'}):initial(url));vi.stubGlobal('fetch',fetcher);
     const w=mount(App);await flushPromises();await findButton(w,'理解我的口味').trigger('click');await flushPromises();expect(fetcher.mock.calls.some(([u])=>u.includes('/recommendations'))).toBe(false);expect(w.text()).toContain('确认偏好，生成片单');await findButton(w,'确认偏好').trigger('click');await flushPromises();expect(w.text()).toContain('这一种口味，还没有遇到');w.unmount();

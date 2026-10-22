@@ -120,6 +120,38 @@ async def test_selecting_categories_changes_only_allowed_routes():
     assert rows[0]['id']!=rows[1]['id']
 
 
+async def test_cleaning_discards_unknown_types_after_explicit_category_merge():
+    ambiguous=rank_row('22222222');ambiguous['tags']=['玄幻','修真']
+    known_same_id=rank_row();known_same_id['tags']=['玄幻']
+    typed=rank_row('33333333')
+    def handle(request):
+        if request.url.path.startswith('/rank'):
+            return httpx.Response(200,text=page([known_same_id,ambiguous,typed],'rank'))
+        return httpx.Response(200,text=page([category_row()],'comic-drama'))
+    rows,meta=await collect_hongguo(RefreshRequest(categories=['comic-drama'],include_hot_rank=True),transport=httpx.MockTransport(handle))
+    assert {r['id'] for r in rows}=={'hongguo-12345678','hongguo-33333333'}
+    assert meta['raw_count']==4 and meta['discovered_count']==3 and meta['unique_count']==2
+    assert meta['filtered_unclassified']==1
+    assert rows[0]['source_meta']['content_type']=='漫剧' and rows[0]['source_meta']['rank']==1
+
+
+async def test_ranking_only_does_not_guess_type_from_genre_or_title():
+    row=rank_row();row['tags']=['修真','都市'];row['title']='像是AI剧的作品名称'
+    transport=httpx.MockTransport(lambda request:httpx.Response(200,text=page([row],'rank')))
+    rows,meta=await collect_hongguo(RefreshRequest(categories=[],include_hot_rank=True),transport=transport)
+    assert rows==[] and meta['filtered_unclassified']==1 and meta['raw_count']==1
+
+
+async def test_source_import_discards_untyped_rows_before_embedding_and_preserves_known_work(database):
+    settings=Settings(ai_mode='live');provider=FakeAI()
+    known=normalize(category_row(),'comic-drama','2026-10-22')
+    await import_works([known],database,provider,settings,source_sync=True)
+    raw=rank_row();raw['tags']=['玄幻'];untyped=normalize(raw,'rank','2026-10-22')
+    result=await import_works([untyped],database,provider,settings,source_sync=True,update=True)
+    assert result['filtered_unclassified']==1 and result['imported']==0 and provider.calls==1
+    with database() as session: assert session.get(Work,known['id']).source_meta['content_type']=='漫剧'
+
+
 @pytest.mark.parametrize('limit_kind',['source','pages','works'])
 async def test_normal_limits_are_reported_without_claiming_full_sync(limit_kind):
     settings=Settings(crawl_pages_per_source=1 if limit_kind=='source' else 5,

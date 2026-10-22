@@ -1,0 +1,24 @@
+{
+  "scope": "hot ranking, first page only; collection validation without database import",
+  "stats": {
+    "sources": [
+      {
+        "category": "rank",
+        "label": "红果热播榜",
+        "url": "https://hongguoduanju.com/rank/hot-drama",
+        "pages": 1,
+        "records": 20,
+        "coverage": "limited"
+      }
+    ],
+    "coverage": "limited",
+    "pages_done": 1,
+    "raw_count": 20,
+    "discovered_count": 20,
+    "unique_count": 3,
+    "filtered_unclassified": 17
+  },
+  "retained_types": [
+    "AI剧"
+  ]
+}

@@ -37,7 +37,8 @@ describe('home collection settings and progress',()=>{
     expect(wrapper.find('.catalog-update-button').attributes('disabled')).toBeDefined();
     await vi.advanceTimersByTimeAsync(2000);await flushPromises();expect(wrapper.find('.catalog-sync').text()).toContain('已读取 5 页');
     done=true;await vi.advanceTimersByTimeAsync(2000);await flushPromises();
-    expect(wrapper.find('.drama-card h3').text()).toBe(work.title);expect(wrapper.find('.catalog-sync').text()).toContain('限定范围');expect(wrapper.find('.catalog-sync').text()).toContain('1 组同名资料待核对');
+    expect(wrapper.find('.drama-card h3').text()).toBe(work.title);expect(wrapper.find('.sync-summary').exists()).toBe(false);
+    await button('更新详情').trigger('click');expect(wrapper.find('.catalog-sync').text()).toContain('限定范围');expect(wrapper.find('.catalog-sync').text()).toContain('1 组同名资料待核对');
     expect(wrapper.find('.catalog-update-button').attributes('disabled')).toBeUndefined();
     wrapper.unmount();const count=fetcher.mock.calls.length;await vi.advanceTimersByTimeAsync(6000);expect(fetcher.mock.calls).toHaveLength(count);
   });
@@ -92,12 +93,14 @@ describe('server paging, category filters and local favorites',()=>{
       return response({items:[workFixture({id:`page-${params.get('page')}`,title:`第${params.get('page')}页作品`})],total:51});
     });vi.stubGlobal('fetch',fetcher);wrapper=mount(App);await flushPromises();
     expect(fetcher.mock.calls.filter(([url])=>url.includes('/works?'))).toHaveLength(1);
+    expect(new URL(fetcher.mock.calls.find(([url])=>url.includes('/works?'))![0],'http://localhost').searchParams.get('page_size')).toBe('6');
     await button('真实片库').trigger('click');await flushPromises();await button('下一页').trigger('click');await flushPromises();
     expect(wrapper.find('.drama-card h3').text()).toBe('第2页作品');
     await wrapper.find('.content-type-filters').findAll('button').find(b=>b.text()==='漫画')!.trigger('click');await flushPromises();
     const types=fetcher.mock.calls.filter(([url])=>url.includes('content_type'));expect(types.length).toBeGreaterThan(0);
     const params=new URL(types.at(-1)![0],'http://localhost').searchParams;expect(params.get('content_type')).toBe('漫画');expect(params.get('page')).toBe('1');
     expect(wrapper.findAll('.nav-count')[0]!.text()).toBe('51');
+    expect(wrapper.find('.content-type-filters').text()).not.toContain('未标注');
   });
 
   it('discards a late page response after the category changes',async()=>{

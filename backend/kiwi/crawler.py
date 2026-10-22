@@ -267,5 +267,13 @@ async def collect_hongguo(scope=None, progress=None, *, settings=None, transport
                     break
             if stats["coverage"] == "limited":
                 coverage = "limited"
-    return list(rows.values()), {"sources": counts, "coverage": coverage, "pages_done": pages_done,
-                                 "raw_count": raw_count, "unique_count": len(rows)}
+    # Resolve types from all selected category pages before discarding unknowns.
+    # A genre such as 修仙 is not evidence for a content type such as 漫剧.
+    cleaned=[row for row in rows.values() if row['source_meta']['content_type'] in CATEGORY_LABELS.values()]
+    filtered=len(rows)-len(cleaned)
+    if progress:
+        progress({'stage':'cleaning','message':f'资料清洗完成，跳过 {filtered} 部类型不明作品',
+                  'pages_done':pages_done,'raw_count':raw_count,'unique_count':len(cleaned),'filtered_unclassified':filtered})
+    return cleaned, {"sources": counts, "coverage": coverage, "pages_done": pages_done,
+                     "raw_count": raw_count, "discovered_count":len(rows), "unique_count":len(cleaned),
+                     "filtered_unclassified":filtered}
