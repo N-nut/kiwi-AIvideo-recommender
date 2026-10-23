@@ -15,7 +15,7 @@ export function useCatalog(library: ReturnType<typeof useLibrary>) {
   const pages=computed(()=>Math.max(1,Math.ceil(displayTotal.value/12)));
   const visibleWorks=computed(()=>view.value==='favorites'
     ? favoriteIds.value.slice((page.value-1)*12,page.value*12).flatMap(id=>cache.value.get(id)?[cache.value.get(id)!]:[])
-    : view.value==='discover'?works.value.slice(0,3):works.value);
+    : view.value==='discover'?[]:works.value);
 
   async function load() {
     const request=lane.begin();

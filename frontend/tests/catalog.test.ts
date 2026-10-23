@@ -19,7 +19,7 @@ describe('home collection settings and progress',()=>{
     vi.stubGlobal('fetch',vi.fn((url:string)=>response(url.includes('/catalog/refresh')?{status:'succeeded',message:'已更新',result:{total:41}}:url.startsWith('/health')?{}:{items:[],total:0})));
     wrapper=mount(App);await flushPromises();expect(wrapper.find('.sync-counts').exists()).toBe(false);
   });
-  it('submits selected scope once and refreshes real cards after completion',async()=>{
+  it('submits selected scope once and refreshes the carousel after completion',async()=>{
     let started=false,done=false;
     const fetcher=vi.fn((url:string,options?:RequestInit)=>{
       if(url==='/api/v1/catalog/refresh') {
@@ -37,7 +37,8 @@ describe('home collection settings and progress',()=>{
     expect(wrapper.find('.catalog-update-button').attributes('disabled')).toBeDefined();
     await vi.advanceTimersByTimeAsync(2000);await flushPromises();expect(wrapper.find('.catalog-sync').text()).toContain('已读取 5 页');
     done=true;await vi.advanceTimersByTimeAsync(2000);await flushPromises();
-    expect(wrapper.find('.drama-card h3').text()).toBe(work.title);expect(wrapper.find('.sync-summary').exists()).toBe(false);
+    expect(wrapper.find('.featured-copy h1').text()).toBe(work.title);expect(wrapper.find('.sync-summary').exists()).toBe(false);
+    expect(wrapper.findAll('.drama-card')).toHaveLength(0);expect(wrapper.find('.generation-guide').exists()).toBe(true);
     await button('更新详情').trigger('click');expect(wrapper.find('.catalog-sync').text()).toContain('限定范围');expect(wrapper.find('.catalog-sync').text()).toContain('1 组同名资料待核对');
     expect(wrapper.find('.catalog-update-button').attributes('disabled')).toBeUndefined();
     wrapper.unmount();const count=fetcher.mock.calls.length;await vi.advanceTimersByTimeAsync(6000);expect(fetcher.mock.calls).toHaveLength(count);
@@ -51,13 +52,13 @@ describe('home collection settings and progress',()=>{
     await wrapper.find('.rank-option input').setValue(true);expect(wrapper.find('.collection-dialog button[type="submit"]').attributes('disabled')).toBeUndefined();
   });
 
-  it('keeps existing cards and reports failures without claiming new data',async()=>{
+  it('keeps the existing carousel and reports failures without claiming new data',async()=>{
     let started=false;
     vi.stubGlobal('fetch',vi.fn((url:string,opts?:RequestInit)=>{
       if(url.includes('/catalog/refresh')) {if(opts?.method==='POST')started=true;return response(started?{status:'failed',message:'来源暂时不可用，已保留片库'}:initial);}
       return response(url.startsWith('/health')?{}:{items:[work],total:1});
     }));wrapper=mount(App);await flushPromises();await startUpdate();
-    expect(wrapper.find('.drama-card h3').text()).toBe(work.title);expect(wrapper.find('.catalog-sync').text()).toContain('已保留片库');
+    expect(wrapper.find('.featured-copy h1').text()).toBe(work.title);expect(wrapper.find('.catalog-sync').text()).toContain('已保留片库');
   });
 
   it('resumes polling a running task with its actual source scope',async()=>{

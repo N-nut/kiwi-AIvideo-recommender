@@ -26,7 +26,7 @@ const refreshError = ref(''); const refreshStarting = ref(false);
 const syncDetails = ref(false);
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const refreshLane = latestRequest(); let disposed=false;
-const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>(); const login = ref<HTMLDialogElement>(); const guide = ref<HTMLDialogElement>();
+const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>(); const login = ref<HTMLDialogElement>();
 const preview = ref<InstanceType<typeof WorkPreview>>();
 const detailScroll = ref<HTMLElement>();
 let backdropPressed = false;
@@ -155,7 +155,6 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
       <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>真实片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
       <button :class="['nav-item',{active:view==='favorites'}]" @click="setView('favorites')"><span class="nav-icon">♡</span>我的收藏<span class="nav-count">{{favoriteCount}}</span></button>
     </nav>
-    <button class="guide-link" @click="guide?.showModal()"><span>?</span> 使用说明</button>
   </aside>
   <main>
     <header class="topbar">
@@ -183,8 +182,11 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
 
     <section v-if="view==='discover'">
       <FeaturedCarousel :works="shelf.works.value" :suspended="busy" @detail="showDetail" />
+      <div v-if="catalogError" class="featured-status" role="alert"><span>{{catalogError}}</span><button class="text-button" @click="loadCatalog">重新加载片库</button></div>
+      <p v-else-if="catalogLoading" class="featured-status" role="status">正在加载轮播作品…</p>
+      <p v-else-if="!shelf.works.value.length" class="featured-status">片库还没有作品，点击右上角“更新漫剧库”即可加载。</p>
       <section class="composer" aria-labelledby="composer-title">
-        <div class="section-top"><div><h2 id="composer-title">今天，想看点什么？</h2><button class="help-button" aria-label="如何生成片单" aria-haspopup="dialog" aria-controls="guide-dialog" @click="guide?.showModal()">?</button></div></div>
+        <div class="section-top"><div><h2 id="composer-title">今天，想看点什么？</h2></div></div>
         <div class="composer-grid">
           <div class="query-column">
             <label class="sr-only" for="query">描述你的观剧需求</label>
@@ -204,14 +206,20 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         </div>
       </section>
       <section class="results-section" :aria-busy="busy" aria-labelledby="results-title">
-        <div class="section-top result-top"><div><h2 id="results-title">{{busy?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'请调整偏好'):'随便看看'}}</h2></div><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span></div>
+        <div class="section-top result-top"><div><h2 id="results-title">{{busy?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'请调整偏好'):'你的片单'}}</h2></div><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span></div>
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
         <div v-else-if="result&&!result.items.length" class="empty-state"><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':'这一种口味，还没有遇到'}}</h3><p>可以主动调整偏好后重试，明确排除的条件不会自动放宽。</p><button class="secondary-button" @click="edit">调整我的偏好</button></div>
-        <div v-else :class="['drama-grid',{'discovery-grid':!result}]"><WorkCard v-for="(work,i) in result?.items || visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
-        <div v-if="!result&&!busy&&catalogLoading" class="loading-message" role="status">正在加载作品…</div>
-        <div v-if="catalogError&&!result" class="empty-state" role="alert"><p>{{catalogError}}</p><button class="secondary-button" @click="loadCatalog">重新加载片库</button></div>
-        <div v-if="!result&&!busy&&!catalogLoading&&!visibleWorks.length&&!catalogError" class="empty-state">片库还没有作品，点击右上角“更新漫剧库”即可加载。</div>
+        <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
+        <div v-else class="empty-state generation-guide">
+          <h3>三步生成你的片单</h3>
+          <ol class="generation-steps">
+            <li><strong>写下想看的故事</strong><p>在上方描述题材、剧情偏好和不想看的内容，例如“想看修仙逆袭，不要后宫”。</p></li>
+            <li><strong>检查识别出的偏好</strong><p>点击“理解我的口味”，确认题材、必须条件和排除项；有偏差时点击“调整”。</p></li>
+            <li><strong>确认并生成片单</strong><p>点击“确认偏好，生成片单”，从已有资料中查找最多 3 部作品。点开作品可查看详情与来源。</p></li>
+          </ol>
+          <p class="source-note">资料未知或条件过严时，可能没有匹配结果。你可以主动调整条件，系统不会自动放宽明确排除项。</p>
+        </div>
       </section>
     </section>
     <section v-else>
@@ -259,15 +267,5 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
     </template>
   </dialog>
   <dialog ref="login" aria-labelledby="login-title" @close="pendingFavorite='' "><form @submit.prevent="loginSubmit"><div class="dialog-heading"><h2 id="login-title">保存你的收藏</h2><button type="button" class="icon-button" @click="login?.close()" aria-label="关闭登录">×</button></div><p class="dialog-intro">填写演示昵称，无需密码。收藏仅保存在当前浏览器，不创建真实账号。</p><label class="login-label">演示昵称<input v-model="nickname" maxlength="20" required placeholder="你的昵称"></label><div class="dialog-actions"><button class="primary-button" type="submit">登录体验</button></div></form></dialog>
-  <dialog ref="guide" id="guide-dialog" class="generation-guide" aria-labelledby="guide-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false">
-    <div class="dialog-heading"><h2 id="guide-title">如何生成片单</h2><button class="icon-button" @click="guide?.close()" aria-label="关闭使用指引">×</button></div>
-    <ol class="generation-steps">
-      <li><strong>写下想看的故事</strong><p>描述题材、剧情偏好和不想看的内容，例如“想看修仙逆袭，不要后宫”。</p></li>
-      <li><strong>检查识别出的偏好</strong><p>点击“理解我的口味”，确认题材、必须条件和排除项；有偏差时点击“调整”。</p></li>
-      <li><strong>确认并生成片单</strong><p>点击“确认偏好，生成片单”，从已有资料中查找最多 3 部作品。点开作品可查看详情与来源。</p></li>
-    </ol>
-    <p class="source-note">资料未知或条件过严时，可能没有匹配结果。你可以主动调整条件，系统不会自动放宽明确排除项。</p>
-    <div class="dialog-actions"><button class="primary-button" @click="guide?.close()">知道了</button></div>
-  </dialog>
   <div class="toast" role="status" aria-live="polite" v-if="toast">{{toast}}</div>
 </template>

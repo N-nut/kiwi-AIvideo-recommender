@@ -6,7 +6,8 @@ import { workFixture } from './work-fixture';
 let wrapper: ReturnType<typeof mount>;
 async function openDetail() {
   wrapper = mount(App, { attachTo: document.body });
-  await flushPromises(); await wrapper.find('.poster-button').trigger('click'); await flushPromises();
+  await flushPromises(); await wrapper.findAll('button').find(b=>b.text().includes('真实片库'))!.trigger('click'); await flushPromises();
+  await wrapper.find('.poster-button').trigger('click'); await flushPromises();
   return wrapper.find('dialog.work-dialog');
 }
 beforeEach(() => {
