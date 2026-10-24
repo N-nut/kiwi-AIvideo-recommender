@@ -34,3 +34,18 @@ test('项目文档的代码块成对闭合，JSON 示例可直接解析', async 
     assert.equal(block, undefined, `${document.pathname} 存在未闭合代码块`);
   }
 });
+
+test('文档表格各行列数一致，接口与字段约定不会因漏写分隔符而错位', async () => {
+  for (const document of documents) {
+    const source = await readFile(document, 'utf8');
+    let columns = 0, inFence = false;
+    for (const [index, line] of source.split(/\r?\n/).entries()) {
+      if (/^```/.test(line)) { inFence = !inFence; columns = 0; continue; }
+      if (inFence) continue;
+      if (!/^\s*\|.*\|\s*$/.test(line)) { columns = 0; continue; }
+      const count = line.trim().slice(1, -1).split(/(?<!\\)\|/).length;
+      columns ||= count;
+      assert.equal(count, columns, `${document.pathname}:${index + 1} 的表格列数不一致`);
+    }
+  }
+});
