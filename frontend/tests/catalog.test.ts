@@ -94,7 +94,7 @@ describe('server paging, category filters',()=>{
     });vi.stubGlobal('fetch',fetcher);wrapper=mount(App);await flushPromises();
     expect(fetcher.mock.calls.filter(([url])=>url.includes('/works?'))).toHaveLength(1);
     expect(new URL(fetcher.mock.calls.find(([url])=>url.includes('/works?'))![0],'http://localhost').searchParams.get('page_size')).toBe('6');
-    await button('真实片库').trigger('click');await flushPromises();await button('下一页').trigger('click');await flushPromises();
+    await button('片库').trigger('click');await flushPromises();await button('下一页').trigger('click');await flushPromises();
     expect(wrapper.find('.drama-card h3').text()).toBe('第2页作品');
     await wrapper.find('.content-type-filters').findAll('button').find(b=>b.text()==='漫画')!.trigger('click');await flushPromises();
     const types=fetcher.mock.calls.filter(([url])=>url.includes('content_type'));expect(types.length).toBeGreaterThan(0);
@@ -110,7 +110,7 @@ describe('server paging, category filters',()=>{
       const p=new URL(url,'http://localhost').searchParams;
       if(p.get('page')==='2')return new Promise<Response>(done=>resolve=done);
       return response({items:[workFixture({title:p.get('content_type')==='漫画'?'漫画结果':'首页结果'})],total:50});
-    }));wrapper=mount(App);await flushPromises();await button('真实片库').trigger('click');await flushPromises();await button('下一页').trigger('click');
+    }));wrapper=mount(App);await flushPromises();await button('片库').trigger('click');await flushPromises();await button('下一页').trigger('click');
     await wrapper.find('.content-type-filters').findAll('button').find(b=>b.text()==='漫画')!.trigger('click');await flushPromises();
     resolve(new Response(JSON.stringify({items:[workFixture({title:'迟到结果'})],total:50})));await flushPromises();
     expect(wrapper.find('.drama-card h3').text()).toBe('漫画结果');

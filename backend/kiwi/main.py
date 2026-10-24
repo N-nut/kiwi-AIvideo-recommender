@@ -165,13 +165,15 @@ def create_app(settings=None, provider_factory=None, collector=None):
         return await catalog.start(body)
 
     @app.get("/api/v1/works")
-    def works(page: int = Query(1, ge=1), page_size: int = Query(12, ge=1, le=50), genre: str | None = Query(None, max_length=30), content_type: ContentType | None = None):
+    def works(page: int = Query(1, ge=1), page_size: int = Query(12, ge=1, le=50), genre: str | None = Query(None, max_length=30), content_type: ContentType | None = None, q: str = Query("", max_length=100)):
         with sessions() as session:
             statement = select(Work).where(Work.review_status == "approved")
             if genre:
                 statement = statement.where(array_has(Work.genres, genre, engine.dialect.name))
             if content_type:
                 statement = statement.where(Work.source_meta["content_type"].as_string() == content_type)
+            if q.strip():
+                statement = statement.where(Work.title.icontains(q.strip(), autoescape=True))
             total = session.scalar(select(func.count()).select_from(statement.subquery()))
             rows = session.scalars(statement.order_by(Work.id).offset((page-1)*page_size).limit(page_size))
             return {"items": [public_work(w) for w in rows], "total": total, "page": page, "page_size": page_size}

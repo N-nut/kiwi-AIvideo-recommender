@@ -12,6 +12,7 @@ import WorkCard from './components/WorkCard.vue';
 import WorkPreview from './components/WorkPreview.vue';
 import PreferenceEditor from './components/PreferenceEditor.vue';
 import FeaturedCarousel from './components/FeaturedCarousel.vue';
+import CatalogPagination from './components/CatalogPagination.vue';
 import logo from '../../demo/assets/kiwi-logo.svg';
 
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
@@ -128,8 +129,9 @@ function setView(value:string) {
   }
   shelf.setView(value);
 }
-function changePage(step:number) {
-  preview.value?.close(); catalogPage.value+=step;
+function goToPage(page:number) {
+  if(page<1||page>catalogPages.value||page===catalogPage.value) return;
+  preview.value?.close(); catalogPage.value=page;
   document.querySelector('.catalog-heading')?.scrollIntoView?.({block:'start'});
 }
 function showDetail(work:Work) {
@@ -190,23 +192,15 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
     <a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a>
     <nav aria-label="主导航">
       <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')"><span class="nav-icon">⌂</span>发现好剧</button>
-      <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>真实片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
+      <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
       <button :class="['nav-item',{active:view==='favorites'}]" @click="setView('favorites')"><span class="nav-icon">♡</span>我的收藏<span class="nav-count">{{favoriteCount}}</span></button>
     </nav>
-  </aside>
-  <main>
-    <header class="topbar">
-      <div class="breadcrumb"><strong>{{view==='discover'?'首页':view==='catalog'?'作品库':'我的收藏'}}</strong></div>
-      <div class="topbar-actions">
-        <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新漫剧库'}}</button>
-        <button class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.user.value?.username||(auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册')}}</button>
-        <button class="logout-button" v-if="auth.user.value" :disabled="auth.busy.value" @click="logout">{{auth.busy.value?'正在退出…':'退出'}}</button>
-      </div>
-    </header>
-    <p v-if="auth.error.value" class="account-notice" role="alert">{{auth.error.value}} <button v-if="auth.state.value==='error'" class="text-button" @click="auth.restore">重试</button><button v-else-if="auth.state.value==='guest'" class="text-button" @click="openAccount">登录</button></p>
-    <p v-if="library.error.value" class="account-notice" role="alert">{{library.error.value}} <button class="text-button" @click="library.load">重试收藏状态</button></p>
-    <LegacyImport ref="legacy" :auth="auth" :library="library" />
-    <div class="catalog-sync" :class="{failed:refresh.status==='failed'||refreshError}" role="status" aria-live="polite">
+
+    <div class="sidebar-bottom">
+      <section class="sidebar-library" aria-label="片库更新">
+        <div class="sidebar-section-title"><span>片库管理</span><span class="library-status" :class="{running:updating,failed:refresh.status==='failed'}">{{updating?'更新中':refresh.last_success_at?'已同步':'尚未同步'}}</span></div>
+        <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}" aria-hidden="true">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新漫剧库'}}</button>
+        <div class="catalog-sync" :class="{failed:refresh.status==='failed'||refreshError}" role="status" aria-live="polite">
       <span>{{refreshError || (refresh.status==='running'||refresh.status==='failed'?refresh.message:'最近更新 '+updatedTime)}}</span>
       <span v-if="health.mode==='baseline'" class="baseline-notice">标签基线模式</span>
       <span v-if="refresh.status==='running'" class="sync-counts">已读取 {{refresh.pages_done||0}} 页 · {{refresh.raw_count||0}} 条 · 去重 {{refresh.unique_count||0}} 部</span>
@@ -220,12 +214,30 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         <p v-if="refresh.result.same_title_groups" class="constraint-warning">{{refresh.result.same_title_groups}} 组同名资料待核对</p>
       </div>
     </div>
+      </section>
+      <section class="sidebar-account" aria-label="账号与个人空间">
+        <div class="account-identity">
+          <span class="account-avatar" aria-label="头像占位"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c0-6 4-9 10-9s10 3 10 9"/></svg></span>
+          <div class="account-copy">
+            <strong v-if="auth.user.value" class="account-button" :title="auth.user.value.username">{{auth.user.value.username}}</strong>
+            <button v-else class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册'}}</button>
+            <small>{{auth.user.value?'个人空间':'收藏喜欢的作品'}}</small>
+          </div>
+        </div>
+        <button class="logout-button" v-if="auth.user.value" :disabled="auth.busy.value" @click="logout">{{auth.busy.value?'正在退出…':'退出'}}</button>
+      </section>
+    </div>
+  </aside>
+  <main>
+    <p v-if="auth.error.value" class="account-notice" role="alert">{{auth.error.value}} <button v-if="auth.state.value==='error'" class="text-button" @click="auth.restore">重试</button><button v-else-if="auth.state.value==='guest'" class="text-button" @click="openAccount">登录</button></p>
+    <p v-if="library.error.value" class="account-notice" role="alert">{{library.error.value}} <button class="text-button" @click="library.load">重试收藏状态</button></p>
+    <LegacyImport ref="legacy" :auth="auth" :library="library" />
 
     <section v-if="view==='discover'">
       <FeaturedCarousel :works="shelf.works.value" :suspended="busy" @detail="showDetail" />
       <div v-if="catalogError" class="featured-status" role="alert"><span>{{catalogError}}</span><button class="text-button" @click="loadCatalog">重新加载片库</button></div>
       <p v-else-if="catalogLoading" class="featured-status" role="status">正在加载轮播作品…</p>
-      <p v-else-if="!shelf.works.value.length" class="featured-status">片库还没有作品，点击右上角“更新漫剧库”即可加载。</p>
+      <p v-else-if="!shelf.works.value.length" class="featured-status">片库还没有作品，点击侧栏“更新漫剧库”即可加载。</p>
       <section class="composer" aria-labelledby="composer-title">
         <div class="section-top"><div><h2 id="composer-title">今天，想看点什么？</h2></div></div>
         <div class="composer-grid">
@@ -264,18 +276,27 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
       </section>
     </section>
     <section v-else>
-      <div class="catalog-heading"><h1>{{view==='favorites'?'我的收藏':'作品库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别或题材找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>
+      <div class="catalog-heading">
+        <div><h1>{{view==='favorites'?'我的收藏':'片库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别、题材或剧名找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>
+        <form v-if="view==='catalog'" class="catalog-search" role="search" aria-label="按剧名搜索片库" @submit.prevent="shelf.submitSearch">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+          <label class="sr-only" for="catalog-search">搜索剧名</label>
+          <input id="catalog-search" v-model="shelf.search.value" type="search" maxlength="100" placeholder="搜索剧名，发现想看的故事" autocomplete="off">
+          <button v-if="shelf.search.value" type="button" class="search-clear" aria-label="清空搜索" @click="shelf.clearSearch">×</button>
+          <button type="submit" class="search-submit">搜索</button>
+        </form>
+      </div>
       <div v-if="view==='catalog'" class="catalog-filters content-type-filters" aria-label="内容类别筛选"><button v-for="kind in ['全部','漫剧','AI剧','真人剧','漫画']" :key="kind" :class="['filter-button',{active:contentType===kind}]" :aria-pressed="contentType===kind" @click="preview?.close();shelf.setContentType(kind)">{{kind}}</button></div>
       <div v-if="view==='catalog'" class="catalog-filters" aria-label="题材筛选"><button v-for="g in ['全部',...genres]" :key="g" :class="['filter-button',{active:category===g}]" :aria-pressed="category===g" @click="preview?.close();shelf.setGenre(g)">{{g}}</button></div>
-      <div class="catalog-count">{{view==='favorites'?'我的收藏':`${contentType} / ${category}`}} · 共 {{displayTotal}} 部</div>
+      <div class="catalog-count">{{view==='favorites'?'我的收藏':`${contentType} / ${category}`}}<span v-if="view==='catalog'&&shelf.searchTerm.value"> · “{{shelf.searchTerm.value}}”</span> · 共 {{displayTotal}} 部</div>
       <p v-if="favoriteError&&view==='favorites'" role="alert">{{favoriteError}} <button class="text-button" @click="shelf.loadFavorites">重试加载收藏</button></p>
       <p v-if="library.unavailable.value&&view==='favorites'" class="source-note">{{library.unavailable.value}} 部收藏资料已不可用，已从当前展示中排除。</p>
       <details v-if="view==='favorites'&&shelf.unavailableIds.value.length" class="unavailable-favorites"><summary>管理不可用收藏（最多显示 50 部）</summary><ul><li v-for="id in shelf.unavailableIds.value" :key="id"><span>{{id}}</span><button class="text-button" :disabled="favoriteBusy(id)" @click="library.setSaved(id,false)">取消收藏</button></li></ul></details>
       <p v-if="catalogLoading||favoriteLoading&&view==='favorites'" role="status">正在加载作品…</p>
       <p v-if="catalogError" role="alert">{{catalogError}} <button class="text-button" @click="loadCatalog">重试</button></p>
       <div class="drama-grid catalog-grid"><WorkCard v-for="(work,i) in visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
-      <nav v-if="catalogPages>1" class="catalog-pagination" aria-label="作品分页"><button class="secondary-button" :disabled="catalogPage<=1||catalogLoading||favoriteLoading" @click="changePage(-1)">上一页</button><span>第 {{catalogPage}} / {{catalogPages}} 页</span><button class="secondary-button" :disabled="catalogPage>=catalogPages||catalogLoading||favoriteLoading" @click="changePage(1)">下一页</button></nav>
-      <div v-if="!visibleWorks.length&&!catalogLoading&&!favoriteLoading&&!catalogError&&!favoriteError" class="empty-state"><h3>{{view==='favorites'?'还没有收藏作品':'暂时没有符合条件的作品'}}</h3><button class="secondary-button" @click="setView('discover')">回到首页</button></div>
+      <CatalogPagination :page="catalogPage" :pages="catalogPages" :busy="catalogLoading||favoriteLoading" @change="goToPage" />
+      <div v-if="!visibleWorks.length&&!catalogLoading&&!favoriteLoading&&!catalogError&&!favoriteError" class="empty-state"><h3>{{view==='favorites'?'还没有收藏作品':shelf.searchTerm.value?'没有找到相关剧名':'暂时没有符合条件的作品'}}</h3><template v-if="view==='catalog'&&shelf.searchTerm.value"><p>试试其他关键词，或清空搜索后继续浏览。</p><button class="secondary-button" @click="shelf.clearSearch">清空搜索</button></template><button v-else class="secondary-button" @click="setView('discover')">回到首页</button></div>
     </section>
     <footer class="page-footer">作品资料来自红果 · 自动整理，待人工核对</footer>
   </main>

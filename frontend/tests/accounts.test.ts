@@ -46,7 +46,7 @@ async function signIn(name='Alpha') {
   await wrapper.find('#auth-username').setValue(name);await wrapper.find('#auth-password').setValue('test password');
   await wrapper.find('.auth-dialog form').trigger('submit');await flushPromises();
 }
-async function showCatalog() {await button('真实片库').trigger('click');await flushPromises();}
+async function showCatalog() {await button('片库').trigger('click');await flushPromises();}
 
 describe('account product flow',()=>{
   it('paginates favorites on the server and retains the complete collection count',async()=>{
@@ -114,7 +114,7 @@ describe('account product flow',()=>{
   it('requires successful logout, clears private UI, and keeps different accounts isolated',async()=>{
     const backend=server('Alpha');backend.saved.Alpha!.add('work-a');wrapper=mount(App);await flushPromises();await button('我的收藏').trigger('click');await flushPromises();
     backend.failLogout();await button('退出').trigger('click');await flushPromises();expect(wrapper.find('.account-button').text()).toBe('Alpha');expect(wrapper.find('.drama-card').exists()).toBe(true);
-    backend.failLogout(false);await button('退出').trigger('click');await flushPromises();expect(wrapper.find('.account-button').text()).toBe('登录 / 注册');expect(wrapper.find('.breadcrumb').text()).toBe('首页');
+    backend.failLogout(false);await button('退出').trigger('click');await flushPromises();expect(wrapper.find('.account-button').text()).toBe('登录 / 注册');expect(wrapper.find('.nav-item.active').text()).toContain('发现好剧');
     await wrapper.find('.account-button').trigger('click');await signIn('Beta');await button('我的收藏').trigger('click');await flushPromises();expect(wrapper.findAll('.drama-card')).toHaveLength(0);
     expect(backend.saved.Alpha!.has('work-a')).toBe(true);
   });

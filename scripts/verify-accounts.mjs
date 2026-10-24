@@ -28,7 +28,7 @@ async function authForm(p,name,register=false) {
   await p.locator('.auth-dialog').waitFor({state:'hidden'});
   await p.waitForFunction(()=>!document.querySelector('.account-notice'));
 }
-async function catalog(p) {await p.getByRole('button',{name:/真实片库/}).click();await p.locator('.card-favorite').first().waitFor();await p.waitForFunction(()=>!document.querySelector('.card-favorite:disabled'));}
+async function catalog(p) {await p.getByRole('button',{name:/片库/}).click();await p.locator('.card-favorite').first().waitFor();await p.waitForFunction(()=>!document.querySelector('.card-favorite:disabled'));}
 async function favorites(p) {await p.getByRole('button',{name:/我的收藏/}).click();}
 async function noOverflow(p) {assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
 try {

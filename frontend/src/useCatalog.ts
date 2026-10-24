@@ -6,6 +6,8 @@ import type { useAuth } from './useAuth';
 
 export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnType<typeof useAuth>) {
   const view=ref('discover'), genre=ref('全部'), contentType=ref('全部'), page=ref(1);
+  const search=ref(''),searchTerm=ref('');
+  let searchTimer:ReturnType<typeof setTimeout>|undefined;
   const works=ref<Work[]>([]), total=ref(0), overall=ref(0), loading=ref(false), error=ref('');
   const favoriteLoading=ref(false), favoriteError=ref('');
   const favoriteWorks=ref<Work[]>([]);
@@ -27,12 +29,13 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
     if(currentView==='catalog') {
       if(genre.value!=='全部') params.set('genre',genre.value);
       if(contentType.value!=='全部') params.set('content_type',contentType.value);
+      if(searchTerm.value) params.set('q',searchTerm.value);
     }
     try {
       const data=await api<{items:Work[];total:number}>(`/api/v1/works?${params}`,undefined,request.signal);
       if(!request.current()) return;
       works.value=data.items;total.value=data.total;
-      if(currentView==='discover'||genre.value==='全部'&&contentType.value==='全部') overall.value=data.total;
+      if(currentView==='discover'||genre.value==='全部'&&contentType.value==='全部'&&!searchTerm.value) overall.value=data.total;
       if(currentView==='catalog'&&currentPage>pages.value) page.value=pages.value;
     } catch(exc) {if(request.current()) error.value=exc instanceof Error?exc.message:'片库加载失败';}
     finally {if(request.current()) loading.value=false;}
@@ -55,11 +58,33 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
   async function reload() {
     await Promise.all([load(),auth.state.value==='authenticated'?library.load():Promise.resolve()]);
   }
-  function setView(value:string) {view.value=value;page.value=1;}
-  function setGenre(value:string) {genre.value=value;page.value=1;}
-  function setContentType(value:string) {contentType.value=value;page.value=1;}
-  watch([view,genre,contentType,page],(current,previous)=>{
-    const changed=current.slice(0,3).some((value,index)=>value!==previous[index]);
+  function flushSearch() {clearTimeout(searchTimer);searchTimer=undefined;searchTerm.value=search.value.trim();}
+  function submitSearch() {
+    const unchanged=searchTerm.value===search.value.trim()&&page.value===1;
+    flushSearch();page.value=1;
+    if(unchanged&&view.value==='catalog') void load();
+  }
+  function clearSearch() {search.value='';submitSearch();}
+  function setView(value:string) {
+    const unchanged=view.value===value&&page.value===1&&searchTerm.value===search.value.trim();
+    flushSearch();view.value=value;page.value=1;if(unchanged&&loading.value) void load();
+  }
+  function setGenre(value:string) {
+    const unchanged=genre.value===value&&page.value===1&&searchTerm.value===search.value.trim();
+    flushSearch();genre.value=value;page.value=1;if(unchanged&&loading.value) void load();
+  }
+  function setContentType(value:string) {
+    const unchanged=contentType.value===value&&page.value===1&&searchTerm.value===search.value.trim();
+    flushSearch();contentType.value=value;page.value=1;if(unchanged&&loading.value) void load();
+  }
+  watch(search,()=>{
+    clearTimeout(searchTimer);
+    if(view.value!=='catalog') return;
+    lane.cancel();works.value=[];loading.value=true;error.value='';
+    searchTimer=setTimeout(submitSearch,300);
+  },{flush:'sync'});
+  watch([view,genre,contentType,page,searchTerm],(current,previous)=>{
+    const changed=current.slice(0,3).some((value,index)=>value!==previous[index])||current[4]!==previous[4];
     if(changed) works.value=[];
     if(changed||view.value!=='discover') void load();
   });
@@ -68,7 +93,7 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
     if(view.value==='favorites'&&auth.state.value!=='authenticated') setView('discover');
   },{flush:'sync'});
   watch(library.revision,()=>{if(view.value==='favorites') void loadFavorites();});
-  onUnmounted(()=>{lane.cancel();favoriteLane.cancel();});
-  return {view,genre,contentType,page,works,overall,visibleWorks,displayTotal,pages,loading,error,
-    favoriteCount,favoriteLoading,favoriteError,unavailableIds,load,loadFavorites,reload,setView,setGenre,setContentType};
+  onUnmounted(()=>{clearTimeout(searchTimer);lane.cancel();favoriteLane.cancel();});
+  return {view,genre,contentType,page,search,searchTerm,works,overall,visibleWorks,displayTotal,pages,loading,error,
+    favoriteCount,favoriteLoading,favoriteError,unavailableIds,load,loadFavorites,reload,setView,setGenre,setContentType,submitSearch,clearSearch};
 }

@@ -54,6 +54,13 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch):
         # PGlite has one backend; release the existing pool before opening the app.
         engine.dispose()
         with TestClient(create_app(Settings(ai_mode='baseline',database_url=url)),base_url='http://127.0.0.1:8000',headers=HEADERS) as client:
+            assert client.get('/api/v1/works',params={'q':'TEST'}).json()['total']==3
+            assert client.get('/api/v1/works',params={'q':'Test','content_type':'漫画'}).json()['total']==1
+            with client.app.state.sessions.begin() as session:
+                session.get(Work,'work-0').title='100% Kiwi_短剧'
+            for query in ['kiwi_','%','_']:
+                result=client.get('/api/v1/works',params={'q':query}).json()
+                assert result['total']==1 and result['items'][0]['id']=='work-0'
             assert register(client).status_code==201
             assert register(client,'user_a').status_code==409
             assert client.get('/api/v1/auth/me').json()['user']['username']=='User_A'

@@ -1,0 +1,47 @@
+{
+  "checks": [
+    "sidebar bottom contains update controls, account and placeholder; main header removed",
+    "direct numbered navigation reaches the last page and updates the moving number window",
+    "title search matches the whole catalogue, resets page and clears cleanly",
+    "responsive widths keep search, avatar and number controls within the viewport"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 2160,
+      "height": 1150,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1366,
+      "height": 650,
+      "horizontal_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "external_covers_blocked": true
+}
