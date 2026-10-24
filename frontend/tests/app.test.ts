@@ -6,7 +6,7 @@ import { workFixture } from './work-fixture';
 
 const prefs=()=>({...emptyPreferences(),soft_preferences:{genres:['修仙'],themes:[],pace:null}});
 const response=(body:unknown,status=200)=>Promise.resolve(new Response(JSON.stringify(body),{status}));
-const initial=(url:string)=>url.startsWith('/health')?response({status:'ready',mode:'live',works:41}):url.includes('/catalog/refresh')?response({status:'idle',message:'尚未同步'}):response({items:[],total:0});
+const initial=(url:string)=>url.endsWith('/auth/me')?response({user:null}):url.startsWith('/health')?response({status:'ready',mode:'live',works:41}):url.includes('/catalog/refresh')?response({status:'idle',message:'尚未同步'}):response({items:[],total:0});
 const findButton=(wrapper:ReturnType<typeof mount>,text:string)=>wrapper.findAll('button').find(b=>b.text().includes(text))!;
 beforeEach(()=>{localStorage.clear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>vi.unstubAllGlobals());

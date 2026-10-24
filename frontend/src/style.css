@@ -150,3 +150,17 @@ main {width:calc(100% - 212px);margin-left:max(212px,calc((100% - 1650px + 212px
 @media(max-width:980px) {main{width:calc(100% - 76px);margin-left:76px}}
 @media(max-width:520px) {main{width:100%;margin-left:0}}
 @media(max-width:360px) {.featured-counter{display:none}.featured-controls{gap:5px}.featured-control{flex:none}.featured-pages button{min-width:17px}.featured-pages span{width:13px}}
+
+.auth-dialog {width:min(440px,calc(100vw - 32px));box-sizing:border-box;padding:26px;max-height:90dvh}
+.auth-dialog .login-label {display:block;margin:17px 0 0;font-size:13px}
+.auth-dialog input {display:block;box-sizing:border-box;width:100%;min-width:0;margin-top:8px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit}
+.auth-dialog input[aria-invalid=true] {border-color:#b65036}
+.auth-dialog .dialog-actions {justify-content:space-between;flex-wrap:wrap;gap:14px}
+.auth-dialog .field-error {font-size:12px;line-height:1.7;margin-top:8px;color:#a34528}
+.account-notice {font-size:13px;padding:12px 16px;border:1px solid #e2d4b6;background:#fffbef;border-radius:8px;line-height:1.8}
+.legacy-import {border:1px solid var(--line);padding:18px 22px;border-radius:12px;margin:18px 0;background:#f7f9f2;overflow-wrap:anywhere}
+.legacy-import h2 {font-size:17px;margin:0 0 10px}.legacy-import p,.legacy-import label {font-size:13px;line-height:1.8}
+.legacy-import select {max-width:100%;padding:8px;border:1px solid var(--line);border-radius:7px;background:#fff}
+.account-button {max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:520px){.auth-dialog{padding:20px}.legacy-import{padding:16px}.account-button{max-width:118px}.logout-button{padding:8px;font-size:12px}.topbar-actions{flex-wrap:wrap;justify-content:flex-end}.topbar{gap:8px}.account-notice{font-size:12px}}
+.unavailable-favorites{font-size:12px;color:#6e7668;margin:12px 0}.unavailable-favorites li{display:flex;justify-content:space-between;gap:12px;margin:10px 0;overflow-wrap:anywhere}.unavailable-favorites ul{padding-left:16px}

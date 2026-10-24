@@ -1,0 +1,26 @@
+{
+  "base": "http://127.0.0.1:8001",
+  "desktop": {
+    "width": 1440,
+    "height": 1000
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844
+  },
+  "checks": [
+    "guest recommendation remains available",
+    "registration continues the requested favorite",
+    "HttpOnly session and reload restore",
+    "mobile guest sees no other account data",
+    "same account restores favorites in independent cookie store",
+    "logout revokes only this browser session",
+    "legacy import explicitly selects one group and keeps the local dictionary",
+    "desktop and mobile have no horizontal overflow or page errors"
+  ],
+  "synthetic_users": [
+    "qaA_mvm4side",
+    "qaB_mvm4side"
+  ],
+  "page_errors": []
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-24",
+  "sqlite_upgrade": {
+    "backup": ".local\\kiwi-before-accounts-20261024-161548.db",
+    "public_data_unchanged": true,
+    "before": {
+      "works": {
+        "count": 434,
+        "sha256": "54c79d9e890be62195679e820fb4fd6d75e4897e1a66dc6cf447a2f8ac74f43c"
+      },
+      "catalog_refresh": {
+        "count": 2,
+        "sha256": "9f29936f046b26ddd33c262375a4bdf623cf52745525ac99d53e2dbe1135c3d5"
+      }
+    },
+    "after": {
+      "works": {
+        "count": 434,
+        "sha256": "54c79d9e890be62195679e820fb4fd6d75e4897e1a66dc6cf447a2f8ac74f43c"
+      },
+      "catalog_refresh": {
+        "count": 2,
+        "sha256": "9f29936f046b26ddd33c262375a4bdf623cf52745525ac99d53e2dbe1135c3d5"
+      }
+    }
+  },
+  "password_hash": {
+    "algorithm": "argon2id",
+    "parameters": "m=65536,t=3,p=4",
+    "pwdlib": "0.3.1",
+    "argon2_cffi": "25.1.0",
+    "single_sample_hash_ms": 33.97,
+    "single_sample_verify_ms": 33.41
+  },
+  "checks": {
+    "pytest": 178,
+    "vitest": 64,
+    "node": 28,
+    "postgres_integration": 1,
+    "browser_scenarios": 8
+  },
+  "deployment_limits": [
+    "Actual two-device/HTTPS deployment not tested",
+    "PGlite PostgreSQL is not a native concurrent PostgreSQL deployment",
+    "Docker not tested",
+    "Limits are single-worker and trusted proxy IP handling is not configured"
+  ],
+  "recommendation_evaluation": {
+    "reports_unchanged": true,
+    "reference_catalog_count": 192,
+    "status": "reference_stale",
+    "current_catalog_count": 434
+  }
+}

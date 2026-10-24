@@ -10,7 +10,6 @@ const work=workFixture({id:'hongguo-12345678',title:'真实来源作品',cover_u
 let wrapper:ReturnType<typeof mount>;
 const button=(text:string)=>wrapper.findAll('button').find(b=>b.text().includes(text))!;
 async function startUpdate() {await wrapper.find('.catalog-update-button').trigger('click');await wrapper.find('.collection-dialog form').trigger('submit');await flushPromises();}
-async function login() {await wrapper.find('.account-button').trigger('click');await wrapper.find('input[maxlength="20"]').setValue('nut');await wrapper.find('dialog[aria-labelledby="login-title"] form').trigger('submit');await flushPromises();}
 beforeEach(()=>{localStorage.clear();vi.useFakeTimers();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>{wrapper?.unmount();vi.useRealTimers();vi.unstubAllGlobals();});
 
@@ -85,7 +84,7 @@ describe('home collection settings and progress',()=>{
   });
 });
 
-describe('server paging, category filters and local favorites',()=>{
+describe('server paging, category filters',()=>{
   it('fetches only the current page and sends content type separately from genre',async()=>{
     const fetcher=vi.fn((url:string)=>{
       if(url.includes('/catalog/refresh')) return response(initial);
@@ -117,28 +116,7 @@ describe('server paging, category filters and local favorites',()=>{
     expect(wrapper.find('.drama-card h3').text()).toBe('漫画结果');
   });
 
-  it('loads saved works outside the current catalog page and excludes missing records',async()=>{
-    localStorage.setItem('kiwi-real-library-v1',JSON.stringify({nut:['bili-45128',work.id]}));
-    vi.stubGlobal('fetch',vi.fn((url:string)=>{
-      if(url.includes('/catalog/refresh'))return response(initial);if(url.startsWith('/health'))return response({works:51});
-      if(url===`/api/v1/works/${work.id}`)return response(work);
-      if(url.includes('/works/bili-'))return response({detail:'作品不存在'},404);
-      return response({items:[workFixture({id:'other',title:'其他作品'})],total:51});
-    }));wrapper=mount(App);await flushPromises();await login();
-    expect(wrapper.findAll('.nav-count').map(n=>n.text())).toEqual(['51','1']);
-    await button('我的收藏').trigger('click');await flushPromises();expect(wrapper.find('.drama-card h3').text()).toBe(work.title);
-    expect(wrapper.text()).toContain('部分收藏资料已不可用');
-    await button('真实片库').trigger('click');await flushPromises();await button('下一页').trigger('click');await flushPromises();
-    expect(wrapper.findAll('.nav-count')[1]!.text()).toBe('1');expect(localStorage.getItem('kiwi-real-library-v1')).toContain('bili-45128');
-  });
 
-  it('keeps saved IDs when a temporary favorites request fails and supports retry',async()=>{
-    localStorage.setItem('kiwi-real-library-v1',JSON.stringify({nut:[work.id]}));let failed=true;
-    vi.stubGlobal('fetch',vi.fn((url:string)=>url.includes('/catalog/refresh')?response(initial):url.startsWith('/health')?response({works:1}):url.includes('/works/')?(failed?response({error:{message:'稍后重试'}},503):response(work)):response({items:[],total:0})));
-    wrapper=mount(App);await flushPromises();await login();await button('我的收藏').trigger('click');await flushPromises();
-    expect(wrapper.text()).toContain('稍后重试');expect(wrapper.findAll('.nav-count')[1]!.text()).toBe('1');
-    failed=false;await button('重试加载收藏').trigger('click');await flushPromises();expect(wrapper.find('.drama-card h3').text()).toBe(work.title);
-  });
 });
 
 it('uses real covers and classification, then falls back after image failure',async()=>{

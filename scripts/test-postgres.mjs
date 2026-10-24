@@ -17,7 +17,7 @@ try {
   await server.start();
   console.log((await db.query('SELECT version()')).rows[0]);
   const code = await new Promise((resolveCode, reject) => {
-    const child = spawn(existsSync(python) ? python : 'python', ['-X', 'utf8', '-m', 'pytest', 'backend/tests/test_postgres.py', '-q'], {
+    const child = spawn(existsSync(python) ? python : 'python', ['-X', 'utf8', '-m', 'pytest', 'backend/tests/test_postgres.py', '-q', '-o', 'cache_dir=.local/pytest-cache-pg'], {
       cwd: root, stdio: 'inherit', env: { ...process.env, KIWI_TEST_DATABASE_URL: `postgresql+psycopg://postgres@127.0.0.1:${port}/kiwi_test?sslmode=disable` },
     });
     child.on('error', reject);

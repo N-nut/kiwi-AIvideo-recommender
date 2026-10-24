@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -20,6 +21,8 @@ from .providers import BaselineAI, LiveAI, ProviderError
 from .repository import array_has
 from .schemas import ContentType, ParseRequest, RecommendationRequest, RefreshRequest
 from .service import recommend
+from .auth import AuthManager, protect_write, router as auth_router
+from .favorites import router as favorites_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -38,6 +41,7 @@ def create_app(settings=None, provider_factory=None, collector=None):
         # Production schema changes are applied by Alembic before startup.
         if engine.dialect.name == "sqlite":
             initialize(engine)
+        app.state.auth.cleanup(force=True)
         catalog.recover()
         yield
         await catalog.close()
@@ -46,33 +50,60 @@ def create_app(settings=None, provider_factory=None, collector=None):
     app = FastAPI(title="Kiwi AI 漫剧推荐", version="1.0.0", lifespan=lifespan)
     app.state.sessions, app.state.engine, app.state.settings = sessions, engine, settings
     app.state.catalog = catalog
+    app.state.auth = AuthManager(sessions, settings)
+    app.include_router(auth_router)
+    app.include_router(favorites_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
         request.state.request_id = uuid.uuid4().hex
         start = time.perf_counter()
+        private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
+        def finish(response):
+            response.headers["X-Request-ID"] = request.state.request_id
+            if private:
+                response.headers["Cache-Control"] = "no-store"
+            return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.
-        if request.method in ("POST", "PUT", "PATCH"):
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             size = 0
             chunks = []
             async for chunk in request.stream():
                 size += len(chunk)
                 if size > 24_000:
-                    return JSONResponse(status_code=413, content={"error": {"code": "payload_too_large", "message": "请求内容过长"}, "request_id": request.state.request_id})
+                    return finish(JSONResponse(status_code=413, content={"error": {"code": "payload_too_large", "message": "请求内容过长"}, "request_id": request.state.request_id}))
                 chunks.append(chunk)
             request._body = b"".join(chunks)
+        if private and request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            try:
+                protect_write(request)
+                if (request.method in ("PUT", "DELETE") or request.url.path.endswith("/logout")) and request._body:
+                    raise HTTPException(422, {"code": "unexpected_body", "message": "此操作不接受额外字段"})
+            except HTTPException as exc:
+                return finish(JSONResponse(status_code=exc.status_code, content={"error": exc.detail, "request_id": request.state.request_id}))
+        if private and "user_id" in request.query_params:
+            return finish(JSONResponse(status_code=422, content={"error": {"code": "unexpected_field", "message": "不接受账号归属字段"}, "request_id": request.state.request_id}))
         try:
             response = await call_next(request)
         except SQLAlchemyError:
-            return JSONResponse(status_code=503, content={"error": {"code": "database_unavailable", "message": "数据库暂时不可用，请稍后重试"}, "request_id": request.state.request_id})
-        response.headers["X-Request-ID"] = request.state.request_id
+            return finish(JSONResponse(status_code=503, content={"error": {"code": "database_unavailable", "message": "数据库暂时不可用，请稍后重试"}, "request_id": request.state.request_id}))
         log.info(json.dumps({"request_id": request.state.request_id, "path": request.url.path,
                              "status": response.status_code, "elapsed_ms": round((time.perf_counter()-start)*1000, 2)}, ensure_ascii=False))
-        return response
+        return finish(response)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request, exc):
+        detail = exc.detail if isinstance(exc.detail, dict) else {"code": "http_error", "message": exc.detail}
+        return JSONResponse(status_code=exc.status_code, content={"error": detail, "request_id": request.state.request_id}, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, exc):
         # Do not echo arbitrary user input, database URLs, or upstream credentials.
+        if request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/")):
+            safe = {"username": "用户名须为 3～20 位英文字母、数字或下划线", "password": "密码须为 8～64 个字符", "confirm_password": "请确认两次密码一致且为 8～64 个字符", "work_ids": "每批提交 1～100 个有效作品标识", "page": "页码须大于零", "page_size": "每页数量超出允许范围"}
+            fields = list(dict.fromkeys(next((str(part) for part in error["loc"] if part in safe), "confirm_password" if error["type"] == "value_error" else "body") for error in exc.errors()))
+            messages = {field: safe.get(field, "请求字段不符合要求") for field in fields}
+            return JSONResponse(status_code=422, content={"error": {"code": "validation_error", "message": "；".join(messages.values()), "fields": fields, "field_messages": messages}, "request_id": request.state.request_id})
         return JSONResponse(status_code=422, content={"error": {"code": "validation_error", "message": "参数不符合要求，请检查输入及偏好字段",
             "fields": [".".join(map(str, e["loc"])) for e in exc.errors()]}, "request_id": request.state.request_id})
 

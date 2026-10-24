@@ -5,6 +5,9 @@ import type { CatalogRefresh, Preferences, Recommendation, Work } from './types'
 import { emptyPreferences, genres, fieldNames, collectionCategories } from './types';
 import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
+import { useAuth } from './useAuth';
+import AuthDialog from './components/AuthDialog.vue';
+import LegacyImport from './components/LegacyImport.vue';
 import WorkCard from './components/WorkCard.vue';
 import WorkPreview from './components/WorkPreview.vue';
 import PreferenceEditor from './components/PreferenceEditor.vue';
@@ -14,8 +17,9 @@ import logo from '../../demo/assets/kiwi-logo.svg';
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
 const prefs = ref<Preferences>(emptyPreferences());
 const parsed = ref(false); const busy = ref(false); const phase = ref(''); const error = ref('');
-const library = useLibrary();
-const shelf = useCatalog(library);
+const auth=useAuth();
+const library = useLibrary(auth);
+const shelf = useCatalog(library,auth);
 const {view,genre:category,contentType,page:catalogPage,visibleWorks,displayTotal,pages:catalogPages,loading:catalogLoading,error:catalogError,favoriteCount,favoriteLoading,favoriteError}=shelf;
 const result = ref<Recommendation|null>(null);
 const updateDialog=ref<HTMLDialogElement>();
@@ -26,11 +30,13 @@ const refreshError = ref(''); const refreshStarting = ref(false);
 const syncDetails = ref(false);
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const refreshLane = latestRequest(); let disposed=false;
-const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>(); const login = ref<HTMLDialogElement>();
+const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>();
+const login=ref<InstanceType<typeof AuthDialog>>(),legacy=ref<InstanceType<typeof LegacyImport>>();
 const preview = ref<InstanceType<typeof WorkPreview>>();
 const detailScroll = ref<HTMLElement>();
 let backdropPressed = false;
-const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const nickname = ref(''); const pendingFavorite = ref('');
+const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const pendingFavorite = ref('');
+const pendingView=ref(false);
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
 const examples = ['想看穿越逆袭的故事，偏好修仙题材。','想看都市和系统，主角逐渐成长。','只看玄幻，要有战斗。','想看修仙逆袭，不要后宫。'];
@@ -113,7 +119,15 @@ async function updateCatalog() {
   } catch(exc) { if(request.current()&&!disposed) refreshError.value=exc instanceof Error?exc.message:'更新失败，请重试'; }
   finally { if(request.current()) refreshStarting.value=false; }
 }
-function setView(value:string) { preview.value?.close(); shelf.setView(value); }
+function setView(value:string) {
+  preview.value?.close();
+  if(value==='favorites'&&auth.state.value!=='authenticated') {
+    if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=true;login.value?.open();}
+    else message(auth.state.value==='checking'?'正在检查登录状态':'请先重试检查登录状态');
+    return;
+  }
+  shelf.setView(value);
+}
 function changePage(step:number) {
   preview.value?.close(); catalogPage.value+=step;
   document.querySelector('.catalog-heading')?.scrollIntoView?.({block:'start'});
@@ -136,10 +150,34 @@ function finishDetailClick(event: MouseEvent) {
   if(backdropPressed&&outsideDetail(event)) (event.currentTarget as HTMLDialogElement).close();
   backdropPressed=false;
 }
-function favorite(id:string) { if(!library.user.value) { preview.value?.close(); pendingFavorite.value=id; login.value?.showModal(); return; } library.toggle(id); message(library.has(id)?'已加入本机收藏':'已取消收藏'); }
-function loginSubmit() { if(library.login(nickname.value)) { if(pendingFavorite.value) library.toggle(pendingFavorite.value); pendingFavorite.value=''; login.value?.close(); message('演示昵称已登录，收藏仅保存在本机'); } }
+function openAccount() {pendingFavorite.value='';pendingView.value=false;if(auth.state.value==='error') void auth.restore();else if(auth.state.value==='guest') login.value?.open();}
+function dismissLogin() {pendingFavorite.value='';pendingView.value=false;}
+async function favorite(id:string) {
+  if(auth.state.value==='guest') {preview.value?.close();pendingFavorite.value=id;pendingView.value=false;login.value?.open();return;}
+  if(auth.state.value!=='authenticated') {message('请先检查登录状态');return;}
+  if(!library.ready.value) {await library.load();return;}
+  if(auth.busy.value) return;
+  const desired=!library.has(id);
+  if(await library.setSaved(id,desired)) message(desired?'已加入账号收藏':'已取消收藏');
+  else if(library.error.value) message(library.error.value);
+}
+async function loginSuccess() {
+  const id=pendingFavorite.value, go=pendingView.value,account=auth.scope();dismissLogin();
+  await library.load();if(!account.current()) return;
+  if(go) shelf.setView('favorites');
+  if(id) {
+    if(!library.ready.value) {message('已登录，收藏状态加载失败，请重试后再次收藏');return;}
+    if(await library.setSaved(id,true)) message('已登录并加入账号收藏');
+    else if(library.error.value) message(library.error.value);
+  }else message('已登录');
+}
+async function logout() {if(await auth.logout()){preview.value?.close();detail.value?.close();shelf.setView('discover');message('已退出');}}
+const favoriteBusy=(id:string)=>auth.busy.value||auth.state.value==='checking'||auth.state.value==='authenticated'&&(library.loading.value||library.pending.value.has(id));
+const favoriteReady=computed(()=>auth.state.value==='guest'||auth.state.value==='authenticated'&&library.ready.value);
+watch(auth.generation,()=>{if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();}},{flush:'post'});
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
+  void auth.restore();
   void loadCatalog();
   void loadHealth(); void pollRefresh();
 });
@@ -161,10 +199,13 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
       <div class="breadcrumb"><strong>{{view==='discover'?'首页':view==='catalog'?'作品库':'我的收藏'}}</strong></div>
       <div class="topbar-actions">
         <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新漫剧库'}}</button>
-        <button class="account-button" @click="login?.showModal()">{{library.user.value?library.user.value:'演示昵称登录'}}</button>
-        <button class="logout-button" v-if="library.user.value" @click="library.logout()">退出</button>
+        <button class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.user.value?.username||(auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册')}}</button>
+        <button class="logout-button" v-if="auth.user.value" :disabled="auth.busy.value" @click="logout">{{auth.busy.value?'正在退出…':'退出'}}</button>
       </div>
     </header>
+    <p v-if="auth.error.value" class="account-notice" role="alert">{{auth.error.value}} <button v-if="auth.state.value==='error'" class="text-button" @click="auth.restore">重试</button><button v-else-if="auth.state.value==='guest'" class="text-button" @click="openAccount">登录</button></p>
+    <p v-if="library.error.value" class="account-notice" role="alert">{{library.error.value}} <button class="text-button" @click="library.load">重试收藏状态</button></p>
+    <LegacyImport ref="legacy" :auth="auth" :library="library" />
     <div class="catalog-sync" :class="{failed:refresh.status==='failed'||refreshError}" role="status" aria-live="polite">
       <span>{{refreshError || (refresh.status==='running'||refresh.status==='failed'?refresh.message:'最近更新 '+updatedTime)}}</span>
       <span v-if="health.mode==='baseline'" class="baseline-notice">标签基线模式</span>
@@ -210,7 +251,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
         <div v-else-if="result&&!result.items.length" class="empty-state"><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':'这一种口味，还没有遇到'}}</h3><p>可以主动调整偏好后重试，明确排除的条件不会自动放宽。</p><button class="secondary-button" @click="edit">调整我的偏好</button></div>
-        <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
+        <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
         <div v-else class="empty-state generation-guide">
           <h3>三步生成你的片单</h3>
           <ol class="generation-steps">
@@ -223,15 +264,16 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
       </section>
     </section>
     <section v-else>
-      <div class="catalog-heading"><h1>{{view==='favorites'?'我的收藏':'作品库'}}</h1><p>{{view==='favorites'?'收藏保存在当前浏览器。':'按类别或题材找作品'}}</p></div>
+      <div class="catalog-heading"><h1>{{view==='favorites'?'我的收藏':'作品库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别或题材找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>
       <div v-if="view==='catalog'" class="catalog-filters content-type-filters" aria-label="内容类别筛选"><button v-for="kind in ['全部','漫剧','AI剧','真人剧','漫画']" :key="kind" :class="['filter-button',{active:contentType===kind}]" :aria-pressed="contentType===kind" @click="preview?.close();shelf.setContentType(kind)">{{kind}}</button></div>
       <div v-if="view==='catalog'" class="catalog-filters" aria-label="题材筛选"><button v-for="g in ['全部',...genres]" :key="g" :class="['filter-button',{active:category===g}]" :aria-pressed="category===g" @click="preview?.close();shelf.setGenre(g)">{{g}}</button></div>
       <div class="catalog-count">{{view==='favorites'?'我的收藏':`${contentType} / ${category}`}} · 共 {{displayTotal}} 部</div>
       <p v-if="favoriteError&&view==='favorites'" role="alert">{{favoriteError}} <button class="text-button" @click="shelf.loadFavorites">重试加载收藏</button></p>
-      <p v-if="shelf.missing.value.size&&view==='favorites'" class="source-note">部分收藏资料已不可用，已从当前展示中排除。</p>
+      <p v-if="library.unavailable.value&&view==='favorites'" class="source-note">{{library.unavailable.value}} 部收藏资料已不可用，已从当前展示中排除。</p>
+      <details v-if="view==='favorites'&&shelf.unavailableIds.value.length" class="unavailable-favorites"><summary>管理不可用收藏（最多显示 50 部）</summary><ul><li v-for="id in shelf.unavailableIds.value" :key="id"><span>{{id}}</span><button class="text-button" :disabled="favoriteBusy(id)" @click="library.setSaved(id,false)">取消收藏</button></li></ul></details>
       <p v-if="catalogLoading||favoriteLoading&&view==='favorites'" role="status">正在加载作品…</p>
       <p v-if="catalogError" role="alert">{{catalogError}} <button class="text-button" @click="loadCatalog">重试</button></p>
-      <div class="drama-grid catalog-grid"><WorkCard v-for="(work,i) in visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
+      <div class="drama-grid catalog-grid"><WorkCard v-for="(work,i) in visibleWorks" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
       <nav v-if="catalogPages>1" class="catalog-pagination" aria-label="作品分页"><button class="secondary-button" :disabled="catalogPage<=1||catalogLoading||favoriteLoading" @click="changePage(-1)">上一页</button><span>第 {{catalogPage}} / {{catalogPages}} 页</span><button class="secondary-button" :disabled="catalogPage>=catalogPages||catalogLoading||favoriteLoading" @click="changePage(1)">下一页</button></nav>
       <div v-if="!visibleWorks.length&&!catalogLoading&&!favoriteLoading&&!catalogError&&!favoriteError" class="empty-state"><h3>{{view==='favorites'?'还没有收藏作品':'暂时没有符合条件的作品'}}</h3><button class="secondary-button" @click="setView('discover')">回到首页</button></div>
     </section>
@@ -250,7 +292,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
     </form>
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
-  <WorkPreview ref="preview" :saved="library.has" @favorite="favorite" @detail="showDetail" />
+  <WorkPreview ref="preview" :saved="library.has" :favorite-busy="favoriteBusy" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" />
   <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false">
     <template v-if="selected">
       <header class="dialog-heading work-dialog-header"><h2 id="detail-title">{{selected.title}}</h2><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></header>
@@ -263,9 +305,9 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         <details class="detail-evidence"><summary>查看资料依据</summary><div class="evidence" v-for="e in detailEvidence" :key="e.quote"><small>{{e.label}}</small><blockquote>{{e.quote}}</blockquote></div></details>
         <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}<br>{{selected.source_meta?.provider==='hongguo'?'自动整理，待人工核对。':selected.review_note}}</p>
       </div>
-      <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="primary-button" @click="favorite(selected.id)">{{library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>
+      <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="primary-button" :disabled="favoriteBusy(selected.id)" @click="favorite(selected.id)">{{favoriteBusy(selected.id)?'正在处理…':!favoriteReady?'重试收藏状态':library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>
     </template>
   </dialog>
-  <dialog ref="login" aria-labelledby="login-title" @close="pendingFavorite='' "><form @submit.prevent="loginSubmit"><div class="dialog-heading"><h2 id="login-title">保存你的收藏</h2><button type="button" class="icon-button" @click="login?.close()" aria-label="关闭登录">×</button></div><p class="dialog-intro">填写演示昵称，无需密码。收藏仅保存在当前浏览器，不创建真实账号。</p><label class="login-label">演示昵称<input v-model="nickname" maxlength="20" required placeholder="你的昵称"></label><div class="dialog-actions"><button class="primary-button" type="submit">登录体验</button></div></form></dialog>
+  <AuthDialog ref="login" :auth="auth" @success="loginSuccess" @dismiss="dismissLogin" />
   <div class="toast" role="status" aria-live="polite" v-if="toast">{{toast}}</div>
 </template>

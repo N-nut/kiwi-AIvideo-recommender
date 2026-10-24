@@ -8,4 +8,4 @@ COPY data /app/data
 RUN pip install --no-deps /app/backend && useradd --create-home kiwi && chown -R kiwi:kiwi /app
 USER kiwi
 EXPOSE 8000
-CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && python -m kiwi import && uvicorn kiwi.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && python -m kiwi import && uvicorn kiwi.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers"]

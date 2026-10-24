@@ -42,6 +42,50 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch):
         changed=copy.deepcopy(rows[0]);changed['title']='updated'
         with pytest.raises(RuntimeError): await import_works([changed],sessions,Fail(),settings,update=True)
         with sessions() as session: assert session.get(Work,'work-0').title=='Test 0'
+        # Exercise the account migration, real session lookup, ON CONFLICT and FK
+        # constraints over the same disposable PostgreSQL wire connection.
+        from fastapi.testclient import TestClient
+        from sqlalchemy.exc import IntegrityError
+        from kiwi.main import create_app
+        from kiwi.database import Favorite, User, UserSession, utc_now
+        from test_accounts import FastPasswords, HEADERS, register, login
+        from kiwi import auth as auth_module
+        monkeypatch.setattr(auth_module,'passwords',FastPasswords())
+        # PGlite has one backend; release the existing pool before opening the app.
+        engine.dispose()
+        with TestClient(create_app(Settings(ai_mode='baseline',database_url=url)),base_url='http://127.0.0.1:8000',headers=HEADERS) as client:
+            assert register(client).status_code==201
+            assert register(client,'user_a').status_code==409
+            assert client.get('/api/v1/auth/me').json()['user']['username']=='User_A'
+            assert client.put('/api/v1/me/favorites/work-0').status_code==200
+            assert client.put('/api/v1/me/favorites/work-0').status_code==200
+            imported=client.post('/api/v1/me/favorites/import',json={'work_ids':['work-0','work-1','missing','work-1']}).json()
+            assert imported=={'requested':4,'unique':3,'added':1,'already_saved':1,'skipped_unavailable':1}
+            assert client.get('/api/v1/me/favorites?page_size=1').json()['total']==2
+            assert len(client.get('/api/v1/me/favorites?page=2&page_size=1').json()['items'])==1
+            assert client.get('/api/v1/me/favorites/ids').json()['relation_total']==2
+            assert register(client,'User_B').status_code==201
+            assert client.get('/api/v1/me/favorites').json()['total']==0
+            assert client.delete('/api/v1/me/favorites/work-0').status_code==204
+            assert login(client).status_code==200
+            assert client.get('/api/v1/me/favorites').json()['total']==2
+            assert client.post('/api/v1/auth/logout').status_code==204
+            assert client.get('/api/v1/me/favorites').status_code==401
+        # Catch the actual FK violation inside PostgreSQL. PGlite's socket shim
+        # cannot recover psycopg's ROLLBACK after a statement-level error.
+        from sqlalchemy import text
+        with engine.begin() as connection:
+            connection.execute(text("""DO $$ BEGIN
+                BEGIN
+                    INSERT INTO favorites(user_id,work_id,created_at) VALUES ('missing','work-0',now());
+                    RAISE EXCEPTION 'Expected foreign key rejection';
+                EXCEPTION WHEN foreign_key_violation THEN NULL;
+                END;
+            END $$"""))
+        with sessions.begin() as session:session.execute(User.__table__.delete())
+        with sessions() as session:
+            assert session.scalars(select(Favorite)).all()==[]
+            assert session.scalars(select(UserSession)).all()==[]
     finally:
         command.downgrade(migration,'base')
         engine.dispose()

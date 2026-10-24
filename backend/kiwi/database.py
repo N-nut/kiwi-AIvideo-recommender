@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, create_engine, inspect, select, text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, create_engine, event, inspect, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -44,6 +44,31 @@ class CatalogRefresh(Base):
     payload: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
 
 
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    username: Mapped[str] = mapped_column(String(20))
+    username_key: Mapped[str] = mapped_column(String(20), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class Favorite(Base):
+    __tablename__ = "favorites"
+    __table_args__ = (Index("ix_favorites_user_created_work", "user_id", "created_at", "work_id"),)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="CASCADE"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 # Only the explicitly retired seed IDs; other manually imported data is preserved.
 RETIRED_IDS = tuple(f"bili-{i}" for i in (
     45128,102888,42977,102887,28092,103017,102867,32556,32430,102998,100171,102872,
@@ -60,6 +85,10 @@ def make_database(url):
         elif url.startswith("sqlite:///"):
             Path(url.removeprefix("sqlite:///")).parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(url, pool_pre_ping=True, **kwargs)
+    if engine.dialect.name == "sqlite":
+        @event.listens_for(engine, "connect")
+        def enable_foreign_keys(connection, _):
+            connection.execute("PRAGMA foreign_keys=ON")
     return engine, sessionmaker(engine, expire_on_commit=False)
 
 
@@ -89,3 +118,7 @@ def public_work(work):
 
 def utc_now():
     return datetime.now(timezone.utc)
+
+
+def as_utc(value):
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)

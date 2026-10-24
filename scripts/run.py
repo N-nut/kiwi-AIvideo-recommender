@@ -28,4 +28,4 @@ if not args.skip_import:
 engine.dispose()
 import uvicorn
 print(f'Kiwi: http://127.0.0.1:{args.port} ({settings.ai_mode})',flush=True)
-uvicorn.run('kiwi.main:app',host='127.0.0.1',port=args.port,log_level='info')
+uvicorn.run('kiwi.main:app',host='127.0.0.1',port=args.port,log_level='info',proxy_headers=False)

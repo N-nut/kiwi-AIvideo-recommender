@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Work } from '../types';
 import { workArt } from '../presentation';
 import { posterArt } from '../../../demo/art.mjs';
-const props = defineProps<{ work: Work; index: number; saved: boolean }>();
+const props = defineProps<{ work: Work; index: number; saved: boolean; favoriteBusy?:boolean; favoriteReady?:boolean }>();
 const emit = defineEmits<{ favorite: [id: string]; detail: [work: Work]; preview: [work: Work, anchor: HTMLElement, immediate: boolean]; previewLeave: [anchor: HTMLElement] }>();
 const art = computed(() => workArt(props.work));
 const coverFailed = ref(false);
@@ -29,7 +29,7 @@ function leavePreview(event: Event) { emit('previewLeave', event.currentTarget a
       <div v-else class="poster-svg" v-html="poster"></div><span class="poster-tag">{{work.source_meta?.content_type || work.genres[0] || '作品'}}</span>
       <span v-if="!hasCover" class="poster-wordmark"><strong>{{work.title.replace(/ 动态漫.*$/,'')}}</strong></span><span class="poster-arrow">{{work.source_meta?.content_type==='漫画'?'▤':'▷'}}</span><span class="hover-hint">{{work.source_meta?.content_type==='漫画'?'阅读资料预览':'模拟视频预览 · 非真实片段'}}</span>
     </button>
-    <div class="card-body"><div class="card-heading"><h3>{{work.title}}</h3><button class="card-favorite" @click="$emit('favorite',work.id)" :aria-pressed="saved" :aria-label="`${saved?'取消收藏':'收藏'}《${work.title}》`">{{saved?'♥':'♡'}}</button></div>
+    <div class="card-body"><div class="card-heading"><h3>{{work.title}}</h3><button class="card-favorite" :disabled="favoriteBusy" @click="$emit('favorite',work.id)" :aria-pressed="favoriteReady===false?undefined:saved" :aria-label="`${favoriteReady===false?'重试收藏状态':saved?'取消收藏':'收藏'}《${work.title}》`">{{favoriteBusy?'…':favoriteReady===false?'↻':saved?'♥':'♡'}}</button></div>
       <div class="card-tags"><span v-for="tag in tags" :key="tag" class="card-tag">{{tag}}</span><span v-if="!tags.length" class="card-tag">资料可追溯</span></div>
       <p v-if="work.source_meta?.rank" class="source-rank">红果热播榜 #{{work.source_meta.rank}} <span>{{work.source_meta.heat}}</span></p>
       <div class="match-box"><span v-if="work.reason" class="match-label">推荐理由</span><p>{{work.reason || work.summary}}</p><div v-if="work.caveats?.length" class="caveat">留意：{{work.caveats.join('；')}}</div></div>

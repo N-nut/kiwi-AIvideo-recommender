@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(os.environ.get("KIWI_PROJECT_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
@@ -31,6 +31,28 @@ class Settings(BaseSettings):
     crawl_timeout: float = Field(default=300, ge=1, le=300)
     index_timeout: float = Field(default=600, ge=1, le=600)
     refresh_timeout: float = Field(default=900, ge=1, le=900)
+    auth_cookie_secure: bool = False
+    auth_session_seconds: int = Field(default=604800, ge=60, le=604800)
+    auth_allowed_origins: str = "http://127.0.0.1:8000,http://localhost:8000,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:8080,http://localhost:8080"
+    auth_login_ip_limit: int = Field(default=30, ge=1, le=30)
+    auth_login_failure_limit: int = Field(default=5, ge=1, le=5)
+    auth_register_limit: int = Field(default=10, ge=1, le=10)
+    auth_hash_concurrency: int = Field(default=2, ge=1, le=2)
+    auth_limiter_capacity: int = Field(default=10000, ge=10, le=100000)
+
+    @model_validator(mode="after")
+    def validate_auth_origins(self):
+        from urllib.parse import urlsplit
+        for origin in self.auth_allowed_origins.split(","):
+            parsed = urlsplit(origin.strip())
+            if (parsed.scheme not in ("http", "https") or not parsed.hostname or "*" in parsed.hostname or parsed.username
+                    or parsed.password or parsed.path or parsed.query or parsed.fragment):
+                raise ValueError("AUTH_ALLOWED_ORIGINS 必须是完整来源，不能含路径或通配符")
+            if parsed.port == 0:
+                raise ValueError("AUTH_ALLOWED_ORIGINS 的端口必须为 1～65535")
+            if not self.auth_cookie_secure and not (parsed.scheme == "http" and parsed.hostname in {"127.0.0.1", "localhost", "::1"}):
+                raise ValueError("仅回环 HTTP 开发来源允许 AUTH_COOKIE_SECURE=false")
+        return self
 
     @property
     def configured(self):

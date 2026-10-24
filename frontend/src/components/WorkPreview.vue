@@ -5,7 +5,7 @@ import { workArt, workClip } from '../presentation';
 import { posterArt } from '../../../demo/art.mjs';
 import { createHoverIntent, previewPosition } from '../../../demo/library.mjs';
 
-const props = defineProps<{ saved: (id: string) => boolean }>();
+const props = defineProps<{ saved: (id: string) => boolean; favoriteBusy?:(id:string)=>boolean; favoriteReady?:boolean }>();
 const emit = defineEmits<{ detail: [work: Work]; favorite: [id: string] }>();
 const active = shallowRef<{ work: Work; anchor: HTMLElement } | null>(null);
 const panel = ref<HTMLElement>();
@@ -142,7 +142,7 @@ defineExpose({ enter, leave, close });
           <button class="preview-close" :aria-label="isComic?'关闭漫画预览':'关闭视频预览'" @click="close(true)">×</button>
         </div>
         <div class="preview-body">
-          <div class="preview-heading"><div><span class="preview-meta">{{active.work.genres.join(' · ') || '动态漫'}}</span><h2>{{active.work.title}}</h2></div><button class="preview-favorite" :aria-pressed="props.saved(active.work.id)" @click="saveFavorite">{{props.saved(active.work.id)?'♥ 已收藏':'♡ 收藏'}}</button></div>
+          <div class="preview-heading"><div><span class="preview-meta">{{active.work.genres.join(' · ') || '动态漫'}}</span><h2>{{active.work.title}}</h2></div><button class="preview-favorite" :disabled="props.favoriteBusy?.(active.work.id)" :aria-pressed="props.favoriteReady===false?undefined:props.saved(active.work.id)" @click="saveFavorite">{{props.favoriteBusy?.(active.work.id)?'正在处理…':props.favoriteReady===false?'重试收藏状态':props.saved(active.work.id)?'♥ 已收藏':'♡ 收藏'}}</button></div>
           <div class="card-tags"><span class="card-tag" v-for="tag in active.work.themes.slice(0,4)" :key="tag">{{tag}}</span></div>
           <p class="preview-intro">{{active.work.summary}}</p>
           <p v-if="active.work.reason" class="preview-caveat">{{active.work.reason}}</p>
