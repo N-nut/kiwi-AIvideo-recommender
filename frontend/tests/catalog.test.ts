@@ -2,9 +2,9 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import App from '../src/App.vue';
 import WorkCard from '../src/components/WorkCard.vue';
-import { workFixture } from './work-fixture';
+import { homeFixture, workFixture } from './work-fixture';
 
-const response=(data:unknown,status=200)=>Promise.resolve(new Response(JSON.stringify(data),{status}));
+const response=(data:any,status=200)=>Promise.resolve(new Response(JSON.stringify(data?.items?{...homeFixture(data.items),...data}:data),{status}));
 const initial={status:'idle',message:'尚未同步'};
 const work=workFixture({id:'hongguo-12345678',title:'真实来源作品',cover_url:'https://p3-novel.byteimg.com/test.image',source_meta:{provider:'hongguo',content_type:'真人剧',tags:['爱情'],pages:[],rank:3,heat:'123万热度',episode_count:30}});
 let wrapper:ReturnType<typeof mount>;
@@ -92,8 +92,8 @@ describe('server paging, category filters',()=>{
       const params=new URL(url,'http://localhost').searchParams;
       return response({items:[workFixture({id:`page-${params.get('page')}`,title:`第${params.get('page')}页作品`})],total:51});
     });vi.stubGlobal('fetch',fetcher);wrapper=mount(App);await flushPromises();
-    expect(fetcher.mock.calls.filter(([url])=>url.includes('/works?'))).toHaveLength(1);
-    expect(new URL(fetcher.mock.calls.find(([url])=>url.includes('/works?'))![0],'http://localhost').searchParams.get('page_size')).toBe('6');
+    expect(fetcher.mock.calls.filter(([url])=>url.includes('/works?'))).toHaveLength(0);
+    expect(fetcher.mock.calls.some(([url])=>url==='/api/v1/home/recommendations')).toBe(true);
     await button('片库').trigger('click');await flushPromises();await button('下一页').trigger('click');await flushPromises();
     expect(wrapper.find('.drama-card h3').text()).toBe('第2页作品');
     await wrapper.find('.content-type-filters').findAll('button').find(b=>b.text()==='漫画')!.trigger('click');await flushPromises();

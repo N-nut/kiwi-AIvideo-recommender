@@ -25,12 +25,12 @@ async function run() {
   const account=props.auth.scope();busy.value=true;error.value='';result.value='';progress.value='';
   try {
     const stats=await importGroup(group,ids=>account.request<ImportStats>('/api/v1/me/favorites/import',{work_ids:ids}),
-      (done,remaining)=>{if(account.current()) progress.value=`已完成 ${done} 批，剩余 ${remaining} 部`;});
+      (done,remaining)=>{if(account.current()) {progress.value=`已完成 ${done} 批，剩余 ${remaining} 部`;props.library.revision.value++;}});
     if(!account.current()) return;
     markImported(importMarker(user.id,group),history);
     result.value=`导入完成：新增 ${stats.added} 部，账号已有 ${stats.already_saved} 部，跳过不可用 ${stats.skipped_unavailable} 部。`;
   } catch(exc) {if(account.current()) error.value=`${exc instanceof Error?exc.message:'导入失败'}。已完成批次仍保留，可重新导入，重复作品会跳过。`;}
-  finally {if(account.current()){busy.value=false;props.library.revision.value++;await props.library.load();}}
+  finally {if(account.current()){busy.value=false;await props.library.load();}}
 }
 defineExpose({open});
 </script>

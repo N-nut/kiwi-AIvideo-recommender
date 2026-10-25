@@ -23,9 +23,10 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
   async function load() {
     const request=lane.begin();
     if(view.value==='favorites') {loading.value=false;await loadFavorites();return;}
+    if(view.value==='discover') {loading.value=false;error.value='';return;}
     loading.value=true;error.value='';
     const currentView=view.value, currentPage=page.value;
-    const params=new URLSearchParams({page_size:currentView==='discover'?'6':'12',page:String(currentView==='discover'?1:currentPage)});
+    const params=new URLSearchParams({page_size:'12',page:String(currentPage)});
     if(currentView==='catalog') {
       if(genre.value!=='全部') params.set('genre',genre.value);
       if(contentType.value!=='全部') params.set('content_type',contentType.value);

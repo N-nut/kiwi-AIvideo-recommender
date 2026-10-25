@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-25",
+  "strategy_version": "favorites-tags-v1",
+  "database": ".local\\home-recommendations-mvnbv7wi.db",
+  "public_works": 434,
+  "mode": "baseline",
+  "checks": [
+    "guest receives real public content and prompts do not auto-submit",
+    "favorite saves update personalized carousel and tag-derived prompts",
+    "second cookie store and different favorite styles remain isolated",
+    "canceling the last favorite restores default and confirmed legacy import refreshes again",
+    "private 503 uses public fallback and retry restores personalization without changing the query",
+    "logout and account switch clear old personalization while preserving the active list",
+    "desktop and mobile stay within the viewport without page errors"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 2160,
+      "height": 1150,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "external_covers_blocked": true,
+  "account_a": {
+    "favorite": "hongguo-7668904735717477400",
+    "first": "hongguo-7685713332619201561",
+    "prompts": [
+      "修仙战斗",
+      "修仙穿越",
+      "玄幻战斗",
+      "玄幻穿越"
+    ]
+  },
+  "account_b": {
+    "favorite": "hongguo-7689759731010767896",
+    "first": "hongguo-7693090206953507864",
+    "prompts": [
+      "末世系统",
+      "都市系统",
+      "末世",
+      "系统"
+    ]
+  }
+}

@@ -111,9 +111,11 @@ def initialize(engine):
             connection.execute(CatalogRefresh.__table__.insert().values(id="seed-retired", payload={"count": 36}))
 
 
+PUBLIC_WORK_FIELDS = ("id", "title", "original_intro", "summary", "genres", "themes", "pace", "harem", "romance", "tragic", "source_url", "cover_url", "source_meta", "collected_at", "evidence", "review_note")
+
+
 def public_work(work):
-    fields = ["id", "title", "original_intro", "summary", "genres", "themes", "pace", "harem", "romance", "tragic", "source_url", "cover_url", "source_meta", "collected_at", "evidence", "review_note"]
-    return {key: getattr(work, key) for key in fields}
+    return {key: getattr(work, key) for key in PUBLIC_WORK_FIELDS}
 
 
 def utc_now():

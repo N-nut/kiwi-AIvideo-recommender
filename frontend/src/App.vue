@@ -6,6 +6,7 @@ import { emptyPreferences, genres, fieldNames, collectionCategories } from './ty
 import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
 import { useAuth } from './useAuth';
+import { useHomeRecommendations } from './useHomeRecommendations';
 import AuthDialog from './components/AuthDialog.vue';
 import LegacyImport from './components/LegacyImport.vue';
 import WorkCard from './components/WorkCard.vue';
@@ -22,6 +23,7 @@ const auth=useAuth();
 const library = useLibrary(auth);
 const shelf = useCatalog(library,auth);
 const {view,genre:category,contentType,page:catalogPage,visibleWorks,displayTotal,pages:catalogPages,loading:catalogLoading,error:catalogError,favoriteCount,favoriteLoading,favoriteError}=shelf;
+const home=useHomeRecommendations(auth,library,view);
 const result = ref<Recommendation|null>(null);
 const updateDialog=ref<HTMLDialogElement>();
 const selectedCategories=ref(['comic-drama','ai-drama']); const includeHotRank=ref(false);
@@ -40,13 +42,9 @@ const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|nu
 const pendingView=ref(false);
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
-// Fixed style examples until the favorites recommendation backend is implemented.
-const promptExamples = [
-  {label:'修仙逆袭',text:'想看修仙题材，主角逐渐成长、逆袭的故事。'},
-  {label:'穿越重生',text:'想看穿越或重生后重新开始的故事。'},
-  {label:'末世系统',text:'想看末世题材，带有系统和冒险元素的故事。'},
-  {label:'都市成长',text:'想看都市题材，主角逐渐成长、实现逆袭的故事。'},
-];
+function choosePrompt(text:string) {
+  lane.cancel();busy.value=false;parsed.value=false;prefs.value=emptyPreferences();result.value=null;error.value='';query.value=text;
+}
 const updating = computed(() => refreshStarting.value || refresh.value.status==='running');
 const updatedTime = computed(() => refresh.value.last_success_at ? new Date(refresh.value.last_success_at).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '尚未同步');
 const chips = computed(() => [...prefs.value.soft_preferences.genres,...prefs.value.soft_preferences.themes,...(prefs.value.soft_preferences.pace?[`节奏${prefs.value.soft_preferences.pace}`]:[]),...prefs.value.required.map(r=>`必须 ${fieldNames[r.field]}：${typeof r.value==='boolean'?(r.value?'有':'无'):r.value}`),...prefs.value.excluded_features.map(f=>`不要${fieldNames[f]}`),...prefs.value.excluded_genres.map(g=>`不要${g}`)]);
@@ -102,7 +100,7 @@ async function acceptRefresh(state:CatalogRefresh, finished=false) {
   refresh.value=state;
   if(state.cooldown&&state.status!=='succeeded') message('刚刚尝试过更新，请稍后再试');
   if(state.status==='succeeded'&&finished) {
-    lane.cancel(); busy.value=false; result.value=null; preview.value?.close(); detail.value?.close();
+    home.invalidate();
     await Promise.all([shelf.reload(),loadHealth()]);
     message(state.cooldown?'刚刚已更新，请稍后再次同步':state.message);
   }
@@ -240,18 +238,20 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
     <LegacyImport ref="legacy" :auth="auth" :library="library" />
 
     <section v-if="view==='discover'">
-      <FeaturedCarousel :works="shelf.works.value" :suspended="busy" @detail="showDetail" />
-      <div v-if="catalogError" class="featured-status" role="alert"><span>{{catalogError}}</span><button class="text-button" @click="loadCatalog">重新加载片库</button></div>
-      <p v-else-if="catalogLoading" class="featured-status" role="status">正在加载轮播作品…</p>
-      <p v-else-if="!shelf.works.value.length" class="featured-status">片库还没有作品，点击侧栏“更新漫剧库”即可加载。</p>
+      <FeaturedCarousel :works="home.works.value" :suspended="busy" @detail="showDetail" />
+      <div v-if="home.error.value" class="featured-status" role="alert"><span>{{home.error.value}}</span><button class="text-button" @click="home.load">重新加载首页推荐</button></div>
+      <p v-else-if="home.loading.value" class="featured-status" role="status">正在加载首页推荐…</p>
+      <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库还没有可展示的剧集，点击侧栏“更新漫剧库”即可加载。'}}</p>
+      <div v-if="home.notice.value" class="featured-status" role="status">{{home.notice.value}} <button class="text-button" @click="home.load">重试个性化推荐</button></div>
+      <p v-if="home.data.value?.warnings.length" class="featured-status" role="status">{{home.data.value.warnings.join('；')}}</p>
       <section class="composer" aria-labelledby="composer-title">
         <div class="section-top"><div><h2 id="composer-title">今天，想看点什么？</h2></div></div>
         <div class="composer-grid">
           <div class="query-column">
             <label class="sr-only" for="query">描述你的观剧需求</label>
             <textarea id="query" v-model="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
-            <div class="input-bottom prompt-intro"><span id="favorite-prompts-title">根据您的收藏，猜您喜欢：<small class="prompt-example-badge">示例</small></span><span class="query-count">{{query.length}} / 300</span></div>
-            <div class="example-buttons favorite-prompt-examples" role="group" aria-labelledby="favorite-prompts-title"><button type="button" class="example-button" v-for="prompt in promptExamples" :key="prompt.label" @click="query=prompt.text">{{prompt.label}}</button></div>
+            <div class="input-bottom prompt-intro"><span id="favorite-prompts-title">{{home.promptTitle.value}}</span><span class="query-count">{{query.length}} / 300</span></div>
+            <div class="example-buttons favorite-prompt-examples" role="group" aria-labelledby="favorite-prompts-title"><button type="button" class="example-button" v-for="prompt in home.prompts.value" :key="prompt.label" @click="choosePrompt(prompt.text)">{{prompt.label}}</button></div>
             <p v-if="error" class="field-error" role="alert">{{error}}</p>
           </div>
           <div class="taste-panel">

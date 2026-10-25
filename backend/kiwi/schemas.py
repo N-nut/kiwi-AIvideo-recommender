@@ -177,3 +177,52 @@ class GeneratedReason(StrictModel):
 
 class ReasonBatch(StrictModel):
     items: list[GeneratedReason] = Field(max_length=3)
+
+
+class PublicWork(StrictModel):
+    id: str
+    title: str
+    original_intro: str
+    summary: str
+    genres: list[str]
+    themes: list[str]
+    pace: str | None
+    harem: bool | None
+    romance: bool | None
+    tragic: bool | None
+    source_url: str
+    cover_url: str | None
+    source_meta: SourceMetadata | None
+    collected_at: str
+    evidence: list[Evidence]
+    review_note: str
+
+
+class MatchedFeatures(StrictModel):
+    content_type: list[Literal["真人剧", "漫剧", "AI剧"]] = Field(default_factory=list, max_length=1)
+    genres: list[str] = Field(default_factory=list, max_length=10)
+    themes: list[str] = Field(default_factory=list, max_length=10)
+
+
+class HomeWorkItem(PublicWork):
+    basis: Literal["favorites", "public"]
+    matched_features: MatchedFeatures
+    reason: str = Field(min_length=1, max_length=300)
+
+
+class PromptSuggestion(StrictModel):
+    label: str = Field(min_length=1, max_length=16)
+    text: str = Field(min_length=1, max_length=300)
+    basis: Literal["favorites", "public"]
+    genres: list[str] = Field(default_factory=list, max_length=1)
+    themes: list[str] = Field(default_factory=list, max_length=1)
+
+
+class HomeRecommendationResponse(StrictModel):
+    request_id: str
+    strategy_version: Literal["favorites-tags-v1"] = "favorites-tags-v1"
+    carousel_mode: Literal["personalized", "mixed", "default"]
+    prompts_mode: Literal["personalized", "default"]
+    items: list[HomeWorkItem] = Field(max_length=6)
+    prompts: list[PromptSuggestion] = Field(max_length=4)
+    warnings: list[str] = Field(default_factory=list)

@@ -1,7 +1,7 @@
 import { mount,flushPromises } from '@vue/test-utils';
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest';
 import App from '../src/App.vue';
-import { workFixture } from './work-fixture';
+import { homeFixture, workFixture } from './work-fixture';
 
 const work=workFixture({id:'work-a'});
 const response=(body:unknown,status=200)=>Promise.resolve(new Response(status===204?null:JSON.stringify(body),{status}));
@@ -18,6 +18,7 @@ function server(initialUser:string|null=null) {
   let user=initialUser,failWrite=false,failLogout=false,failMe=false,failIds=false,expireWrite=false;
   const saved:Record<string,Set<string>>={Alpha:new Set(),Beta:new Set()};
   const fetcher=vi.fn((url:string,options?:RequestInit):Promise<Response>=>{
+    if(url.includes('/home/recommendations')||url.endsWith('/home-recommendations'))return response(homeFixture());
     if(url==='/api/v1/auth/me')return failMe?response({error:{message:'账号检查失败'}},503):response({user:user?{id:`uuid-${user}`,username:user}:null});
     if(url.endsWith('/auth/register')||url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:`uuid-${user}`,username:user}},url.endsWith('/register')?201:200);}
     if(url.endsWith('/auth/logout')){if(failLogout)return response({error:{message:'退出失败，请重试'}},503);user=null;return response(null,204);}

@@ -1,7 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App.vue';
-import { workFixture } from './work-fixture';
+import { homeFixture, workFixture } from './work-fixture';
 
 let wrapper: ReturnType<typeof mount>;
 async function openDetail() {
@@ -18,6 +18,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(new Response(JSON.stringify(url.startsWith('/health')
     ? { status: 'ready', mode: 'live' }
     : url.includes('/catalog/refresh') ? {status:'idle',message:'尚未同步'}
+    : url==='/api/v1/home/recommendations' ? homeFixture()
     : { items: [workFixture({ original_intro: '很长的作品简介。'.repeat(100) })], total: 1 })))));
 });
 afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -25,7 +26,7 @@ afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals(
 describe('long work details', () => {
   it('shows readable content and groups duplicate evidence without exposing internal IDs',async()=>{
     const tagQuote='来源标签：玄幻、穿越';
-    vi.stubGlobal('fetch',vi.fn((url:string)=>Promise.resolve(new Response(JSON.stringify(url.startsWith('/health')?{}:url.includes('/catalog/refresh')?{status:'idle'}:{items:[workFixture({original_intro:`完整故事简介。\n\n${tagQuote}`,evidence:[{id:'summary-1',field:'summary',quote:'完整故事简介。'},{id:'genres-1',field:'genres',quote:tagQuote},{id:'themes-1',field:'themes',quote:tagQuote}]})],total:1})))));
+    vi.stubGlobal('fetch',vi.fn((url:string)=>Promise.resolve(new Response(JSON.stringify(url.startsWith('/health')?{}:url.includes('/catalog/refresh')?{status:'idle'}:url==='/api/v1/home/recommendations'?homeFixture():{items:[workFixture({original_intro:`完整故事简介。\n\n${tagQuote}`,evidence:[{id:'summary-1',field:'summary',quote:'完整故事简介。'},{id:'genres-1',field:'genres',quote:tagQuote},{id:'themes-1',field:'themes',quote:tagQuote}]})],total:1})))));
     const dialog=await openDetail();
     expect(dialog.find('.detail-intro').text()).toBe('完整故事简介。');
     expect(dialog.text()).not.toMatch(/EVERY STORY|summary-1|genres-1|themes-1/);

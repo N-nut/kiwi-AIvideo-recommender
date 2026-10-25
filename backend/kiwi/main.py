@@ -6,7 +6,7 @@ import uuid
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,10 +19,11 @@ from .catalog import CatalogManager
 from .database import Work, initialize, make_database, public_work
 from .providers import BaselineAI, LiveAI, ProviderError
 from .repository import array_has
-from .schemas import ContentType, ParseRequest, RecommendationRequest, RefreshRequest
+from .schemas import ContentType, HomeRecommendationResponse, ParseRequest, RecommendationRequest, RefreshRequest
 from .service import recommend
-from .auth import AuthManager, protect_write, router as auth_router
+from .auth import AuthManager, get_current_user, problem, protect_write, router as auth_router
 from .favorites import router as favorites_router
+from .home_recommendations import home_recommendations
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -61,7 +62,7 @@ def create_app(settings=None, provider_factory=None, collector=None):
         private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
         def finish(response):
             response.headers["X-Request-ID"] = request.state.request_id
-            if private:
+            if private or request.url.path == "/api/v1/home/recommendations":
                 response.headers["Cache-Control"] = "no-store"
             return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.
@@ -149,6 +150,23 @@ def create_app(settings=None, provider_factory=None, collector=None):
         result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id), settings.request_timeout)
         log.info(json.dumps({"request_id": result["request_id"], "stage_ms": result["timings_ms"], "candidates": len(result["candidate_ids"]), "mode": settings.ai_mode, "usage": result["usage"]}))
         return result
+
+    def home_response(request, user_id=None):
+        if request.query_params:
+            raise problem(422, "unexpected_field", "首页推荐不接受额外参数")
+        try:
+            return home_recommendations(sessions, request.state.request_id, user_id)
+        except Exception as exc:
+            log.error({"request_id": request.state.request_id, "stage": "home_recommendations", "error_type": type(exc).__name__})
+            raise problem(503, "home_unavailable", "首页推荐暂时不可用，请稍后重试") from None
+
+    @app.get("/api/v1/home/recommendations", response_model=HomeRecommendationResponse)
+    def public_home(request: Request):
+        return home_response(request)
+
+    @app.get("/api/v1/me/home-recommendations", response_model=HomeRecommendationResponse)
+    def private_home(request: Request, user=Depends(get_current_user)):
+        return home_response(request, user["id"])
 
     @app.get("/api/v1/catalog/refresh")
     async def refresh_state():

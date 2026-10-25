@@ -15,6 +15,17 @@ export interface Work {
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }
 export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string }
+export interface HomeWorkItem extends Work {
+  basis: 'favorites' | 'public';
+  matched_features: {content_type:string[];genres:string[];themes:string[]};
+  reason: string;
+}
+export interface PromptSuggestion {label:string;text:string;basis:'favorites'|'public';genres:string[];themes:string[]}
+export interface HomeRecommendation {
+  request_id:string;strategy_version:'favorites-tags-v1';
+  carousel_mode:'personalized'|'mixed'|'default';prompts_mode:'personalized'|'default';
+  items:HomeWorkItem[];prompts:PromptSuggestion[];warnings:string[];
+}
 export interface RefreshScope { categories: string[]; include_hot_rank: boolean }
 export interface CatalogRefresh { status: 'idle' | 'running' | 'succeeded' | 'failed'; message: string; limits?:{pages_per_source:number;max_pages:number;max_works:number}; run_id?: string; scope?: RefreshScope; stage?:string; category?:string; current_page?:number; pages_done?:number; raw_count?:number; unique_count?:number; indexed?:number; index_total?:number; last_success_at?: string; cooldown?: boolean; reused?:boolean; result?: { total: number; catalog_total?:number; new?:number; updated?:number; unchanged?:number; embedded?:number; pages_done?:number; raw_count?:number; coverage?:'complete'|'limited'; indexing_enabled?:boolean; indexed_total?:number; same_title_groups?:number; filtered_unclassified?:number } | null }
 export const collectionCategories = [{value:'comic-drama',label:'漫剧'},{value:'ai-drama',label:'AI剧'},{value:'real-drama',label:'真人剧'},{value:'comic',label:'漫画'}];

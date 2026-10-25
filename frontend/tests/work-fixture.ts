@@ -1,4 +1,13 @@
-import type { Work } from '../src/types';
+import type { HomeRecommendation, Work } from '../src/types';
+
+export function homeFixture(items:Work[]=[],overrides:Partial<HomeRecommendation>={}):HomeRecommendation {
+  return {request_id:'home-test',strategy_version:'favorites-tags-v1',carousel_mode:'default',prompts_mode:'default',warnings:[],
+    items:items.map(work=>({...work,basis:'public',matched_features:{content_type:[],genres:[],themes:[]},reason:'片库精选'})),
+    prompts:[{label:'修仙逆袭',text:'想看修仙题材，偏好逆袭主题。',basis:'public',genres:[],themes:[]},
+      {label:'穿越重生',text:'想看带有穿越和重生元素的故事。',basis:'public',genres:[],themes:[]},
+      {label:'末世系统',text:'想看末世题材，偏好系统主题。',basis:'public',genres:[],themes:[]},
+      {label:'都市成长',text:'想看都市题材，偏好成长主题。',basis:'public',genres:[],themes:[]}],...overrides};
+}
 
 export function workFixture(overrides: Partial<Work> = {}): Work {
   return {

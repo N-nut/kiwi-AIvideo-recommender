@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { Work } from '../types';
+import type { HomeWorkItem, Work } from '../types';
 
-const props=defineProps<{ works:Work[]; suspended?:boolean }>();
+const props=defineProps<{ works:(Work | HomeWorkItem)[]; suspended?:boolean }>();
 const emit=defineEmits<{ detail:[work:Work] }>();
-// This selection deliberately uses catalog order; favorites do not affect it yet.
+// Keep the server's candidate order while retaining defensive display checks.
 const slides=computed(()=>Array.from(new Map(props.works.filter(w=>w.cover_url&&w.source_meta?.content_type&&w.source_meta.content_type!=='未标注'&&w.source_meta.content_type!=='漫画').map(w=>[w.id,w])).values()).slice(0,6));
 const current=ref(0), reducedMotion=ref(false), hovered=ref(false), focused=ref(false), hidden=ref(false);
 const failed=ref(new Set<string>());
@@ -28,12 +28,13 @@ onUnmounted(()=>{clearInterval(timer);motion?.removeEventListener?.('change',mot
 </script>
 
 <template>
-  <section v-if="active" class="featured-carousel" aria-label="片库精选" aria-roledescription="轮播" tabindex="0" @pointerenter="hovered=true" @pointerleave="hovered=false" @focusin="focused=true" @focusout="focusOut" @keydown.left.prevent="go(current-1)" @keydown.right.prevent="go(current+1)">
+  <section v-if="active" class="featured-carousel" aria-label="首页作品推荐" aria-roledescription="轮播" tabindex="0" @pointerenter="hovered=true" @pointerleave="hovered=false" @focusin="focused=true" @focusout="focusOut" @keydown.left.prevent="go(current-1)" @keydown.right.prevent="go(current+1)">
     <div class="featured-copy" role="group" aria-roledescription="幻灯片" :aria-label="`第 ${current+1} 部，共 ${slides.length} 部`">
-      <span class="featured-label">片库精选</span>
+      <span class="featured-label">{{'basis' in active && active.basis==='favorites'?'根据收藏推荐':'片库精选'}}</span>
       <h1>{{active.title}}</h1>
       <div class="featured-meta"><span>{{active.source_meta?.content_type}}</span><span v-for="tag in active.genres.slice(0,2)" :key="tag">{{tag}}</span><span v-if="active.source_meta?.episode_count">全 {{active.source_meta.episode_count}} 集</span></div>
       <p>{{active.summary}}</p>
+      <p v-if="'basis' in active && active.basis==='favorites'" class="featured-reason">{{active.reason}}</p>
       <button class="featured-detail" @click="emit('detail',active)">查看详情 <span aria-hidden="true">›</span></button>
     </div>
     <button class="featured-poster" :aria-label="`查看《${active.title}》详情`" @click="emit('detail',active)">

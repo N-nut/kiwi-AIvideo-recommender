@@ -50,7 +50,7 @@ test('文档表格各行列数一致，接口与字段约定不会因漏写分�
   }
 });
 
-test('待实现推荐接口的文档示例在数量、来源和隐私字段上自洽', async () => {
+test('推荐接口的文档示例在数量、来源和隐私字段上自洽', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
   const section = source.slice(source.indexOf('## 11.'));
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)];

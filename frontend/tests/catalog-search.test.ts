@@ -1,7 +1,7 @@
 import { mount,flushPromises } from '@vue/test-utils';
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest';
 import App from '../src/App.vue';
-import { workFixture } from './work-fixture';
+import { homeFixture, workFixture } from './work-fixture';
 const response=(data:unknown,status=200)=>Promise.resolve(new Response(JSON.stringify(data),{status}));
 let wrapper:ReturnType<typeof mount>;
 const button=(text:string)=>wrapper.findAll('button').find(b=>b.text().includes(text))!;
@@ -9,6 +9,7 @@ beforeEach(()=>{vi.useFakeTimers();localStorage.clear();HTMLDialogElement.protot
 afterEach(()=>{wrapper?.unmount();vi.useRealTimers();vi.unstubAllGlobals();});
 function server(override?:(url:string)=>Promise<Response>|undefined) {
   const fetcher=vi.fn((url:string)=>{
+    if(url==='/api/v1/home/recommendations')return response(homeFixture());
     if(url.endsWith('/auth/me'))return response({user:null});
     if(url.startsWith('/health'))return response({works:434});
     if(url.includes('/catalog/refresh'))return response({status:'idle'});
@@ -71,6 +72,8 @@ describe('sidebar and catalogue search',()=>{
     let fail=true;const fetcher=server(url=>new URL(url,'http://local').searchParams.has('q')&&fail?response({error:{message:'搜索暂时不可用'}},503):undefined);
     await catalog();await wrapper.find('#catalog-search').setValue('玄幻');await wrapper.find('.catalog-search').trigger('submit');await flushPromises();expect(wrapper.text()).toContain('搜索暂时不可用');
     fail=false;await wrapper.find('main [role=alert] .text-button').trigger('click');await flushPromises();expect(wrapper.find('.drama-card h3').text()).toBe('玄幻的故事');
-    await button('发现好剧').trigger('click');await flushPromises();const params=new URL(fetcher.mock.calls.at(-1)![0],'http://local').searchParams;expect(params.has('q')).toBe(false);expect(params.get('page_size')).toBe('6');
+    const homeCalls=fetcher.mock.calls.filter(([url])=>url==='/api/v1/home/recommendations').length;
+    await button('发现好剧').trigger('click');await flushPromises();expect(fetcher.mock.calls.filter(([url])=>url==='/api/v1/home/recommendations')).toHaveLength(homeCalls);
+    expect(wrapper.find('.catalog-search').exists()).toBe(false);expect(wrapper.find('#favorite-prompts-title').text()).toBe('换个口味试试：');
   });
 });

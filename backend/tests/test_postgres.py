@@ -71,11 +71,42 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch):
             assert client.get('/api/v1/me/favorites?page_size=1').json()['total']==2
             assert len(client.get('/api/v1/me/favorites?page=2&page_size=1').json()['items'])==1
             assert client.get('/api/v1/me/favorites/ids').json()['relation_total']==2
+            # The same works and favorites must give identical SQLite/PostgreSQL
+            # home responses, including JSONB filtering, stable order and prompts.
+            from kiwi.database import public_work
+            from kiwi.home_recommendations import home_recommendations
+            from test_home_recommendations import home_work, seed
+            seed(client, [home_work(record, 'home-favorite'), home_work(record, 'home-similar'),
+                          home_work(record, 'home-public', genres=['都市'], themes=['经营']),
+                          home_work(record, 'home-comic', kind='漫画'),
+                          home_work(record, 'home-no-cover', cover_url='  '),
+                          home_work(record, 'home-pending', review_status='pending')])
+            assert client.put('/api/v1/me/favorites/home-favorite').status_code==200
+            pg_home=client.get('/api/v1/me/home-recommendations').json()
+            assert pg_home['carousel_mode']=='mixed' and pg_home['items'][0]['id']=='home-similar'
+            assert pg_home['items'][1]['id']=='home-public' and pg_home['items'][1]['basis']=='public'
+            sqlite_engine,sqlite_sessions=make_database('sqlite:///:memory:')
+            initialize(sqlite_engine)
+            try:
+                parity_user_id=client.get('/api/v1/auth/me').json()['user']['id']
+                with client.app.state.sessions() as session:
+                    copies=[{**public_work(work),'review_status':work.review_status,'content_hash':work.content_hash} for work in session.scalars(select(Work))]
+                    favorite_ids=session.scalars(select(Favorite.work_id).where(Favorite.user_id==parity_user_id)).all()
+                with sqlite_sessions.begin() as session:
+                    session.add(User(id='parity-user',username='parity',username_key='parity',password_hash='test-only',created_at=utc_now()))
+                    session.add_all(Work(**row) for row in copies)
+                with sqlite_sessions.begin() as session:
+                    session.add_all(Favorite(user_id='parity-user',work_id=id,created_at=utc_now()) for id in favorite_ids)
+                expected=home_recommendations(sqlite_sessions,pg_home['request_id'],'parity-user').model_dump(mode='json')
+                assert pg_home==expected
+                assert client.get('/api/v1/home/recommendations').json()['prompts_mode']=='default'
+            finally:
+                sqlite_engine.dispose()
             assert register(client,'User_B').status_code==201
             assert client.get('/api/v1/me/favorites').json()['total']==0
             assert client.delete('/api/v1/me/favorites/work-0').status_code==204
             assert login(client).status_code==200
-            assert client.get('/api/v1/me/favorites').json()['total']==2
+            assert client.get('/api/v1/me/favorites').json()['total']==3
             assert client.post('/api/v1/auth/logout').status_code==204
             assert client.get('/api/v1/me/favorites').status_code==401
         # Catch the actual FK violation inside PostgreSQL. PGlite's socket shim
