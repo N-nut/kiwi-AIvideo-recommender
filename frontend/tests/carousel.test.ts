@@ -11,20 +11,30 @@ describe('six real-cover featured slides',()=>{
   it('has six selectors, wraps arrows, and opens the selected work',async()=>{
     wrapper=mount(FeaturedCarousel,{props:{works:works()}});
     expect(wrapper.findAll('.featured-pages button')).toHaveLength(6);
+    expect(wrapper.findAll('.featured-control')).toHaveLength(2);
+    expect(wrapper.findAll('.featured-control svg')).toHaveLength(2);
+    expect(wrapper.find('.featured-pause').exists()).toBe(false);
     await wrapper.find('[aria-label="上一部精选"]').trigger('click');expect(wrapper.find('h1').text()).toBe('精选作品6');
     await wrapper.find('[aria-label="下一部精选"]').trigger('click');expect(wrapper.find('h1').text()).toBe('精选作品1');
     await wrapper.findAll('.featured-pages button')[3]!.trigger('click');await wrapper.find('.featured-poster').trigger('click');
     expect(wrapper.emitted('detail')![0]![0]).toMatchObject({id:'featured-3'});
     expect(wrapper.find('img').attributes('src')).toContain('/3.jpg');
   });
-  it('autoplays but pauses during hover, manual pause and an open modal',async()=>{
+  it('autoplays and suspends during hover or an open modal without a manual pause control',async()=>{
     wrapper=mount(FeaturedCarousel,{props:{works:works()}});await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品2');
     await wrapper.find('section').trigger('pointerenter');await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品2');
-    await wrapper.find('section').trigger('pointerleave');await wrapper.find('[aria-label="暂停轮播"]').trigger('click');await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品2');
-    await wrapper.find('[aria-label="开启自动轮播"]').trigger('click');
+    await wrapper.find('section').trigger('pointerleave');
     const modal=document.createElement('dialog');modal.setAttribute('open','');document.body.append(modal);
     await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品2');modal.remove();
     await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品3');
+  });
+  it('tracks reduced-motion changes without keeping a removed manual pause state',async()=>{
+    let change=()=>{};
+    const preference={matches:false,addEventListener:vi.fn((_name:string,listener:()=>void)=>{change=listener;}),removeEventListener:vi.fn()};
+    vi.stubGlobal('matchMedia',vi.fn(()=>preference));wrapper=mount(FeaturedCarousel,{props:{works:works()}});
+    preference.matches=true;change();await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品1');
+    preference.matches=false;change();await vi.advanceTimersByTimeAsync(6000);expect(wrapper.find('h1').text()).toBe('精选作品2');
+    wrapper.unmount();expect(preference.removeEventListener).toHaveBeenCalledWith('change',change);
   });
   it('respects reduced motion, keyboard navigation and async collection changes',async()=>{
     vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true})));

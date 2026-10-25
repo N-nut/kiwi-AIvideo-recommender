@@ -40,7 +40,13 @@ const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|nu
 const pendingView=ref(false);
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
-const examples = ['想看穿越逆袭的故事，偏好修仙题材。','想看都市和系统，主角逐渐成长。','只看玄幻，要有战斗。','想看修仙逆袭，不要后宫。'];
+// Fixed style examples until the favorites recommendation backend is implemented.
+const promptExamples = [
+  {label:'修仙逆袭',text:'想看修仙题材，主角逐渐成长、逆袭的故事。'},
+  {label:'穿越重生',text:'想看穿越或重生后重新开始的故事。'},
+  {label:'末世系统',text:'想看末世题材，带有系统和冒险元素的故事。'},
+  {label:'都市成长',text:'想看都市题材，主角逐渐成长、实现逆袭的故事。'},
+];
 const updating = computed(() => refreshStarting.value || refresh.value.status==='running');
 const updatedTime = computed(() => refresh.value.last_success_at ? new Date(refresh.value.last_success_at).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '尚未同步');
 const chips = computed(() => [...prefs.value.soft_preferences.genres,...prefs.value.soft_preferences.themes,...(prefs.value.soft_preferences.pace?[`节奏${prefs.value.soft_preferences.pace}`]:[]),...prefs.value.required.map(r=>`必须 ${fieldNames[r.field]}：${typeof r.value==='boolean'?(r.value?'有':'无'):r.value}`),...prefs.value.excluded_features.map(f=>`不要${fieldNames[f]}`),...prefs.value.excluded_genres.map(g=>`不要${g}`)]);
@@ -244,8 +250,8 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
           <div class="query-column">
             <label class="sr-only" for="query">描述你的观剧需求</label>
             <textarea id="query" v-model="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
-            <div class="input-bottom"><span>题材、剧情偏好和不想看的内容，都可以写</span><span>{{query.length}} / 300</span></div>
-            <div class="example-buttons"><button class="example-button" v-for="(example,i) in examples" :key="example" @click="query=example">{{['穿越逆袭','都市成长','玄幻战斗','严格排除'][i]}}</button></div>
+            <div class="input-bottom prompt-intro"><span id="favorite-prompts-title">根据您的收藏，猜您喜欢：<small class="prompt-example-badge">示例</small></span><span class="query-count">{{query.length}} / 300</span></div>
+            <div class="example-buttons favorite-prompt-examples" role="group" aria-labelledby="favorite-prompts-title"><button type="button" class="example-button" v-for="prompt in promptExamples" :key="prompt.label" @click="query=prompt.text">{{prompt.label}}</button></div>
             <p v-if="error" class="field-error" role="alert">{{error}}</p>
           </div>
           <div class="taste-panel">

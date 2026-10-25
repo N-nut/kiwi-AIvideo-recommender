@@ -11,6 +11,24 @@ const findButton=(wrapper:ReturnType<typeof mount>,text:string)=>wrapper.findAll
 beforeEach(()=>{localStorage.clear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>vi.unstubAllGlobals());
 describe('preference confirmation flow',()=>{
+  it('labels favorites prompts as examples and fills the query without fetching personalization or submitting',async()=>{
+    const fetcher=vi.fn((url:string)=>initial(url));vi.stubGlobal('fetch',fetcher);
+    const w=mount(App);await flushPromises();const baseline=fetcher.mock.calls.length;
+    expect(w.find('.prompt-intro').text()).toContain('根据您的收藏，猜您喜欢：');expect(w.find('.prompt-example-badge').text()).toBe('示例');
+    expect(w.findAll('.favorite-prompt-examples button').map(b=>b.text())).toEqual(['修仙逆袭','穿越重生','末世系统','都市成长']);
+    await w.findAll('.favorite-prompt-examples button')[2]!.trigger('click');await flushPromises();
+    expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe('想看末世题材，带有系统和冒险元素的故事。');
+    expect(w.find('.query-count').text()).toBe(`${[...(w.find('textarea').element as HTMLTextAreaElement).value].length} / 300`);
+    expect(fetcher.mock.calls.length).toBe(baseline);expect(fetcher.mock.calls.some(([url])=>url.includes('/me/favorites')||url.includes('/recommendations'))).toBe(false);w.unmount();
+  });
+  it('requires another preference confirmation after choosing a style example over an existing list',async()=>{
+    const fetcher=vi.fn((url:string)=>url.includes('/parse')?response({preferences:prefs()}):url.includes('/recommendations')?response({status:'success',items:[workFixture()],warnings:[],timings_ms:{},request_id:'test'}):initial(url));vi.stubGlobal('fetch',fetcher);
+    const w=mount(App);await flushPromises();await findButton(w,'理解我的口味').trigger('click');await flushPromises();await findButton(w,'确认偏好').trigger('click');await flushPromises();
+    expect(w.find('.drama-card').exists()).toBe(true);const count=fetcher.mock.calls.length;
+    await w.findAll('.favorite-prompt-examples button')[1]!.trigger('click');await flushPromises();
+    expect(w.find('.drama-card').exists()).toBe(false);expect(w.find('.generation-guide').exists()).toBe(true);expect(w.find('.empty-preferences').exists()).toBe(true);
+    expect(findButton(w,'理解我的口味').exists()).toBe(true);expect(fetcher.mock.calls.length).toBe(count);w.unmount();
+  });
   it('shows inline steps instead of default cards or a help dialog, while retaining the carousel',async()=>{
     const works=Array.from({length:6},(_,i)=>workFixture({id:`featured-${i}`,cover_url:`https://example.org/${i}.jpg`,source_meta:{provider:'hongguo',content_type:'漫剧',tags:[],pages:[],rank:null,heat:null,episode_count:30}}));
     const fetcher=vi.fn((url:string)=>url.includes('/works?')?response({items:works,total:6}):initial(url));vi.stubGlobal('fetch',fetcher);

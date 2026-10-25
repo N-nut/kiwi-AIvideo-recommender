@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-25",
+  "checks": [
+    "only centered previous/next icons remain and manual navigation still wraps",
+    "style examples fill editable text without API calls or generating a list",
+    "automatic rotation remains available without a manual pause button",
+    "desktop and mobile icons stay centered and the prompt examples do not overflow"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "icons": [
+        {
+          "label": "上一部精选",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "label": "下一部精选",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "horizontal_overflow": false
+    },
+    {
+      "width": 2160,
+      "height": 1150,
+      "icons": [
+        {
+          "label": "上一部精选",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "label": "下一部精选",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "icons": [
+        {
+          "label": "上一部精选",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "label": "下一部精选",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "icons": [
+        {
+          "label": "上一部精选",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "label": "下一部精选",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "icons": [
+        {
+          "label": "上一部精选",
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "label": "下一部精选",
+          "dx": 0,
+          "dy": 0
+        }
+      ],
+      "horizontal_overflow": false
+    }
+  ],
+  "backend_personalization": false,
+  "external_covers_blocked": true,
+  "page_errors": [],
+  "action_requests": []
+}

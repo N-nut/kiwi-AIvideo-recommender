@@ -108,8 +108,10 @@ main {width:calc(100% - 212px);margin-left:max(212px,calc((100% - 1650px + 212px
 .featured-pages span {display:block;width:17px;height:3px;border-radius:2px;background:#c9cec0}
 .featured-pages .active span {background:#5e7547}
 .featured-counter {font-size:11px;color:#858c7d;margin-right:7px;font-variant-numeric:tabular-nums}
-.featured-control {width:28px;height:28px;display:grid;place-items:center;border:1px solid #d4d8cb;border-radius:50%;background:transparent;color:#59664b;font-size:20px;line-height:1}
-.featured-pause {font-size:11px}
+.featured-control {width:28px;height:28px;display:grid;place-items:center;padding:0;flex:none;border:1px solid #d4d8cb;border-radius:50%;background:transparent;color:#59664b;line-height:1}
+.featured-control svg {display:block;width:16px;height:16px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.featured-control:hover {background:#e4e9dc;border-color:#b8c6a8}
+.featured-control:focus-visible {outline:2px solid #789556;outline-offset:3px}
 .featured-empty {border:1px solid var(--line);border-radius:14px;padding:30px;background:#eeeee8}
 .featured-empty h1 {font-size:24px;margin:0 0 8px}.featured-empty p {font-size:13px;color:var(--muted);margin:0}
 .featured-status {display:flex;align-items:center;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:12px 0 0}
@@ -118,6 +120,14 @@ main {width:calc(100% - 212px);margin-left:max(212px,calc((100% - 1650px + 212px
 .composer textarea {min-height:94px}
 .composer .example-buttons {gap:7px}
 .composer .input-bottom {margin-bottom:10px}
+.composer .prompt-intro {align-items:center;gap:8px 12px;flex-wrap:wrap;color:#7b856f;font-size:11px}
+.composer .prompt-intro>span:first-child {display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:none}
+.prompt-example-badge {display:inline-block;padding:1px 6px;border:1px solid #e1e7d7;border-radius:5px;background:#f3f6ed;color:#8a9879;font-size:9px;font-weight:400;line-height:1.6}
+.prompt-intro .query-count {margin-left:auto;white-space:nowrap;font-size:10px;font-variant-numeric:tabular-nums}
+.composer .favorite-prompt-examples .example-button {border-color:#e2e8d9;border-radius:6px;padding:5px 10px;color:#71835b;background:#f7f9f3;font-size:11px}
+.composer .favorite-prompt-examples .example-button:hover {border-color:#b8c9a2;background:#edf3e3;color:#4b682f}
+.composer .favorite-prompt-examples .example-button:focus-visible {outline:2px solid #789556;outline-offset:2px}
+@media(max-width:520px){.composer .favorite-prompt-examples .example-button{padding:5px 8px;font-size:10px}}
 .primary-button {box-shadow:none}
 .section-top h2 {font-size:17px;letter-spacing:0}
 .match-label:before {content:none}
