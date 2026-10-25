@@ -281,7 +281,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         </div>
       </section>
     </section>
-    <section v-else>
+    <section v-else class="catalog-section">
       <div class="catalog-heading">
         <div><h1>{{view==='favorites'?'我的收藏':'片库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别、题材或剧名找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>
         <form v-if="view==='catalog'" class="catalog-search" role="search" aria-label="按剧名搜索片库" @submit.prevent="shelf.submitSearch">
@@ -319,7 +319,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
     </form>
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
-  <WorkPreview ref="preview" :saved="library.has" :favorite-busy="favoriteBusy" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" />
+  <WorkPreview ref="preview" />
   <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false">
     <template v-if="selected">
       <header class="dialog-heading work-dialog-header"><h2 id="detail-title">{{selected.title}}</h2><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></header>

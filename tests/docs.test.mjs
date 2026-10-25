@@ -93,12 +93,15 @@ test('真实片段预览方案保留待实现状态、来源边界与异常验�
   const source = await readFile(new URL('../产品设计文档.md', import.meta.url), 'utf8');
   const section = source.match(/^### 3\.8 .*\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
   assert.ok(section, '真实片段预览须有独立产品方案');
-  assert.match(section, /产品方案，待实现/);
+  assert.match(section, /侧边交互已实现，真实素材待接入/);
   assert.match(source, /\| 真实片段预览 \|[^\n]+\| 产品方案已补充；素材核实、接入与验收待完成 \|/);
   for (const requirement of ['3～5 部作品', '10～20 秒', '作品唯一标识', '使用依据', '暂无视频预览', '视频暂不可用', '重试', '迟到', '静音', '后台', '减少动态效果', 'Esc']) {
     assert.ok(section.includes(requirement), `预览方案缺少要求：${requirement}`);
   }
   assert.match(section, /不包含整剧站内播放、自动识别精彩片段或大规模视频采集/);
-  assert.match(source, /真实预览验收覆盖[^\n]+当前不计为已实现/);
+  assert.match(source, /真实预览验收覆盖[^\n]+当前真实片段接入不计为已实现/);
+  assert.match(section, /浮层只保留视频画面/);
+  assert.match(section, /不遮挡原卡片的封面、文字和操作/);
+  assert.match(section, /卡片资料区下方/);
   assert.match(source, /首版不提供完整剧集站内播放/);
 });

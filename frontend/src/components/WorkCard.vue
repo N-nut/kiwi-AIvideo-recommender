@@ -13,7 +13,7 @@ const tags = computed(() => [...new Set([...props.work.genres,...props.work.them
 const colors = ['#315946','#5c4378','#9c613c','#405b7e','#546b3b','#82565b'];
 const poster = computed(() => posterArt(art.value, colors[props.index % colors.length], `real-${props.work.id}-${props.index}`));
 function preview(event: Event, immediate = false) {
-  if ('pointerType' in event && event.pointerType === 'touch') return;
+  if (!immediate && 'pointerType' in event && event.pointerType === 'touch') return;
   const anchor = (event.currentTarget as HTMLElement).closest<HTMLElement>('article');
   if (anchor) emit('preview', props.work, anchor, immediate);
 }

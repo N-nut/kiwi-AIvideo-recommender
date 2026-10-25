@@ -1,0 +1,218 @@
+{
+  "date": "2026-10-25",
+  "database": ".local\\card-preview-mvnul2se.db",
+  "mode": "baseline",
+  "checks": [
+    "complete catalogue pages fill rows at wide desktop, tablet and phone widths",
+    "hover preview contains only media and flips between the right and left sides",
+    "moving into the preview keeps it open; closing unloads and stays closed",
+    "the source card keeps accessible favorite and detail buttons while previewing",
+    "phone preview expands below card information with manual muted playback",
+    "favorites share complete rows and the same media-only side preview",
+    "a real last page keeps its actual count rather than filling fabricated cards"
+  ],
+  "viewports": [
+    {
+      "width": 2209,
+      "height": 1150,
+      "columns": 6,
+      "cards": 12,
+      "last_row": 6,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 2073,
+      "height": 1075,
+      "columns": 6,
+      "cards": 12,
+      "last_row": 6,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 2540,
+      "height": 1200,
+      "columns": 6,
+      "cards": 12,
+      "last_row": 6,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "columns": 4,
+      "cards": 12,
+      "last_row": 4,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "columns": 4,
+      "cards": 12,
+      "last_row": 4,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "columns": 3,
+      "cards": 12,
+      "last_row": 3,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "columns": 3,
+      "cards": 12,
+      "last_row": 3,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "columns": 1,
+      "cards": 12,
+      "last_row": 1,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "columns": 1,
+      "cards": 12,
+      "last_row": 1,
+      "horizontal_overflow": false
+    }
+  ],
+  "placements": [
+    {
+      "side": "right",
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "y": 292.765625,
+        "bottom": 912.40625
+      },
+      "panel": {
+        "x": 551.5,
+        "right": 911.5,
+        "y": 292.765625,
+        "bottom": 496.140625
+      },
+      "bodyBottom": 911.40625,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "left",
+      "card": {
+        "x": 1132.5,
+        "right": 1396,
+        "y": 292.765625,
+        "bottom": 912.40625
+      },
+      "panel": {
+        "x": 760.5,
+        "right": 1120.5,
+        "y": 292.765625,
+        "bottom": 496.140625
+      },
+      "bodyBottom": 911.40625,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "right",
+      "card": {
+        "x": 561.5,
+        "right": 825,
+        "y": 292.765625,
+        "bottom": 912.40625
+      },
+      "panel": {
+        "x": 837,
+        "right": 1197,
+        "y": 292.765625,
+        "bottom": 496.140625
+      },
+      "bodyBottom": 911.40625,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "right",
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "y": 292.765625,
+        "bottom": 912.40625
+      },
+      "panel": {
+        "x": 551.5,
+        "right": 911.5,
+        "y": 292.765625,
+        "bottom": 496.140625
+      },
+      "bodyBottom": 911.40625,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "right",
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "y": 292.765625,
+        "bottom": 912.40625
+      },
+      "panel": {
+        "x": 551.5,
+        "right": 911.5,
+        "y": 292.765625,
+        "bottom": 496.140625
+      },
+      "bodyBottom": 911.40625,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "inline",
+      "card": {
+        "x": 16,
+        "right": 374,
+        "y": -285.875,
+        "bottom": 657.359375
+      },
+      "panel": {
+        "x": 17,
+        "right": 373,
+        "y": 455.109375,
+        "bottom": 656.359375
+      },
+      "bodyBottom": 443.109375,
+      "duplicate": false,
+      "overflow": false
+    },
+    {
+      "side": "right",
+      "card": {
+        "x": 276,
+        "right": 572.5,
+        "y": 197.578125,
+        "bottom": 866.71875
+      },
+      "panel": {
+        "x": 584.5,
+        "right": 944.5,
+        "y": 197.578125,
+        "bottom": 400.953125
+      },
+      "bodyBottom": 865.71875,
+      "duplicate": false,
+      "overflow": false
+    }
+  ],
+  "page_errors": [],
+  "real_clips": false
+}

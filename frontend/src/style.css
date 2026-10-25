@@ -2,13 +2,12 @@
 @media(max-width:760px){.example-buttons{gap:6px;}.demo-badge{font-size:10px;}.topbar-actions{gap:6px;}.account-button{font-size:11px;padding:8px;}.poster-button{aspect-ratio:1.5;}.sidebar-footer{font-size:10px;}.dialog-actions{gap:10px;}.section-hint{display:none;}.hero-poster-title{font-size:11px;}}
 
 .card-actions { display:flex;align-items:center;gap:12px; }
-.work-preview { scrollbar-width:none; }
+.work-preview { scrollbar-width:none;overflow:hidden; }
 .work-preview::-webkit-scrollbar { display:none;width:0;height:0; }
-.work-preview .preview-heading h2 { font-size:19px;line-height:1.5; }
-.work-preview .preview-intro,.work-preview .preview-caveat { display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; }
-.work-preview .preview-media { position:sticky;top:0;z-index:1; }
-.work-preview .preview-source { align-items:center; }
-.work-preview .preview-source .text-button { font-size:11px; }
+.work-preview .preview-media { position:relative; }
+.work-preview .preview-media video {object-fit:contain}
+.work-preview.preview-inline {position:static;inset:auto;flex:none;max-width:none;max-height:none;margin:12px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;box-shadow:none}
+.work-preview .preview-reading {height:auto;aspect-ratio:16/9}
 .work-dialog { width:min(720px,calc(100vw - 32px));padding:0;overflow:hidden;max-height:85vh;max-height:85dvh; }
 .work-dialog[open] { display:flex;flex-direction:column; }
 .work-dialog-header { flex:none;margin:0;padding:25px 28px 18px;background:#fff;border-bottom:1px solid var(--line); }
@@ -79,6 +78,14 @@
 @media(min-width:1600px) {.drama-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
 @media(max-width:760px) {.drama-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card-body{padding:13px}.poster-button{aspect-ratio:2 / 3}}
 @media(max-width:480px) {.drama-grid{grid-template-columns:minmax(0,1fr);max-width:320px;margin-inline:auto}.catalog-pagination{gap:12px}.sync-scope{font-size:10px}.collection-dialog{padding:20px}.catalog-filters{gap:6px;flex-wrap:wrap}.filter-button{padding:7px 10px}}
+
+/* Full 12-item pages use column counts that divide 12, measured in usable space. */
+.catalog-section {container-type:inline-size;container-name:catalog}
+.catalog-section .catalog-grid {grid-template-columns:minmax(0,1fr);max-width:none;margin-inline:0;gap:22px}
+@container catalog (min-width:440px) {.catalog-section .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container catalog (min-width:660px) {.catalog-section .catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@container catalog (min-width:900px) {.catalog-section .catalog-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@container catalog (min-width:1360px) {.catalog-section .catalog-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 
 /* A quieter home: real portrait covers, short copy, and optional details. */
 main {width:calc(100% - 212px);margin-left:max(212px,calc((100% - 1650px + 212px) / 2))}
