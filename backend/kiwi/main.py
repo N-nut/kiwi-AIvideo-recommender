@@ -24,6 +24,7 @@ from .service import recommend
 from .auth import AuthManager, get_current_user, problem, protect_write, router as auth_router
 from .favorites import router as favorites_router
 from .home_recommendations import home_recommendations
+from .previews import router as previews_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -54,6 +55,7 @@ def create_app(settings=None, provider_factory=None, collector=None):
     app.state.auth = AuthManager(sessions, settings)
     app.include_router(auth_router)
     app.include_router(favorites_router)
+    app.include_router(previews_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -62,7 +64,7 @@ def create_app(settings=None, provider_factory=None, collector=None):
         private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
         def finish(response):
             response.headers["X-Request-ID"] = request.state.request_id
-            if private or request.url.path == "/api/v1/home/recommendations":
+            if private or request.url.path == "/api/v1/home/recommendations" or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
                 response.headers["Cache-Control"] = "no-store"
             return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.

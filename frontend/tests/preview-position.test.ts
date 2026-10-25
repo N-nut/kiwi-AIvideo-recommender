@@ -23,4 +23,9 @@ describe('preview beside its source card',()=>{
     expect(result.top).toBe(12);expect(result.width*9/16).toBeLessThanOrEqual(156);
     expect(result.left).toBeGreaterThanOrEqual(262);
   });
+  it('fits a portrait clip within the viewport while preserving its aspect ratio',()=>{
+    const result=sidePreviewPosition({left:12,right:250,top:300,bottom:800},{width:1440,height:500},360,9/16);
+    expect(result.top).toBe(12);expect(result.top+result.width/(9/16)).toBeLessThanOrEqual(488);
+    expect(result.left).toBeGreaterThanOrEqual(262);
+  });
 });

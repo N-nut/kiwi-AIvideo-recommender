@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 from typing import Literal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(os.environ.get("KIWI_PROJECT_ROOT", str(Path(__file__).resolve().parents[2]))).resolve()
@@ -39,6 +39,19 @@ class Settings(BaseSettings):
     auth_register_limit: int = Field(default=10, ge=1, le=10)
     auth_hash_concurrency: int = Field(default=2, ge=1, le=2)
     auth_limiter_capacity: int = Field(default=10000, ge=10, le=100000)
+    media_root: Path = ROOT / ".local/media/previews"
+    media_delivery_mode: Literal["app", "nginx"] = "app"
+    ffmpeg_path: str = "ffmpeg"
+    ffprobe_path: str = "ffprobe"
+    preview_source_max_bytes: int = Field(default=200 * 1024 * 1024, gt=0)
+    preview_output_max_bytes: int = Field(default=20 * 1024 * 1024, gt=0)
+    preview_probe_timeout: float = Field(default=10, gt=0, le=60)
+    preview_process_timeout: float = Field(default=120, gt=0, le=600)
+
+    @field_validator("media_root")
+    @classmethod
+    def resolve_media_root(cls, value):
+        return (value if value.is_absolute() else ROOT / value).resolve()
 
     @model_validator(mode="after")
     def validate_auth_origins(self):

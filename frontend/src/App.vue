@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { api, latestRequest, APIError } from './api';
-import type { CatalogRefresh, Preferences, Recommendation, Work } from './types';
+import { api, getPreview, latestRequest, APIError } from './api';
+import type { CatalogRefresh, Preferences, PreviewMedia, Recommendation, Work } from './types';
 import { emptyPreferences, genres, fieldNames, collectionCategories } from './types';
 import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
@@ -37,6 +37,9 @@ const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>()
 const login=ref<InstanceType<typeof AuthDialog>>(),legacy=ref<InstanceType<typeof LegacyImport>>();
 const preview = ref<InstanceType<typeof WorkPreview>>();
 const detailScroll = ref<HTMLElement>();
+const detailMedia = ref<PreviewMedia|null>(null);
+const detailLane = latestRequest();
+function closeDetailMetadata(){detailLane.cancel();detailMedia.value=null;}
 let backdropPressed = false;
 const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const pendingFavorite = ref('');
 const pendingView=ref(false);
@@ -142,6 +145,13 @@ function showDetail(work:Work) {
   preview.value?.close();
   selected.value=work;
   detail.value?.showModal();
+  closeDetailMetadata();
+  if(work.source_meta?.content_type!=='漫画') {
+    const request=detailLane.begin();
+    void getPreview(work.id,request.signal).then(result=>{
+      if(request.current()&&detail.value?.open&&selected.value?.id===work.id&&result.work_id===work.id&&result.status==='ready') detailMedia.value=result.preview;
+    }).catch(()=>{});
+  }
   void nextTick(() => { if(detailScroll.value) detailScroll.value.scrollTop=0; });
 }
 function openPreview(work: Work, anchor: HTMLElement, immediate: boolean) { preview.value?.enter(work,anchor,immediate); }
@@ -187,7 +197,7 @@ onMounted(async()=>{
   void loadCatalog();
   void loadHealth(); void pollRefresh();
 });
-onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(toastTimer);clearTimeout(refreshTimer);});
+onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMetadata();clearTimeout(toastTimer);clearTimeout(refreshTimer);});
 </script>
 
 <template>
@@ -320,7 +330,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
   <WorkPreview ref="preview" />
-  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false">
+  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false;closeDetailMetadata()">
     <template v-if="selected">
       <header class="dialog-heading work-dialog-header"><h2 id="detail-title">{{selected.title}}</h2><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></header>
       <div ref="detailScroll" class="work-dialog-scroll" tabindex="0" role="region" aria-label="作品资料内容">
@@ -331,6 +341,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();clearTimeout(t
         <div v-if="selected.harem!==null||selected.romance!==null||selected.tragic!==null" class="facts"><span v-if="selected.harem!==null">后宫：{{featureText(selected.harem)}}</span><span v-if="selected.romance!==null">感情线：{{featureText(selected.romance)}}</span><span v-if="selected.tragic!==null">虐心：{{featureText(selected.tragic)}}</span></div>
         <details class="detail-evidence"><summary>查看资料依据</summary><div class="evidence" v-for="e in detailEvidence" :key="e.quote"><small>{{e.label}}</small><blockquote>{{e.quote}}</blockquote></div></details>
         <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}<br>{{selected.source_meta?.provider==='hongguo'?'自动整理，待人工核对。':selected.review_note}}</p>
+        <p v-if="detailMedia" class="source-note preview-source"><a :href="detailMedia.source_page_url" target="_blank" rel="noopener noreferrer">{{detailMedia.clip_kind==='trailer'?'真实预告来源':'试看片段来源'}}</a> · {{Math.round(detailMedia.duration_ms/1000)}} 秒</p>
       </div>
       <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="primary-button" :disabled="favoriteBusy(selected.id)" @click="favorite(selected.id)">{{favoriteBusy(selected.id)?'正在处理…':!favoriteReady?'重试收藏状态':library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>
     </template>

@@ -1,13 +1,13 @@
 {
   "date": "2026-10-25",
-  "database": ".local\\card-preview-mvnul2se.db",
+  "database": ".local\\card-preview-mvnxu6n1.db",
   "mode": "baseline",
   "checks": [
     "complete catalogue pages fill rows at wide desktop, tablet and phone widths",
     "hover preview contains only media and flips between the right and left sides",
     "moving into the preview keeps it open; closing unloads and stays closed",
     "the source card keeps accessible favorite and detail buttons while previewing",
-    "phone preview expands below card information with manual muted playback",
+    "phone preview expands below card information and displays missing media honestly",
     "favorites share complete rows and the same media-only side preview",
     "a real last page keeps its actual count rather than filling fabricated cards"
   ],
@@ -200,7 +200,7 @@
         "x": 276,
         "right": 572.5,
         "y": 197.578125,
-        "bottom": 866.71875
+        "bottom": 832.71875
       },
       "panel": {
         "x": 584.5,
@@ -208,7 +208,7 @@
         "y": 197.578125,
         "bottom": 400.953125
       },
-      "bodyBottom": 865.71875,
+      "bodyBottom": 831.71875,
       "duplicate": false,
       "overflow": false
     }

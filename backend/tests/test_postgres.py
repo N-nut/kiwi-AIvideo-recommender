@@ -14,7 +14,7 @@ from conftest import FakeAI
 
 
 @pytest.mark.skipif(not os.getenv('KIWI_TEST_DATABASE_URL'), reason='Requires isolated PostgreSQL + pgvector: KIWI_TEST_DATABASE_URL')
-async def test_real_postgres_filter_and_vectors(record,monkeypatch):
+async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
     url=os.environ['KIWI_TEST_DATABASE_URL']
     assert 'test' in url.rsplit('/',1)[-1], 'Use a disposable database whose name contains test'
     engine,sessions=make_database(url)
@@ -124,6 +124,20 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch):
         with sessions() as session:
             assert session.scalars(select(Favorite)).all()==[]
             assert session.scalars(select(UserSession)).all()==[]
+        # Media migration and public state/file checks over the independent DB.
+        from test_previews import ready
+        from kiwi.database import WorkPreview
+        from fastapi.testclient import TestClient
+        ready(sessions,tmp_path,work_id='work-0')
+        media_settings=Settings(ai_mode='baseline',database_url=url,media_root=tmp_path)
+        with TestClient(create_app(media_settings)) as media_client:
+            preview=media_client.get('/api/v1/works/work-0/preview').json()
+            assert preview['status']=='ready' and preview['preview']['duration_ms']==15000
+            url=preview['preview']['video_url']
+            assert media_client.get(url,headers={'Range':'bytes=0-9'}).content==b'0123456789'
+            assert media_client.head(url).headers['content-length']=='100'
+            assert media_client.get('/api/v1/works/work-1/preview').json()['status']=='not_applicable'
+        with sessions() as session: assert session.get(WorkPreview,'work-0').status=='ready'
     finally:
         command.downgrade(migration,'base')
         engine.dispose()

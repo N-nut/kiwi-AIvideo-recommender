@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
-import type { Work } from '../types';
-import { workArt, workClip } from '../presentation';
+import type { PreviewMedia, Work } from '../types';
+import { getPreview, latestRequest } from '../api';
+import { workArt } from '../presentation';
 import { posterArt } from '../../../demo/art.mjs';
 import { createHoverIntent } from '../../../demo/library.mjs';
 import { sidePreviewPosition, type PreviewLayout } from '../previewPosition';
@@ -14,6 +15,13 @@ const isComic = computed(()=>active.value?.work.source_meta?.content_type==='漫
 const readingCoverFailed = ref(false);
 const blocked = ref(false);
 const mediaError = ref(false);
+const media = shallowRef<PreviewMedia|null>(null);
+const status = ref<'loading'|'ready'|'missing'|'error'>('loading');
+const lane = latestRequest();
+const coverFailed = ref(false);
+const buffering = ref(false);
+let mediaRevision = 0;
+const label = computed(()=>media.value?.clip_kind==='trailer'?'真实预告':'试看片段');
 const layout=ref<PreviewLayout>({side:'right',left:12,top:12,width:360});
 const inline=computed(()=>layout.value.side==='inline');
 const position=computed(()=>inline.value?{width:'100%'}:{left:`${layout.value.left}px`,top:`${layout.value.top}px`,width:`${layout.value.width}px`});
@@ -41,6 +49,7 @@ function close(restoreFocus = false, pointer=lastPointer) {
     intent.cancel();
     observer?.disconnect();
     revision++;
+    lane.cancel();
     const anchor = active.value?.anchor;
     if (restoreFocus && anchor) dismissedAnchor = anchor;
     stopMedia();
@@ -51,6 +60,7 @@ function close(restoreFocus = false, pointer=lastPointer) {
     }
     shown = false;
     active.value = null;
+    media.value = null;
     if(restoreFocus&&pointer&&document.elementFromPoint) {
       const closedRevision=revision;
       void nextTick(()=>{
@@ -68,7 +78,7 @@ function reposition() {
   if (!active.value || !panel.value) return;
   const rect = active.value.anchor.getBoundingClientRect();
   if (!active.value.anchor.isConnected || rect.bottom <= 0 || rect.top >= window.innerHeight) { close(); return; }
-  const next=sidePreviewPosition(rect,{width:document.documentElement.clientWidth||window.innerWidth,height:window.innerHeight});
+  const next=sidePreviewPosition(rect,{width:document.documentElement.clientWidth||window.innerWidth,height:window.innerHeight},360,media.value?media.value.width/media.value.height:16/9);
   if((next.side==='inline')!==inline.value) {close();return;}
   layout.value=next;
 }
@@ -81,13 +91,43 @@ async function play() {
   blocked.value = false;
   mediaError.value = false;
   try { await target.play(); }
-  catch { if (current===revision && target === video.value) blocked.value = true; }
+  catch (error) { if (current===revision && target === video.value) {
+    if(error instanceof DOMException && error.name==='NotSupportedError') failMedia();
+    else blocked.value = true;
+  } }
 }
 
-function mediaState(event:Event,state:'play'|'pause'|'error'|'metadata') {
+function failMedia() { stopMedia(); status.value='error'; mediaError.value=true; blocked.value=false; }
+
+async function loadPreview() {
+  if(!active.value||isComic.value) return;
+  const current=revision,workId=active.value.work.id,request=lane.begin();
+  stopMedia(); media.value=null; status.value='loading'; blocked.value=false; mediaError.value=false;
+  try {
+    const result=await getPreview(workId,request.signal);
+    if(!request.current()||current!==revision||active.value?.work.id!==workId) return;
+    if(result.work_id!==workId) throw new Error('Unexpected work');
+    if(result.status!=='ready'||!result.preview) {
+      status.value=result.status==='unavailable'?'error':'missing'; return;
+    }
+    mediaRevision++;
+    media.value=result.preview; status.value='ready'; buffering.value=true;
+    await nextTick();
+    if(!request.current()||current!==revision||!active.value) return;
+    reposition();
+    if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) blocked.value=true;
+    else void play();
+  } catch {
+    if(request.current()&&current===revision&&active.value?.work.id===workId) failMedia();
+  }
+}
+
+function mediaState(event:Event,state:'play'|'pause'|'error'|'metadata'|'loaded'|'waiting') {
   if(event.target!==video.value||!active.value) return;
-  if(state==='error') {mediaError.value=true;blocked.value=true;}
+  if(state==='error'&&status.value==='ready') failMedia();
   else if(state==='metadata') reposition();
+  else if(state==='loaded') buffering.value=false;
+  else if(state==='waiting') buffering.value=true;
   else playing.value=state==='play';
 }
 
@@ -95,6 +135,7 @@ async function open(value: { work: Work; anchor: HTMLElement }) {
   if (!value.anchor.isConnected || document.querySelector('dialog[open]')) return;
   if (active.value?.anchor === value.anchor && active.value.work.id===value.work.id) return;
   stopMedia();
+  lane.cancel(); media.value=null; status.value='loading';coverFailed.value=false;
   if(shown) {panel.value?.hidePopover?.();shown=false;}
   observer?.disconnect();
   const current = ++revision;
@@ -111,8 +152,7 @@ async function open(value: { work: Work; anchor: HTMLElement }) {
   observer=new MutationObserver(()=>{if(active.value&&!active.value.anchor.isConnected) close();});
   observer.observe(document.body,{childList:true,subtree:true});
   if (isComic.value) return;
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) blocked.value = true;
-  else void play();
+  void loadPreview();
 }
 
 const intent = createHoverIntent((value: { work: Work; anchor: HTMLElement }) => { void open(value); }, () => close());
@@ -171,15 +211,22 @@ defineExpose({ enter, leave, close });
 
 <template>
   <Teleport :to="inline && active?active.anchor:'body'">
-    <section v-show="!!active" ref="panel" id="work-preview" :class="['drama-preview','work-preview',{'preview-inline':inline}]" :popover="inline?undefined:'manual'" :data-placement="layout.side" role="dialog" :aria-label="`${active?.work.title||'作品'}${isComic?'阅读资料预览':'模拟视频预览'}`" :style="position" @pointerenter="keep" @pointerleave="leave()" @focusin="keep" @focusout="leave()">
+    <section v-show="!!active" ref="panel" id="work-preview" :class="['drama-preview','work-preview',{'preview-inline':inline}]" :popover="inline?undefined:'manual'" :data-placement="layout.side" role="dialog" :aria-label="`${active?.work.title||'作品'}${isComic?'阅读资料预览':'视频预览'}`" :style="position" @pointerenter="keep" @pointerleave="leave()" @focusin="keep" @focusout="leave()">
       <template v-if="active">
-        <div class="preview-media">
+        <div class="preview-media" :style="media?{aspectRatio:`${media.width}/${media.height}`}:undefined">
           <div v-if="isComic" class="preview-reading"><img :src="!readingCoverFailed&&active.work.cover_url?active.work.cover_url:poster" :alt="`${active.work.title}封面`" referrerpolicy="no-referrer" @error="readingCoverFailed=true" @load="reposition"><span>漫画资料预览 · {{active.work.source_meta?.chapter_count?`${active.work.source_meta.chapter_count} 话`:'章节资料待补充'}}</span></div>
           <template v-else>
-          <video :key="active.work.id" ref="video" :src="workClip(active.work)" :poster="poster" muted loop playsinline preload="metadata" :aria-label="`${active.work.title}原创氛围动画，非真实作品片段`" @play="mediaState($event,'play')" @pause="mediaState($event,'pause')" @loadedmetadata="mediaState($event,'metadata')" @error="mediaState($event,'error')"></video>
-          <span class="preview-kicker"><i></i> 视频预览 <small>原创模拟片段</small></span>
-          <button v-if="blocked" class="preview-play" @click="manualPlay">{{mediaError?'片段暂不可用 · 重试':'▷ 点击播放预览'}}</button>
-          <div class="preview-video-tools"><span>静音循环 · 非真实作品片段</span><button :aria-label="playing?'暂停预览':'播放预览'" @click="toggle">{{playing?'Ⅱ 暂停':'▷ 播放'}}</button></div>
+          <template v-if="status==='ready'&&media">
+            <video :key="`${active.work.id}-${mediaRevision}`" ref="video" :src="media.video_url" :poster="media.poster_url||active.work.cover_url||poster" muted loop playsinline preload="metadata" :aria-label="`${active.work.title}${label}`" @play="mediaState($event,'play')" @pause="mediaState($event,'pause')" @loadedmetadata="mediaState($event,'metadata')" @loadeddata="mediaState($event,'loaded')" @playing="mediaState($event,'loaded')" @waiting="mediaState($event,'waiting')" @error="mediaState($event,'error')"></video>
+            <span v-if="buffering" class="preview-buffering" role="status">正在加载片段…</span>
+            <span class="preview-kicker"><i></i> {{label}}</span>
+            <button v-if="blocked" class="preview-play" @click="manualPlay">▷ 点击播放预览</button>
+            <div class="preview-video-tools"><span>静音循环</span><button :aria-label="playing?'暂停预览':'播放预览'" @click="toggle">{{playing?'Ⅱ 暂停':'▷ 播放'}}</button></div>
+          </template>
+          <div v-else class="preview-placeholder">
+            <img :src="!coverFailed&&active.work.cover_url?active.work.cover_url:poster" alt="" referrerpolicy="no-referrer" @error="coverFailed=true">
+            <div class="preview-status" role="status" aria-live="polite"><span>{{status==='loading'?'正在加载预览…':status==='missing'?'暂无视频预览':'视频暂不可用'}}</span><button v-if="status==='error'" class="preview-retry" @click="loadPreview">重试</button></div>
+          </div>
           </template>
           <button class="preview-close" :aria-label="isComic?'关闭漫画预览':'关闭视频预览'" @click="close(true,$event)">×</button>
         </div>

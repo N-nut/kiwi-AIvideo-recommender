@@ -1,0 +1,13 @@
+[
+  {
+    "work_id": "replace-with-existing-work-id",
+    "source_file": "private-source.mp4",
+    "source_page_url": "https://example.org/first-episode",
+    "usage_basis": "填写作品对应核对及本次展示用途的使用依据",
+    "clip_kind": "excerpt",
+    "start_seconds": 0,
+    "duration_seconds": 15,
+    "work_confirmed": false,
+    "usage_confirmed": false
+  }
+]

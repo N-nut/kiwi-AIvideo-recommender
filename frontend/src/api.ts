@@ -1,3 +1,5 @@
+import type { PreviewResponse } from './types';
+export const getPreview = (id:string, signal?:AbortSignal) => api<PreviewResponse>(`/api/v1/works/${encodeURIComponent(id)}/preview`, undefined, signal);
 export class APIError extends Error {
   constructor(message: string, public requestId?: string, public status?: number, public fields: Record<string,string> = {}) { super(message); }
 }

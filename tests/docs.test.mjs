@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
-const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url), new URL('../docs/实现与验收.md', import.meta.url), new URL('../data/审核说明.md', import.meta.url)];
+const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url), new URL('../docs/实现与验收.md', import.meta.url), new URL('../data/审核说明.md', import.meta.url), new URL('../docs/媒体预览.md', import.meta.url)];
 
 test('README、产品设计和技术方案中的本地文档链接指向实际文件', async () => {
   for (const document of documents) {
@@ -89,10 +89,10 @@ test('推荐接口的文档示例在数量、来源和隐私字段上自洽', as
   }
 });
 
-test('真实媒体技术设计的公开响应与状态、资源地址和内部字段约定一致', async () => {
+test('真实媒体实现文档的公开响应与状态、资源地址和内部字段约定一致', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
   const section = source.slice(source.indexOf('## 12.'));
-  assert.match(section, /^## 12\. 真实片段接入与预览（技术设计，待实现）/);
+  assert.match(section, /^## 12\. 真实片段接入与预览（已实现，本地样本验证）/);
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
   assert.deepEqual(examples.map(example=>example.status), ['ready','missing']);
   const forbidden = new Set(['video_path','poster_path','usage_basis','source_hash','processing_hash','video_sha256','password','token','user_id']);
@@ -115,20 +115,20 @@ test('真实媒体技术设计的公开响应与状态、资源地址和内部�
   }
   assert.match(section,/真实预览流程取消按题材映射/);
   assert.match(section,/不补其他作品或模拟片段/);
-  assert.match(section,/本次只更新技术设计和文档校验/);
+  assert.match(section,/Nginx 实际 Range／HEAD[\s\S]+尚未实测/);
 });
 
-test('真实片段预览方案保留待实现状态、来源边界与异常验收要求', async () => {
+test('真实片段预览文档区分已验证样本、来源边界与待完成部署', async () => {
   const source = await readFile(new URL('../产品设计文档.md', import.meta.url), 'utf8');
   const section = source.match(/^### 3\.8 .*\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
   assert.ok(section, '真实片段预览须有独立产品方案');
-  assert.match(section, /侧边交互已实现，真实素材待接入/);
-  assert.match(source, /\| 真实片段预览 \|[^\n]+\| 产品方案已补充；素材核实、接入与验收待完成 \|/);
+  assert.match(section, /已实现 3 部本地开发样本/);
+  assert.match(source, /\| 真实片段预览 \|[^\n]+\| 已完成 3 部本地开发样本及桌面／触屏播放/);
   for (const requirement of ['3～5 部作品', '10～20 秒', '作品唯一标识', '使用依据', '暂无视频预览', '视频暂不可用', '重试', '迟到', '静音', '后台', '减少动态效果', 'Esc']) {
     assert.ok(section.includes(requirement), `预览方案缺少要求：${requirement}`);
   }
   assert.match(section, /不包含整剧站内播放、自动识别精彩片段或大规模视频采集/);
-  assert.match(source, /真实预览验收覆盖[^\n]+当前真实片段接入不计为已实现/);
+  assert.match(source, /真实预览验收覆盖[^\n]+真实手机与媒体部署验收另行进行/);
   assert.match(section, /浮层只保留视频画面/);
   assert.match(section, /不遮挡原卡片的封面、文字和操作/);
   assert.match(section, /卡片资料区下方/);

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, create_engine, event, inspect, select, text
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, create_engine, event, inspect, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -36,6 +36,33 @@ class Work(Base):
     embedding_dimension: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content_hash: Mapped[str] = mapped_column(String(64))
     embedded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class WorkPreview(Base):
+    __tablename__ = "work_previews"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'ready', 'unavailable')", name="ck_preview_status"),
+        CheckConstraint("clip_kind IN ('trailer', 'excerpt')", name="ck_preview_kind"),
+        CheckConstraint("status != 'ready' OR (asset_id IS NOT NULL AND video_path IS NOT NULL AND duration_ms IS NOT NULL AND duration_ms > 0 AND width IS NOT NULL AND width > 0 AND height IS NOT NULL AND height > 0 AND size_bytes IS NOT NULL AND size_bytes > 0 AND checked_at IS NOT NULL AND length(trim(usage_basis)) > 0 AND source_hash IS NOT NULL AND processing_hash IS NOT NULL AND video_sha256 IS NOT NULL)", name="ck_preview_ready"),
+    )
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="CASCADE"), primary_key=True)
+    asset_id: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True)
+    status: Mapped[str] = mapped_column(String(16))
+    clip_kind: Mapped[str] = mapped_column(String(16))
+    video_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    poster_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_page_url: Mapped[str] = mapped_column(Text)
+    usage_basis: Mapped[str] = mapped_column(Text)
+    source_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    processing_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    video_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class CatalogRefresh(Base):

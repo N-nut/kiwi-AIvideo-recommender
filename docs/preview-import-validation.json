@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-25",
+  "scope": "user-directed local development samples; independent human review pending",
+  "ffmpeg_version": "ffmpeg version git-2019-10-22-0b8956b Copyright (c) 2000-2019 the FFmpeg developers",
+  "ffprobe_version": "ffprobe version git-2019-10-22-0b8956b Copyright (c) 2007-2019 the FFmpeg developers",
+  "samples": [
+    {
+      "work_id": "hongguo-7668904735717477400",
+      "title": "谁让这个文盲修仙的",
+      "source_page_url": "https://hongguoduanju.com/player/7668904735717477400",
+      "kind": "漫剧",
+      "episode": 1,
+      "episode_id": "7668906921558035481",
+      "source_duration_seconds": 90.673991,
+      "source_bytes": 8818447,
+      "identity_check": "source series ID, exact title and first episode ID match",
+      "usage_scope": "user-directed local development validation; distribution permission not established",
+      "duration_ms": 15024,
+      "width": 640,
+      "height": 360,
+      "size_bytes": 1161721,
+      "video_codec": "h264",
+      "pixel_format": "yuv420p",
+      "audio_codecs": [
+        "aac"
+      ],
+      "initial_import_elapsed_ms": 1346,
+      "checked_at": "2026-10-25T14:33:58.846236"
+    },
+    {
+      "work_id": "hongguo-7672595482966772760",
+      "title": "高冷千金的贴身高手",
+      "source_page_url": "https://hongguoduanju.com/player/7672595482966772760",
+      "kind": "漫剧",
+      "episode": 1,
+      "episode_id": "7672598026224929854",
+      "source_duration_seconds": 137.137007,
+      "source_bytes": 12134330,
+      "identity_check": "source series ID, exact title and first episode ID match",
+      "usage_scope": "user-directed local development validation; distribution permission not established",
+      "duration_ms": 15024,
+      "width": 640,
+      "height": 360,
+      "size_bytes": 1625124,
+      "video_codec": "h264",
+      "pixel_format": "yuv420p",
+      "audio_codecs": [
+        "aac"
+      ],
+      "initial_import_elapsed_ms": 1452,
+      "checked_at": "2026-10-25T14:34:00.300908"
+    },
+    {
+      "work_id": "hongguo-7673067074104593432",
+      "title": "谁说纨绔不能当状元",
+      "source_page_url": "https://hongguoduanju.com/player/7673067074104593432",
+      "kind": "漫剧",
+      "episode": 1,
+      "episode_id": "7673071467222797337",
+      "source_duration_seconds": 154.048005,
+      "source_bytes": 11646208,
+      "identity_check": "source series ID, exact title and first episode ID match",
+      "usage_scope": "user-directed local development validation; distribution permission not established",
+      "duration_ms": 15024,
+      "width": 640,
+      "height": 360,
+      "size_bytes": 1484784,
+      "video_codec": "h264",
+      "pixel_format": "yuv420p",
+      "audio_codecs": [
+        "aac"
+      ],
+      "initial_import_elapsed_ms": 1299,
+      "checked_at": "2026-10-25T14:34:01.599494"
+    }
+  ],
+  "repeat_import": {
+    "check_only": false,
+    "ready": 0,
+    "pending": 0,
+    "skipped": 3,
+    "failed": 0,
+    "items": [
+      {
+        "work_id": "hongguo-7668904735717477400",
+        "status": "skipped"
+      },
+      {
+        "work_id": "hongguo-7672595482966772760",
+        "status": "skipped"
+      },
+      {
+        "work_id": "hongguo-7673067074104593432",
+        "status": "skipped"
+      }
+    ]
+  },
+  "database_upgrade": {
+    "date": "2026-10-25",
+    "backup": "kiwi-before-previews-20261025-223346.db",
+    "before": {
+      "works": {
+        "count": 434,
+        "sha256": "54c79d9e890be62195679e820fb4fd6d75e4897e1a66dc6cf447a2f8ac74f43c"
+      },
+      "users": {
+        "count": 1,
+        "sha256": "15787c083f85d9483e351639714eb807d1b4ea51829c0e97fa083bb592606766"
+      },
+      "user_sessions": {
+        "count": 1,
+        "sha256": "82e8dffbedaa4610b3cb9965214db7f09c708dc4f70e4cfdf9680a1ef317dfd6"
+      },
+      "favorites": {
+        "count": 8,
+        "sha256": "f389c1f17f72d874488fbe409fa528ff1655342bfdb470ce57f22a8e7a3a312d"
+      }
+    },
+    "after": {
+      "works": {
+        "count": 434,
+        "sha256": "54c79d9e890be62195679e820fb4fd6d75e4897e1a66dc6cf447a2f8ac74f43c"
+      },
+      "users": {
+        "count": 1,
+        "sha256": "15787c083f85d9483e351639714eb807d1b4ea51829c0e97fa083bb592606766"
+      },
+      "user_sessions": {
+        "count": 1,
+        "sha256": "82e8dffbedaa4610b3cb9965214db7f09c708dc4f70e4cfdf9680a1ef317dfd6"
+      },
+      "favorites": {
+        "count": 8,
+        "sha256": "f389c1f17f72d874488fbe409fa528ff1655342bfdb470ce57f22a8e7a3a312d"
+      }
+    },
+    "unchanged": true,
+    "integrity_check": "ok"
+  },
+  "unchanged_after_import": true,
+  "media_committed_to_git": false,
+  "deployment_verified": false,
+  "backup_restore": {
+    "backup": ".local\\backups\\previews-20261025-144616-8ee2e889",
+    "integrity_check": "ok",
+    "existing_data_unchanged": true,
+    "restored_media_verified": 3,
+    "restored_copy_verified": true
+  }
+}

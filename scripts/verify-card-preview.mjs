@@ -34,7 +34,7 @@ async function preview(index,immediate=false,touch=false){
   await closePreview();const card=page.locator('.catalog-grid .drama-card').nth(index);
   if(immediate) {if(touch)await card.locator('[aria-controls=work-preview]').tap();else await card.locator('[aria-controls=work-preview]').click();}
   else await card.hover({position:{x:15,y:30}});
-  await page.waitForFunction(()=>document.querySelector('#work-preview video')||document.querySelector('#work-preview .preview-reading'));
+  await page.waitForFunction(()=>document.querySelector('#work-preview .preview-placeholder')||document.querySelector('#work-preview .preview-reading'));
   await page.waitForTimeout(220);
   const state=await page.evaluate(index=>{
     const card=document.querySelectorAll('.catalog-grid .drama-card')[index],preview=document.querySelector('#work-preview');
@@ -79,7 +79,7 @@ try{
   await check('moving into the preview keeps it open; closing unloads and stays closed',async()=>{
     const card=await preview(1),title=await card.locator('h3').innerText();
     await page.locator('#work-preview').hover();await page.waitForTimeout(300);
-    assert((await page.locator('#work-preview video').getAttribute('aria-label')).includes(title));
+    assert((await page.locator('#work-preview').getAttribute('aria-label')).includes(title));
     await page.locator('#work-preview .preview-close').click();await page.waitForTimeout(500);
     assert.equal(await page.locator('#work-preview video').count(),0);
   });
@@ -90,14 +90,14 @@ try{
     await page.locator('.work-dialog[open]').waitFor();assert.equal(await page.locator('#detail-title').innerText(),title);
     assert.equal(await page.locator('#work-preview video').count(),0);await page.getByRole('button',{name:'关闭作品详情',exact:true}).click();
   });
-  await check('phone preview expands below card information with manual muted playback',async()=>{
+  await check('phone preview expands below card information and displays missing media honestly',async()=>{
     const desktop=page,touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
     page=await touch.newPage();page.on('pageerror',error=>report.page_errors.push(error.message));
     try {
       await page.goto(base);await page.getByRole('button',{name:/片库/}).tap();await ready();
       await preview(0,true,true);assert.equal(report.placements.at(-1).side,'inline');
-      await page.locator('#work-preview').scrollIntoViewIfNeeded();await page.locator('#work-preview .preview-play').tap();
-      await page.waitForFunction(()=>{const video=document.querySelector('#work-preview video');return video&&!video.paused&&video.muted&&video.readyState>=2;});
+      await page.locator('#work-preview').scrollIntoViewIfNeeded();await page.getByText('暂无视频预览',{exact:true}).waitFor();
+      assert.equal(await page.locator('#work-preview video').count(),0);
       await page.screenshot({path:resolve(root,'docs/screenshots/card-preview-mobile.png')});
       await page.locator('#work-preview .preview-close').tap();await page.waitForTimeout(300);assert.equal(await page.locator('#work-preview video').count(),0);
     } finally {page=desktop;await touch.close();}

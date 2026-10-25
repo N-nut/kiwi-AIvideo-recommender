@@ -6,6 +6,13 @@ export interface Preferences {
   unresolved_constraints: string[]; conflicts: string[];
 }
 export interface Evidence { id: string; field: string; quote: string }
+export interface PreviewMedia {
+  asset_id:string; clip_kind:'trailer'|'excerpt'; video_url:string; poster_url:string|null;
+  content_type:'video/mp4'; duration_ms:number; width:number; height:number; source_page_url:string; checked_at:string;
+}
+export interface PreviewResponse {
+  request_id:string; work_id:string; status:'ready'|'missing'|'pending'|'unavailable'|'not_applicable'; message:string; preview:PreviewMedia|null;
+}
 export interface Work {
   id: string; title: string; summary: string; original_intro: string; genres: string[]; themes: string[];
   pace: string | null; harem: boolean | null; romance: boolean | null; tragic: boolean | null;

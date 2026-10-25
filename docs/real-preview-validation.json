@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-25",
+  "database": ".local\\real-previews-mvnxu85v.db",
+  "real_files": true,
+  "checks": [
+    "three current MP4s support 200, byte Range, HEAD and 416",
+    "all three real clips play muted for 15 seconds on desktop",
+    "details expose the matching clip source without repeating it in the media panel",
+    "unavailable metadata and playback fail with a fresh-metadata retry",
+    "missing clips show the cover and do not load simulated or unrelated media",
+    "generated lists and account favorites share real previews without changing the query or preferences",
+    "all three clips play on an independent touch viewport with inline placement"
+  ],
+  "samples": [
+    {
+      "id": "hongguo-7668904735717477400",
+      "title": "谁让这个文盲修仙的",
+      "metadata": {
+        "asset_id": "f8ab22a328be44439a3b61f423f827a4",
+        "clip_kind": "excerpt",
+        "video_url": "/api/v1/media/previews/f8ab22a328be44439a3b61f423f827a4/video",
+        "poster_url": "/api/v1/media/previews/f8ab22a328be44439a3b61f423f827a4/poster",
+        "content_type": "video/mp4",
+        "duration_ms": 15024,
+        "width": 640,
+        "height": 360,
+        "source_page_url": "https://hongguoduanju.com/player/7668904735717477400",
+        "checked_at": "2026-10-25T14:33:58.846236+00:00"
+      },
+      "bytes": 1161721
+    },
+    {
+      "id": "hongguo-7672595482966772760",
+      "title": "高冷千金的贴身高手",
+      "metadata": {
+        "asset_id": "369f257f19c3464a8169d5c4c3c6715f",
+        "clip_kind": "excerpt",
+        "video_url": "/api/v1/media/previews/369f257f19c3464a8169d5c4c3c6715f/video",
+        "poster_url": "/api/v1/media/previews/369f257f19c3464a8169d5c4c3c6715f/poster",
+        "content_type": "video/mp4",
+        "duration_ms": 15024,
+        "width": 640,
+        "height": 360,
+        "source_page_url": "https://hongguoduanju.com/player/7672595482966772760",
+        "checked_at": "2026-10-25T14:34:00.300908+00:00"
+      },
+      "bytes": 1625124
+    },
+    {
+      "id": "hongguo-7673067074104593432",
+      "title": "谁说纨绔不能当状元",
+      "metadata": {
+        "asset_id": "e332785767ad451ab0439a4eaef3842f",
+        "clip_kind": "excerpt",
+        "video_url": "/api/v1/media/previews/e332785767ad451ab0439a4eaef3842f/video",
+        "poster_url": "/api/v1/media/previews/e332785767ad451ab0439a4eaef3842f/poster",
+        "content_type": "video/mp4",
+        "duration_ms": 15024,
+        "width": 640,
+        "height": 360,
+        "source_page_url": "https://hongguoduanju.com/player/7673067074104593432",
+        "checked_at": "2026-10-25T14:34:01.599494+00:00"
+      },
+      "bytes": 1484784
+    }
+  ],
+  "playback": [
+    {
+      "work_id": "hongguo-7668904735717477400",
+      "device": "desktop",
+      "duration": 15,
+      "current_time": 14.608112,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "right",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 551.5,
+        "y": 292.765625,
+        "right": 911.5,
+        "bottom": 496.140625
+      },
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "bottom": 912.40625
+      }
+    },
+    {
+      "work_id": "hongguo-7672595482966772760",
+      "device": "desktop",
+      "duration": 15,
+      "current_time": 14.608031,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "right",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 551.5,
+        "y": 292.765625,
+        "right": 911.5,
+        "bottom": 496.140625
+      },
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "bottom": 912.40625
+      }
+    },
+    {
+      "work_id": "hongguo-7673067074104593432",
+      "device": "desktop",
+      "duration": 15,
+      "current_time": 14.603585,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "right",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 551.5,
+        "y": 292.765625,
+        "right": 911.5,
+        "bottom": 496.140625
+      },
+      "card": {
+        "x": 276,
+        "right": 539.5,
+        "bottom": 878.40625
+      }
+    },
+    {
+      "work_id": "hongguo-7668904735717477400",
+      "device": "phone",
+      "duration": 15,
+      "current_time": 14.60436,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "inline",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 17,
+        "y": 321.109375,
+        "right": 373,
+        "bottom": 522.359375
+      },
+      "card": {
+        "x": 16,
+        "right": 374,
+        "bottom": 523.359375
+      }
+    },
+    {
+      "work_id": "hongguo-7672595482966772760",
+      "device": "phone",
+      "duration": 15,
+      "current_time": 14.60544,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "inline",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 17,
+        "y": 321.109375,
+        "right": 373,
+        "bottom": 522.359375
+      },
+      "card": {
+        "x": 16,
+        "right": 374,
+        "bottom": 523.359375
+      }
+    },
+    {
+      "work_id": "hongguo-7673067074104593432",
+      "device": "phone",
+      "duration": 15,
+      "current_time": 14.607551,
+      "muted": true,
+      "video_width": 640,
+      "video_height": 360,
+      "side": "inline",
+      "horizontal_overflow": false,
+      "panel": {
+        "x": 17,
+        "y": 567.109375,
+        "right": 373,
+        "bottom": 768.359375
+      },
+      "card": {
+        "x": 16,
+        "right": 374,
+        "bottom": 769.359375
+      }
+    }
+  ],
+  "page_errors": [],
+  "deployment_verified": false
+}
