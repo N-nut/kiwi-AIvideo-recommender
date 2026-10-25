@@ -49,3 +49,42 @@ test('文档表格各行列数一致，接口与字段约定不会因漏写分�
     }
   }
 });
+
+test('待实现推荐接口的文档示例在数量、来源和隐私字段上自洽', async () => {
+  const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
+  const section = source.slice(source.indexOf('## 11.'));
+  const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)];
+  assert.ok(examples.length, '新方案须提供可校验的响应结构示例');
+  const forbidden = new Set(['password', 'password_hash', 'token', 'token_hash', 'cookie', 'user_id', 'profile', 'favorite_ids']);
+  function checkKeys(value) {
+    if (!value || typeof value !== 'object') return;
+    for (const [key, child] of Object.entries(value)) {
+      assert.ok(!forbidden.has(key), `首页响应不能暴露 ${key}`);
+      checkKeys(child);
+    }
+  }
+  for (const [, body] of examples) {
+    const example = JSON.parse(body);
+    assert.ok(example.request_id && example.strategy_version);
+    assert.ok(example.items.length <= 6 && example.prompts.length <= 4);
+    assert.equal(new Set(example.items.map(item => item.id)).size, example.items.length);
+    const sources = new Set(example.items.map(item => item.basis));
+    const expectedMode = sources.has('favorites') ? (sources.has('public') ? 'mixed' : 'personalized') : 'default';
+    assert.equal(example.carousel_mode, expectedMode, '轮播模式须与实际来源一致');
+    for (const item of example.items) {
+      assert.ok(item.id && ['favorites', 'public'].includes(item.basis));
+      const features = item.matched_features;
+      if (item.basis === 'favorites') assert.ok(features.genres.length || features.themes.length, '只有类别相同不能称为风格匹配');
+      else assert.deepEqual(Object.values(features).flat(), [], '公开补充不能携带收藏匹配依据');
+    }
+    assert.ok(['personalized', 'default'].includes(example.prompts_mode));
+    assert.equal(new Set(example.prompts.map(prompt => prompt.label)).size, example.prompts.length);
+    for (const prompt of example.prompts) {
+      assert.ok(prompt.label && [...prompt.label].length <= 16);
+      assert.ok(prompt.text && [...prompt.text].length <= 300);
+      assert.equal(prompt.basis, example.prompts_mode === 'personalized' ? 'favorites' : 'public');
+      if (prompt.basis === 'favorites') assert.ok(prompt.genres.length || prompt.themes.length);
+    }
+    checkKeys(example);
+  }
+});
