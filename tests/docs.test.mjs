@@ -52,7 +52,7 @@ test('文档表格各行列数一致，接口与字段约定不会因漏写分�
 
 test('推荐接口的文档示例在数量、来源和隐私字段上自洽', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
-  const section = source.slice(source.indexOf('## 11.'));
+  const section = source.slice(source.indexOf('## 11.')).split(/\r?\n## \d+\./)[0];
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)];
   assert.ok(examples.length, '新方案须提供可校验的响应结构示例');
   const forbidden = new Set(['password', 'password_hash', 'token', 'token_hash', 'cookie', 'user_id', 'profile', 'favorite_ids']);
@@ -87,6 +87,35 @@ test('推荐接口的文档示例在数量、来源和隐私字段上自洽', as
     }
     checkKeys(example);
   }
+});
+
+test('真实媒体技术设计的公开响应与状态、资源地址和内部字段约定一致', async () => {
+  const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
+  const section = source.slice(source.indexOf('## 12.'));
+  assert.match(section, /^## 12\. 真实片段接入与预览（技术设计，待实现）/);
+  const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
+  assert.deepEqual(examples.map(example=>example.status), ['ready','missing']);
+  const forbidden = new Set(['video_path','poster_path','usage_basis','source_hash','processing_hash','video_sha256','password','token','user_id']);
+  for (const example of examples) {
+    assert.ok(example.request_id && example.work_id);
+    const serialized = JSON.stringify(example);
+    for (const field of forbidden) assert.ok(!Object.hasOwn(example,field) && !Object.hasOwn(example.preview||{},field), `公开媒体响应不能暴露 ${field}`);
+    assert.ok(!/file:\/\/|[A-Z]:\\/i.test(serialized));
+    if (example.status !== 'ready') { assert.equal(example.preview,null); continue; }
+    const preview=example.preview;
+    assert.match(preview.asset_id,/^[a-f0-9]{32}$/);
+    assert.ok(['trailer','excerpt'].includes(preview.clip_kind));
+    assert.equal(preview.content_type,'video/mp4');
+    assert.ok(preview.duration_ms>=10000 && preview.duration_ms<=20200 && preview.width>0 && preview.height>0);
+    for (const [key,kind] of [['video_url','video'],['poster_url','poster']]) {
+      assert.equal(preview[key],`/api/v1/media/previews/${preview.asset_id}/${kind}`);
+    }
+    assert.equal(new URL(preview.source_page_url).protocol,'https:');
+    assert.ok(Number.isFinite(Date.parse(preview.checked_at)));
+  }
+  assert.match(section,/真实预览流程取消按题材映射/);
+  assert.match(section,/不补其他作品或模拟片段/);
+  assert.match(section,/本次只更新技术设计和文档校验/);
 });
 
 test('真实片段预览方案保留待实现状态、来源边界与异常验收要求', async () => {
