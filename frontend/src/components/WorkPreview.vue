@@ -11,7 +11,7 @@ const active = shallowRef<{ work: Work; anchor: HTMLElement } | null>(null);
 const panel = ref<HTMLElement>();
 const video = ref<HTMLVideoElement>();
 const playing = ref(false);
-const muted = ref(true);
+const muted = ref(false);
 const isComic = computed(()=>active.value?.work.source_meta?.content_type==='漫画');
 const readingCoverFailed = ref(false);
 const blocked = ref(false);
@@ -37,7 +37,7 @@ const poster = computed(() => active.value
   : '');
 
 function stopMedia() {
-  muted.value = true;
+  muted.value = false;
   if (!video.value) return;
   video.value.muted = true;
   video.value.pause();

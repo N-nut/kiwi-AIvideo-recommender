@@ -40,9 +40,11 @@ async function playClip(work,device,touch=false){
  await page.locator('#work-preview').scrollIntoViewIfNeeded();
  const play=page.locator('#work-preview .preview-play');await play.waitFor();
  if(touch)await play.tap();else await play.click();
- await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&v.currentTime>=14.6&&v.muted&&!v.paused&&v.readyState>=2;},null,{timeout:25000});
+ await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&v.currentTime>=14.6&&!v.muted&&!v.paused&&v.readyState>=2;},null,{timeout:25000});
  const sound=page.locator('#work-preview .preview-sound'),playback=page.locator('#work-preview .preview-playback');
- assert.equal(await sound.getAttribute('aria-label'),'打开预览声音');
+ assert.equal(await sound.getAttribute('aria-label'),'静音预览');
+ if(touch)await sound.tap();else await sound.click();
+ await page.waitForFunction(()=>document.querySelector('#work-preview video')?.muted);
  if(touch)await sound.tap();else await sound.click();
  await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&!v.muted&&!v.paused&&v.webkitAudioDecodedByteCount>0;});
  if(touch)await playback.tap();else await playback.click();
@@ -50,14 +52,12 @@ async function playClip(work,device,touch=false){
  if(touch)await playback.tap();else await playback.click();
  await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&!v.muted&&!v.paused;});
  const decodedAudio=await page.locator('#work-preview video').evaluate(v=>v.webkitAudioDecodedByteCount);
- if(touch)await sound.tap();else await sound.click();
- await page.waitForFunction(()=>document.querySelector('#work-preview video')?.muted);
  assert.equal(await page.locator('#work-preview input[type=range]').count(),0);
  const state=await page.evaluate(()=>{const v=document.querySelector('#work-preview video'),p=document.querySelector('#work-preview'),c=p.closest('article')||document.querySelector('.catalog-grid .drama-card');const r=p.getBoundingClientRect(),b=c.getBoundingClientRect();return {duration:v.duration,current_time:v.currentTime,muted:v.muted,video_width:v.videoWidth,video_height:v.videoHeight,side:p.dataset.placement,horizontal_overflow:document.documentElement.scrollWidth>innerWidth,panel:{x:r.x,y:r.y,right:r.right,bottom:r.bottom},card:{x:b.x,right:b.right,bottom:b.bottom}};});
- assert(state.muted&&!state.horizontal_overflow&&Math.abs(state.duration-15)<.2);
+ assert(!state.muted&&!state.horizontal_overflow&&Math.abs(state.duration-15)<.2);
  if(device==='desktop')assert(state.panel.x>=state.card.right+8||state.panel.right<=state.card.x-8);
  else assert.equal(state.side,'inline');
- report.playback.push({work_id:work.id,device,...state,sound_toggle_verified:true,resume_keeps_sound:true,decoded_audio_bytes:decodedAudio});
+ report.playback.push({work_id:work.id,device,...state,default_sound_on:true,sound_toggle_verified:true,resume_keeps_sound:true,decoded_audio_bytes:decodedAudio});
  if(work===report.samples[0])await page.screenshot({path:resolve(root,`docs/screenshots/real-preview-${device}.png`)});
  await close();assert.equal(await page.locator('#work-preview video').count(),0);
 }
@@ -82,7 +82,7 @@ try{
    }
  });
  await page.goto(base);await page.getByRole('button',{name:/片库/}).click();
- await check('all three real clips play muted for 15 seconds on desktop',async()=>{for(const work of report.samples)await playClip(work,'desktop');});
+ await check('all three real clips play with sound by default on desktop',async()=>{for(const work of report.samples)await playClip(work,'desktop');});
  await check('details expose the matching clip source without repeating it in the media panel',async()=>{
    const work=report.samples[0],card=await open(work);await page.locator('#work-preview video').waitFor();
    assert.equal(await page.locator('#work-preview .preview-source').count(),0);
