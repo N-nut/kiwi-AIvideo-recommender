@@ -76,12 +76,35 @@ describe('shared hover video preview', () => {
     const fallback = panel().querySelector<HTMLButtonElement>('.preview-play')!;
     expect(fallback.textContent).toContain('点击播放'); fallback.click(); await vi.advanceTimersByTimeAsync(0);
     expect(play).toHaveBeenCalledTimes(2); expect(panel().querySelector('.preview-play')).toBeNull();
-    expect(document.activeElement).toBe(panel().querySelector('.preview-video-tools button'));
+    expect(document.activeElement).toBe(panel().querySelector('.preview-playback'));
   });
   it('respects reduced motion and never autoplays under that preference', async () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
     const api = mountPreview(); api.enter(workFixture(), anchor); await vi.advanceTimersByTimeAsync(270);
     expect(play).not.toHaveBeenCalled(); expect(panel().textContent).toContain('点击播放');
+  });
+  it('toggles sound without changing volume or restarting playback, and preserves it on resume',async()=>{
+    const api=mountPreview();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);
+    const target=video()!,button=panel().querySelector<HTMLButtonElement>('.preview-sound')!;
+    expect(target.muted).toBe(true);expect(button.textContent).toContain('打开声音');
+    const calls=play.mock.calls.length;target.volume=.6;button.click();await vi.advanceTimersByTimeAsync(0);
+    expect(target.muted).toBe(false);expect(target.volume).toBe(.6);expect(button.getAttribute('aria-label')).toBe('静音预览');
+    expect(button.getAttribute('aria-pressed')).toBe('true');expect(play).toHaveBeenCalledTimes(calls);
+    panel().querySelector<HTMLButtonElement>('.preview-playback')!.click();await vi.advanceTimersByTimeAsync(0);
+    expect(target.muted).toBe(false);
+    button.click();await vi.advanceTimersByTimeAsync(0);
+    expect(target.muted).toBe(true);expect(target.volume).toBe(.6);expect(button.getAttribute('aria-label')).toBe('打开预览声音');
+    expect(panel().querySelector('input[type=range]')).toBeNull();
+  });
+  it('resets sound on switching or reopening and ignores old volume events',async()=>{
+    const api=mountPreview();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);
+    const old=video()!;panel().querySelector<HTMLButtonElement>('.preview-sound')!.click();await vi.advanceTimersByTimeAsync(0);
+    expect(old.muted).toBe(false);
+    api.enter(workFixture({id:'other'}),anchor,true);await vi.advanceTimersByTimeAsync(0);
+    old.muted=false;old.dispatchEvent(new Event('volumechange'));await vi.advanceTimersByTimeAsync(0);
+    expect(video()?.muted).toBe(true);expect(panel().querySelector('.preview-sound')?.textContent).toContain('打开声音');
+    panel().querySelector<HTMLButtonElement>('.preview-sound')!.click();await vi.advanceTimersByTimeAsync(0);
+    api.close();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);expect(video()?.muted).toBe(true);
   });
   it('shows buffering until actual frame data arrives and ignores detached media events',async()=>{
     const api=mountPreview();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);

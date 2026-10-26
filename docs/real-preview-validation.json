@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-25",
-  "database": ".local\\real-previews-mvnxu85v.db",
+  "date": "2026-10-26",
+  "database": ".local\\real-previews-mvottdno.db",
   "real_files": true,
   "checks": [
     "three current MP4s support 200, byte Range, HEAD and 416",
@@ -69,7 +69,7 @@
       "work_id": "hongguo-7668904735717477400",
       "device": "desktop",
       "duration": 15,
-      "current_time": 14.608112,
+      "current_time": 14.684251,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -85,13 +85,16 @@
         "x": 276,
         "right": 539.5,
         "bottom": 912.40625
-      }
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 179658
     },
     {
       "work_id": "hongguo-7672595482966772760",
       "device": "desktop",
       "duration": 15,
-      "current_time": 14.608031,
+      "current_time": 14.691117,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -107,13 +110,16 @@
         "x": 276,
         "right": 539.5,
         "bottom": 912.40625
-      }
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 179577
     },
     {
       "work_id": "hongguo-7673067074104593432",
       "device": "desktop",
       "duration": 15,
-      "current_time": 14.603585,
+      "current_time": 14.704045,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -129,13 +135,16 @@
         "x": 276,
         "right": 539.5,
         "bottom": 878.40625
-      }
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 181597
     },
     {
       "work_id": "hongguo-7668904735717477400",
       "device": "phone",
       "duration": 15,
-      "current_time": 14.60436,
+      "current_time": 14.745386,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -143,21 +152,24 @@
       "horizontal_overflow": false,
       "panel": {
         "x": 17,
-        "y": 321.109375,
+        "y": 653.109375,
         "right": 373,
-        "bottom": 522.359375
+        "bottom": 854.359375
       },
       "card": {
         "x": 16,
         "right": 374,
-        "bottom": 523.359375
-      }
+        "bottom": 855.359375
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 180189
     },
     {
       "work_id": "hongguo-7672595482966772760",
       "device": "phone",
       "duration": 15,
-      "current_time": 14.60544,
+      "current_time": 14.736242,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -165,21 +177,24 @@
       "horizontal_overflow": false,
       "panel": {
         "x": 17,
-        "y": 321.109375,
+        "y": 653.109375,
         "right": 373,
-        "bottom": 522.359375
+        "bottom": 854.359375
       },
       "card": {
         "x": 16,
         "right": 374,
-        "bottom": 523.359375
-      }
+        "bottom": 855.359375
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 179890
     },
     {
       "work_id": "hongguo-7673067074104593432",
       "device": "phone",
       "duration": 15,
-      "current_time": 14.607551,
+      "current_time": 14.733445,
       "muted": true,
       "video_width": 640,
       "video_height": 360,
@@ -187,15 +202,18 @@
       "horizontal_overflow": false,
       "panel": {
         "x": 17,
-        "y": 567.109375,
+        "y": 653.109375,
         "right": 373,
-        "bottom": 768.359375
+        "bottom": 854.359375
       },
       "card": {
         "x": 16,
         "right": 374,
-        "bottom": 769.359375
-      }
+        "bottom": 855.359375
+      },
+      "sound_toggle_verified": true,
+      "resume_keeps_sound": true,
+      "decoded_audio_bytes": 181597
     }
   ],
   "page_errors": [],

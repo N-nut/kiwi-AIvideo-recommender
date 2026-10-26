@@ -11,6 +11,7 @@ const active = shallowRef<{ work: Work; anchor: HTMLElement } | null>(null);
 const panel = ref<HTMLElement>();
 const video = ref<HTMLVideoElement>();
 const playing = ref(false);
+const muted = ref(true);
 const isComic = computed(()=>active.value?.work.source_meta?.content_type==='漫画');
 const readingCoverFailed = ref(false);
 const blocked = ref(false);
@@ -36,7 +37,9 @@ const poster = computed(() => active.value
   : '');
 
 function stopMedia() {
+  muted.value = true;
   if (!video.value) return;
+  video.value.muted = true;
   video.value.pause();
   video.value.removeAttribute('src');
   video.value.load();
@@ -87,7 +90,7 @@ async function play() {
   const target = video.value;
   const current=revision;
   if (!target) return;
-  target.muted = true;
+  target.muted = muted.value;
   blocked.value = false;
   mediaError.value = false;
   try { await target.play(); }
@@ -122,12 +125,13 @@ async function loadPreview() {
   }
 }
 
-function mediaState(event:Event,state:'play'|'pause'|'error'|'metadata'|'loaded'|'waiting') {
+function mediaState(event:Event,state:'play'|'pause'|'error'|'metadata'|'loaded'|'waiting'|'volume') {
   if(event.target!==video.value||!active.value) return;
   if(state==='error'&&status.value==='ready') failMedia();
   else if(state==='metadata') reposition();
   else if(state==='loaded') buffering.value=false;
   else if(state==='waiting') buffering.value=true;
+  else if(state==='volume') muted.value=video.value!.muted;
   else playing.value=state==='play';
 }
 
@@ -173,9 +177,14 @@ function leave(anchor?: HTMLElement) {
 function keep() { intent.keep(); }
 function manualPlay() {
   void play();
-  void nextTick(()=>panel.value?.querySelector<HTMLButtonElement>('.preview-video-tools button')?.focus({preventScroll:true}));
+  void nextTick(()=>panel.value?.querySelector<HTMLButtonElement>('.preview-playback')?.focus({preventScroll:true}));
 }
 function toggle() { if (video.value?.paused) void play(); else video.value?.pause(); }
+function toggleSound() {
+  if (!video.value || status.value!=='ready') return;
+  muted.value = !video.value.muted;
+  video.value.muted = muted.value;
+}
 function outsideClick(event: MouseEvent) {
   // The play overlay can disappear during its own click before it bubbles here.
   if(!panel.value||!active.value) return;
@@ -217,11 +226,11 @@ defineExpose({ enter, leave, close });
           <div v-if="isComic" class="preview-reading"><img :src="!readingCoverFailed&&active.work.cover_url?active.work.cover_url:poster" :alt="`${active.work.title}封面`" referrerpolicy="no-referrer" @error="readingCoverFailed=true" @load="reposition"><span>漫画资料预览 · {{active.work.source_meta?.chapter_count?`${active.work.source_meta.chapter_count} 话`:'章节资料待补充'}}</span></div>
           <template v-else>
           <template v-if="status==='ready'&&media">
-            <video :key="`${active.work.id}-${mediaRevision}`" ref="video" :src="media.video_url" :poster="media.poster_url||active.work.cover_url||poster" muted loop playsinline preload="metadata" :aria-label="`${active.work.title}${label}`" @play="mediaState($event,'play')" @pause="mediaState($event,'pause')" @loadedmetadata="mediaState($event,'metadata')" @loadeddata="mediaState($event,'loaded')" @playing="mediaState($event,'loaded')" @waiting="mediaState($event,'waiting')" @error="mediaState($event,'error')"></video>
+            <video :key="`${active.work.id}-${mediaRevision}`" ref="video" :src="media.video_url" :poster="media.poster_url||active.work.cover_url||poster" :muted="muted" loop playsinline preload="metadata" :aria-label="`${active.work.title}${label}`" @play="mediaState($event,'play')" @pause="mediaState($event,'pause')" @loadedmetadata="mediaState($event,'metadata')" @loadeddata="mediaState($event,'loaded')" @playing="mediaState($event,'loaded')" @waiting="mediaState($event,'waiting')" @volumechange="mediaState($event,'volume')" @error="mediaState($event,'error')"></video>
             <span v-if="buffering" class="preview-buffering" role="status">正在加载片段…</span>
             <span class="preview-kicker"><i></i> {{label}}</span>
             <button v-if="blocked" class="preview-play" @click="manualPlay">▷ 点击播放预览</button>
-            <div class="preview-video-tools"><span>静音循环</span><button :aria-label="playing?'暂停预览':'播放预览'" @click="toggle">{{playing?'Ⅱ 暂停':'▷ 播放'}}</button></div>
+            <div class="preview-video-tools"><button class="preview-sound" :aria-label="muted?'打开预览声音':'静音预览'" :aria-pressed="!muted" @click="toggleSound"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4Z"/><path v-if="muted" d="m16 9 5 6m0-6-5 6"/><path v-else d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg>{{muted?'打开声音':'静音'}}</button><button class="preview-playback" :aria-label="playing?'暂停预览':'播放预览'" @click="toggle">{{playing?'Ⅱ 暂停':'▷ 播放'}}</button></div>
           </template>
           <div v-else class="preview-placeholder">
             <img :src="!coverFailed&&active.work.cover_url?active.work.cover_url:poster" alt="" referrerpolicy="no-referrer" @error="coverFailed=true">

@@ -19,7 +19,7 @@ const {ready_work_ids:ids}=JSON.parse(prepared.stdout);assert(ids.length>=3,'Imp
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],
  {cwd:root,env:{...process.env,AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base,MEDIA_DELIVERY_MODE:'app'},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/real-previews-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
-const report={date:'2026-10-25',database:JSON.parse(prepared.stdout).database,real_files:true,checks:[],samples:[],playback:[],page_errors:[],deployment_verified:false};
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),database:JSON.parse(prepared.stdout).database,real_files:true,checks:[],samples:[],playback:[],page_errors:[],deployment_verified:false};
 const pause=ms=>new Promise(done=>setTimeout(done,ms));let browser,page;
 async function check(name,test){await test();report.checks.push(name);console.log(`Passed: ${name}`);}
 async function close(){await page.keyboard.press('Escape');await page.mouse.move(1,1);}
@@ -41,11 +41,23 @@ async function playClip(work,device,touch=false){
  const play=page.locator('#work-preview .preview-play');await play.waitFor();
  if(touch)await play.tap();else await play.click();
  await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&v.currentTime>=14.6&&v.muted&&!v.paused&&v.readyState>=2;},null,{timeout:25000});
+ const sound=page.locator('#work-preview .preview-sound'),playback=page.locator('#work-preview .preview-playback');
+ assert.equal(await sound.getAttribute('aria-label'),'打开预览声音');
+ if(touch)await sound.tap();else await sound.click();
+ await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&!v.muted&&!v.paused&&v.webkitAudioDecodedByteCount>0;});
+ if(touch)await playback.tap();else await playback.click();
+ await page.waitForFunction(()=>document.querySelector('#work-preview video')?.paused);
+ if(touch)await playback.tap();else await playback.click();
+ await page.waitForFunction(()=>{const v=document.querySelector('#work-preview video');return v&&!v.muted&&!v.paused;});
+ const decodedAudio=await page.locator('#work-preview video').evaluate(v=>v.webkitAudioDecodedByteCount);
+ if(touch)await sound.tap();else await sound.click();
+ await page.waitForFunction(()=>document.querySelector('#work-preview video')?.muted);
+ assert.equal(await page.locator('#work-preview input[type=range]').count(),0);
  const state=await page.evaluate(()=>{const v=document.querySelector('#work-preview video'),p=document.querySelector('#work-preview'),c=p.closest('article')||document.querySelector('.catalog-grid .drama-card');const r=p.getBoundingClientRect(),b=c.getBoundingClientRect();return {duration:v.duration,current_time:v.currentTime,muted:v.muted,video_width:v.videoWidth,video_height:v.videoHeight,side:p.dataset.placement,horizontal_overflow:document.documentElement.scrollWidth>innerWidth,panel:{x:r.x,y:r.y,right:r.right,bottom:r.bottom},card:{x:b.x,right:b.right,bottom:b.bottom}};});
  assert(state.muted&&!state.horizontal_overflow&&Math.abs(state.duration-15)<.2);
  if(device==='desktop')assert(state.panel.x>=state.card.right+8||state.panel.right<=state.card.x-8);
  else assert.equal(state.side,'inline');
- report.playback.push({work_id:work.id,device,...state});
+ report.playback.push({work_id:work.id,device,...state,sound_toggle_verified:true,resume_keeps_sound:true,decoded_audio_bytes:decodedAudio});
  if(work===report.samples[0])await page.screenshot({path:resolve(root,`docs/screenshots/real-preview-${device}.png`)});
  await close();assert.equal(await page.locator('#work-preview video').count(),0);
 }
