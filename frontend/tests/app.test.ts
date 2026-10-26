@@ -11,6 +11,22 @@ const findButton=(wrapper:ReturnType<typeof mount>,text:string)=>wrapper.findAll
 beforeEach(()=>{localStorage.clear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>vi.unstubAllGlobals());
 describe('preference confirmation flow',()=>{
+  it('continues polling media progress after the catalogue finishes without overwriting input',async()=>{
+    vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});
+    let progress={enabled:true,total:2,ready:1,pending:1,running:0,unavailable:0,active:true};
+    const fetcher=vi.fn((url:string)=>url==='/api/v1/catalog/refresh'?response({status:'succeeded',message:'已更新',previews:progress}):initial(url));
+    vi.stubGlobal('fetch',fetcher);const w=mount(App);
+    try{
+      await flushPromises();await w.find('textarea').setValue('保留正在编辑的需求');
+      expect(w.find('.sync-preview-count').text()).toContain('1 / 2');
+      progress={...progress,ready:2,pending:0,active:false};
+      await vi.advanceTimersByTimeAsync(2000);await flushPromises();
+      expect(w.find('.sync-preview-count').text()).toContain('2 / 2');
+      expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe('保留正在编辑的需求');
+      const count=fetcher.mock.calls.filter(([url])=>url==='/api/v1/catalog/refresh').length;
+      await vi.advanceTimersByTimeAsync(5000);expect(fetcher.mock.calls.filter(([url])=>url==='/api/v1/catalog/refresh')).toHaveLength(count);
+    }finally{w.unmount();vi.useRealTimers();}
+  });
   it('shows public prompts without example badge and fills the query without submitting',async()=>{
     const fetcher=vi.fn((url:string)=>initial(url));vi.stubGlobal('fetch',fetcher);
     const w=mount(App);await flushPromises();const baseline=fetcher.mock.calls.length;

@@ -10,6 +10,12 @@ from kiwi.rules import parse_baseline
 from kiwi.schemas import ReasonBatch
 
 
+@pytest.fixture(autouse=True)
+def disable_live_preview_jobs(monkeypatch):
+    # Integration tests opt into a deterministic source explicitly.
+    monkeypatch.setenv("PREVIEW_AUTO_ENABLED", "false")
+
+
 @pytest.fixture
 def record():
     intro = "少年修仙，逆袭成长。明确无后宫，无感情线，无虐心情节。"

@@ -21,7 +21,7 @@ await mkdir(resolve(root,'.local'),{recursive:true});
 const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py',database],{cwd:root,encoding:'utf8'});
 assert.equal(prepared.status,0,prepared.stderr);const preparation=JSON.parse(prepared.stdout);
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],
-  {cwd:root,env:{...process.env,AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
+  {cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/home-recommendations-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
 let browser;
 const report={date:'2026-10-25',strategy_version:'favorites-tags-v1',database:preparation.database,public_works:preparation.public_works,

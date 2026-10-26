@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from kiwi.config import ROOT, Settings
 from kiwi.database import initialize, make_database
+from kiwi.file_lock import FileLock
 
 
 def snapshot(connection):
@@ -25,7 +26,7 @@ def snapshot(connection):
     return result
 
 
-def main():
+def backup():
     settings = Settings()
     if not settings.database_url.startswith("sqlite:///") or ":memory:" in settings.database_url:
         raise SystemExit("此辅助脚本只处理现有 SQLite 文件；PostgreSQL 使用 Alembic 与数据库备份流程")
@@ -33,8 +34,6 @@ def main():
     if not source.is_file():
         raise SystemExit("原数据库不存在，请先核对配置")
     media = settings.media_root.resolve()
-    if (media.parent / f".{media.name}.import.lock").exists():
-        raise SystemExit("存在媒体导入锁，请先确认导入已停止")
     target = ROOT / ".local/backups" / f"previews-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
     target.mkdir(parents=True)
     with sqlite3.connect(source) as connection, sqlite3.connect(target / "kiwi.db") as saved:
@@ -75,5 +74,13 @@ def main():
     print(json.dumps(report,ensure_ascii=False))
 
 
-if __name__ == "__main__":
-    main()
+def main():
+    settings=Settings()
+    lock=FileLock(settings.media_root.parent/f'.{settings.media_root.name}.import.lock')
+    if not lock.acquire():
+        raise SystemExit('媒体正在发布，请先停止导入')
+    try:backup()
+    finally:lock.close()
+
+
+if __name__ == "__main__":main()

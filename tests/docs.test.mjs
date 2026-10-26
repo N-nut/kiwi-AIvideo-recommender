@@ -92,7 +92,7 @@ test('推荐接口的文档示例在数量、来源和隐私字段上自洽', as
 test('真实媒体实现文档的公开响应与状态、资源地址和内部字段约定一致', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
   const section = source.slice(source.indexOf('## 12.'));
-  assert.match(section, /^## 12\. 真实片段接入与预览（已实现，本地样本验证）/);
+  assert.match(section, /^## 12\. 真实片段接入与预览（已实现，全库自动准备）/);
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
   assert.deepEqual(examples.map(example=>example.status), ['ready','missing']);
   const forbidden = new Set(['video_path','poster_path','usage_basis','source_hash','processing_hash','video_sha256','password','token','user_id']);
@@ -122,8 +122,8 @@ test('真实片段预览文档区分已验证样本、来源边界与待完成�
   const source = await readFile(new URL('../产品设计文档.md', import.meta.url), 'utf8');
   const section = source.match(/^### 3\.8 .*\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
   assert.ok(section, '真实片段预览须有独立产品方案');
-  assert.match(section, /已实现 3 部本地开发样本/);
-  assert.match(source, /\| 真实片段预览 \|[^\n]+\| 已完成 3 部本地开发样本及桌面／触屏播放/);
+  assert.match(section, /已实现全库自动准备/);
+  assert.match(source, /\| 真实片段预览 \|[^\n]+\| 已实现全库剧集和新增作品自动准备/);
   for (const requirement of ['3～5 部作品', '10～20 秒', '作品唯一标识', '使用依据', '暂无视频预览', '视频暂不可用', '重试', '迟到', '静音', '后台', '减少动态效果', 'Esc']) {
     assert.ok(section.includes(requirement), `预览方案缺少要求：${requirement}`);
   }
@@ -133,4 +133,7 @@ test('真实片段预览文档区分已验证样本、来源边界与待完成�
   assert.match(section, /不遮挡原卡片的封面、文字和操作/);
   assert.match(section, /卡片资料区下方/);
   assert.match(source, /首版不提供完整剧集站内播放/);
+  for (const requirement of ['更新漫剧库成功保存后','预览准备中','重启恢复','默认有声','漫画']) assert.ok(section.includes(requirement), requirement);
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  for (const requirement of ['0005_preview_jobs.py','sync-previews --retry-failed','preparing','preview_jobs','有限','首集 ID']) assert.ok(technical.includes(requirement),requirement);
 });

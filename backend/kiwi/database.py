@@ -65,6 +65,19 @@ class WorkPreview(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class PreviewJob(Base):
+    __tablename__ = "preview_jobs"
+    __table_args__ = (CheckConstraint("status IN ('pending','running','ready','unavailable')", name="ck_preview_job_status"),)
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="CASCADE"), primary_key=True)
+    status: Mapped[str] = mapped_column(String(16), index=True)
+    source_key: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class CatalogRefresh(Base):
     __tablename__ = "catalog_refresh"
     id: Mapped[str] = mapped_column(String(32), primary_key=True)

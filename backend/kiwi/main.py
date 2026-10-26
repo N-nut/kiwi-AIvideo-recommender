@@ -25,6 +25,7 @@ from .auth import AuthManager, get_current_user, problem, protect_write, router 
 from .favorites import router as favorites_router
 from .home_recommendations import home_recommendations
 from .previews import router as previews_router
+from .preview_jobs import PreviewManager
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -32,11 +33,12 @@ if not log.handlers:
     log.addHandler(logging.StreamHandler())
 
 
-def create_app(settings=None, provider_factory=None, collector=None):
+def create_app(settings=None, provider_factory=None, collector=None, preview_source_factory=None):
     settings = settings or Settings()
     engine, sessions = make_database(settings.database_url)
     provider_factory = provider_factory or (lambda: LiveAI(settings) if settings.ai_mode == "live" else BaselineAI())
-    catalog = CatalogManager(sessions, settings, provider_factory, collector)
+    previews = PreviewManager(sessions, settings, preview_source_factory)
+    catalog = CatalogManager(sessions, settings, provider_factory, collector, previews)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -45,13 +47,16 @@ def create_app(settings=None, provider_factory=None, collector=None):
             initialize(engine)
         app.state.auth.cleanup(force=True)
         catalog.recover()
+        await previews.start()
         yield
         await catalog.close()
+        await previews.close()
         engine.dispose()
 
     app = FastAPI(title="Kiwi AI 漫剧推荐", version="1.0.0", lifespan=lifespan)
     app.state.sessions, app.state.engine, app.state.settings = sessions, engine, settings
     app.state.catalog = catalog
+    app.state.previews = previews
     app.state.auth = AuthManager(sessions, settings)
     app.include_router(auth_router)
     app.include_router(favorites_router)

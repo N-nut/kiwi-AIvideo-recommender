@@ -138,6 +138,15 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
             assert media_client.head(url).headers['content-length']=='100'
             assert media_client.get('/api/v1/works/work-1/preview').json()['status']=='not_applicable'
         with sessions() as session: assert session.get(WorkPreview,'work-0').status=='ready'
+        from kiwi.preview_jobs import PreviewManager
+        from kiwi.database import PreviewJob
+        media_settings.preview_auto_enabled=True
+        manager=PreviewManager(sessions,media_settings)
+        queued=manager.enqueue()
+        assert queued>0
+        with sessions() as session:
+            assert session.get(PreviewJob,'work-0') is None
+            assert session.get(PreviewJob,'home-similar').status=='pending'
     finally:
         command.downgrade(migration,'base')
         engine.dispose()

@@ -17,9 +17,9 @@ await mkdir(resolve(root,'.local'),{recursive:true});
 const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py',database],{cwd:root,encoding:'utf8'});
 assert.equal(prepared.status,0,prepared.stderr);
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],
-  {cwd:root,env:{...process.env,AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
+  {cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/card-preview-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
-const report={date:'2026-10-25',database:JSON.parse(prepared.stdout).database,mode:'baseline',checks:[],viewports:[],placements:[],page_errors:[],real_clips:false};
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),database:JSON.parse(prepared.stdout).database,mode:'baseline',checks:[],viewports:[],placements:[],page_errors:[],real_clips:false};
 const pause=ms=>new Promise(done=>setTimeout(done,ms));let browser,page;
 async function check(name,test){await test();report.checks.push(name);console.log(`Passed: ${name}`);}
 async function ready(){await page.waitForFunction(()=>document.querySelectorAll('.catalog-grid .drama-card').length>0&&!document.querySelector('.catalog-pagination[aria-busy=true]'));}

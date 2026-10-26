@@ -21,9 +21,10 @@ def now():
 
 
 class CatalogManager:
-    def __init__(self, sessions, settings, provider_factory, collector=None):
+    def __init__(self, sessions, settings, provider_factory, collector=None, previews=None):
         self.sessions, self.settings, self.provider_factory = sessions, settings, provider_factory
         self.collector = collector or collect_hongguo
+        self.previews = previews
         self.task = None
         self.lock = asyncio.Lock()
 
@@ -31,11 +32,12 @@ class CatalogManager:
         with self.sessions() as session:
             record = session.get(CatalogRefresh, "hongguo")
             state = dict(record.payload) if record else {"status": "idle", "message": "选择类别，更新红果作品库"}
-            return {**state, "limits": {"pages_per_source":self.settings.crawl_pages_per_source,
-                "max_pages":self.settings.crawl_max_pages,"max_works":self.settings.crawl_max_works}}
+        return {**state, "previews":self.previews.state() if self.previews else None, "limits": {"pages_per_source":self.settings.crawl_pages_per_source,
+            "max_pages":self.settings.crawl_max_pages,"max_works":self.settings.crawl_max_works}}
 
     def save(self, **changes):
         state = {**self.state(), **changes}
+        state.pop("previews", None)
         with self.sessions.begin() as session:
             session.merge(CatalogRefresh(id="hongguo", payload=state))
         return state
@@ -78,6 +80,14 @@ class CatalogManager:
                         Work.embedding_model == self.settings.embedding_model, Work.embedding_dimension == self.settings.embedding_dimension))
                 result.update(**metadata, total=len(rows), catalog_total=visible, indexed_total=indexed,
                               indexing_enabled=can_embed, elapsed_ms=round((time.perf_counter()-started)*1000))
+                if self.previews:
+                    # Work data is committed first. Media preparation is resumable
+                    # and never rolls back a successful catalogue update.
+                    try:
+                        result["previews_queued"] = await self.previews.updated()
+                    except Exception as exc:
+                        log.warning("preview_enqueue_failed type=%s", type(exc).__name__)
+                        result["preview_warning"] = "作品已保存，视频预览准备暂未启动，可重新更新后重试"
                 limited = metadata["coverage"] == "limited"
                 text = f"{'限定范围更新完成' if limited else '更新完成'}：新增 {result['new']} 部，更新 {result['updated']} 部，未变 {result['unchanged']} 部"
                 if not can_embed and self.settings.ai_mode == "live":

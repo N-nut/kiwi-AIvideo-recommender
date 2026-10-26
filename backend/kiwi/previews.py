@@ -8,7 +8,7 @@ from pydantic import Field
 from sqlalchemy import select
 
 from .auth import problem
-from .database import Work, WorkPreview, as_utc
+from .database import CatalogRefresh, PreviewJob, Work, WorkPreview, as_utc
 from .schemas import StrictModel
 
 DRAMA_TYPES = {"真人剧", "漫剧", "AI剧"}
@@ -35,6 +35,7 @@ class PreviewResponse(StrictModel):
     status: str
     message: str
     preview: PreviewMedia | None = None
+    preparing: bool = False
 
 
 def reject_query(request):
@@ -83,6 +84,14 @@ def preview_metadata(request: Request, work_id: str = PathParam(min_length=1, ma
         status = "not_applicable" if kind == "漫画" else "unavailable" if kind not in DRAMA_TYPES else row.status if row else "missing"
         if status == "ready" and not ready_file(row, settings):
             status = "unavailable"
+        job = session.get(PreviewJob, work_id) if kind in DRAMA_TYPES else None
+        service = session.get(CatalogRefresh, "preview-service") if job else None
+        service_error = (service.payload or {}).get("error_code") if service else None
+        preparing = bool(settings.preview_auto_enabled and not service_error and job and job.status in ("pending", "running") and status != "ready")
+        if preparing:
+            status = "pending"
+        elif status != "ready" and job and (job.status == "unavailable" or service_error):
+            status = "unavailable"
         payload = None
         if status == "ready":
             prefix = f"/api/v1/media/previews/{row.asset_id}"
@@ -92,7 +101,7 @@ def preview_metadata(request: Request, work_id: str = PathParam(min_length=1, ma
                 source_page_url=row.source_page_url, checked_at=as_utc(row.checked_at).isoformat())
         message = {"ready": "真实预告" if row and row.clip_kind == "trailer" else "试看片段", "missing": "暂无视频预览",
                    "pending": "暂无视频预览", "unavailable": "视频暂不可用", "not_applicable": "漫画阅读资料预览"}[status]
-        return PreviewResponse(request_id=request.state.request_id, work_id=work_id, status=status, message=message, preview=payload)
+        return PreviewResponse(request_id=request.state.request_id, work_id=work_id, status=status, message="预览准备中" if preparing else message, preview=payload, preparing=preparing)
 
 
 @router.api_route("/media/previews/{asset_id}/{kind}", methods=["GET", "HEAD"])

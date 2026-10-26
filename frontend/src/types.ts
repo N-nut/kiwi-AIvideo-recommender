@@ -11,7 +11,7 @@ export interface PreviewMedia {
   content_type:'video/mp4'; duration_ms:number; width:number; height:number; source_page_url:string; checked_at:string;
 }
 export interface PreviewResponse {
-  request_id:string; work_id:string; status:'ready'|'missing'|'pending'|'unavailable'|'not_applicable'; message:string; preview:PreviewMedia|null;
+  request_id:string; work_id:string; status:'ready'|'missing'|'pending'|'unavailable'|'not_applicable'; message:string; preview:PreviewMedia|null; preparing?:boolean;
 }
 export interface Work {
   id: string; title: string; summary: string; original_intro: string; genres: string[]; themes: string[];
@@ -34,7 +34,8 @@ export interface HomeRecommendation {
   items:HomeWorkItem[];prompts:PromptSuggestion[];warnings:string[];
 }
 export interface RefreshScope { categories: string[]; include_hot_rank: boolean }
-export interface CatalogRefresh { status: 'idle' | 'running' | 'succeeded' | 'failed'; message: string; limits?:{pages_per_source:number;max_pages:number;max_works:number}; run_id?: string; scope?: RefreshScope; stage?:string; category?:string; current_page?:number; pages_done?:number; raw_count?:number; unique_count?:number; indexed?:number; index_total?:number; last_success_at?: string; cooldown?: boolean; reused?:boolean; result?: { total: number; catalog_total?:number; new?:number; updated?:number; unchanged?:number; embedded?:number; pages_done?:number; raw_count?:number; coverage?:'complete'|'limited'; indexing_enabled?:boolean; indexed_total?:number; same_title_groups?:number; filtered_unclassified?:number } | null }
+export interface PreviewProgress {total:number;ready:number;pending:number;running:number;unavailable:number;enabled:boolean;active:boolean;error_code?:string|null}
+export interface CatalogRefresh { previews?:PreviewProgress|null; status: 'idle' | 'running' | 'succeeded' | 'failed'; message: string; limits?:{pages_per_source:number;max_pages:number;max_works:number}; run_id?: string; scope?: RefreshScope; stage?:string; category?:string; current_page?:number; pages_done?:number; raw_count?:number; unique_count?:number; indexed?:number; index_total?:number; last_success_at?: string; cooldown?: boolean; reused?:boolean; result?: { total: number; catalog_total?:number; new?:number; updated?:number; unchanged?:number; embedded?:number; pages_done?:number; raw_count?:number; coverage?:'complete'|'limited'; indexing_enabled?:boolean; indexed_total?:number; same_title_groups?:number; filtered_unclassified?:number } | null }
 export const collectionCategories = [{value:'comic-drama',label:'漫剧'},{value:'ai-drama',label:'AI剧'},{value:'real-drama',label:'真人剧'},{value:'comic',label:'漫画'}];
 export const genres = ['修仙','玄幻','都市','末世','科幻','悬疑','恋爱','古风','搞笑','武侠'];
 export const themes = ['逆袭','复仇','重生','穿越','系统','成长','冒险','经营','治愈','战斗'];

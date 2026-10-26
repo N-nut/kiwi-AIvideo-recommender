@@ -18,6 +18,11 @@ services:
       DATABASE_URL: postgresql+psycopg://kiwi:${POSTGRES_PASSWORD:-kiwi-local-development}@db:5432/kiwi
       MEDIA_ROOT: /media/previews
       MEDIA_DELIVERY_MODE: ${MEDIA_DELIVERY_MODE:-app}
+      PREVIEW_BROWSER_CHANNEL: chromium
+      PREVIEW_NODE_PATH: node
+      PREVIEW_PLAYWRIGHT_MODULE: ""
+      FFMPEG_PATH: ffmpeg
+      FFPROBE_PATH: ffprobe
     volumes: ["kiwi-media:/media/previews"]
     depends_on: {db: {condition: service_healthy}}
     healthcheck:

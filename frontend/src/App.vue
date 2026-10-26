@@ -97,7 +97,7 @@ async function loadHealth() {
 }
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
-  if(!disposed && refresh.value.status==='running') refreshTimer=setTimeout(()=>void pollRefresh(),2000);
+  if(!disposed && (refresh.value.status==='running'||refresh.value.previews?.active)) refreshTimer=setTimeout(()=>void pollRefresh(),2000);
 }
 async function acceptRefresh(state:CatalogRefresh, finished=false) {
   refresh.value=state;
@@ -219,6 +219,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       <span v-if="health.mode==='baseline'" class="baseline-notice">标签基线模式</span>
       <span v-if="refresh.status==='running'" class="sync-counts">已读取 {{refresh.pages_done||0}} 页 · {{refresh.raw_count||0}} 条 · 去重 {{refresh.unique_count||0}} 部</span>
       <span v-if="refresh.status==='running'" class="sync-scope">{{scopeText}}</span>
+      <span v-if="refresh.previews?.enabled&&refresh.previews.total" class="sync-preview-count">视频预览 {{refresh.previews.ready}} / {{refresh.previews.total}}<template v-if="refresh.previews.active"> · 补齐中</template><template v-else-if="refresh.previews.error_code"> · 准备暂不可用</template><template v-else-if="refresh.previews.unavailable"> · {{refresh.previews.unavailable}} 部暂不可用</template></span>
       <button v-if="refresh.status==='succeeded'&&refresh.result?.coverage" class="text-button sync-more" :aria-expanded="syncDetails" aria-controls="sync-details" @click="syncDetails=!syncDetails">{{syncDetails?'收起详情':'更新详情'}}</button>
       <button v-if="refreshError" class="text-button" @click="pollRefresh">重试</button>
       <div v-if="refresh.status==='succeeded'&&refresh.result?.coverage&&syncDetails" id="sync-details" class="sync-summary">

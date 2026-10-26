@@ -17,7 +17,7 @@ const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py
 assert.equal(prepared.status,0,prepared.stderr);
 const {ready_work_ids:ids}=JSON.parse(prepared.stdout);assert(ids.length>=3,'Import at least three verified local previews first');
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],
- {cwd:root,env:{...process.env,AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base,MEDIA_DELIVERY_MODE:'app'},stdio:['ignore','pipe','pipe'],windowsHide:true});
+ {cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base,MEDIA_DELIVERY_MODE:'app'},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/real-previews-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
 const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),database:JSON.parse(prepared.stdout).database,real_files:true,checks:[],samples:[],playback:[],page_errors:[],deployment_verified:false};
 const pause=ms=>new Promise(done=>setTimeout(done,ms));let browser,page;
@@ -99,9 +99,11 @@ try{
    await page.getByText('视频暂不可用',{exact:true}).waitFor();await page.locator('.preview-retry').click();await page.locator('#work-preview video').waitFor();await close();
  });
  await check('missing clips show the cover and do not load simulated or unrelated media',async()=>{
-   await page.locator('.catalog-search input').fill('');await page.waitForFunction(()=>document.querySelectorAll('.catalog-grid .drama-card').length===12);
-   await page.locator('.catalog-grid .drama-card [aria-controls=work-preview]').first().click();
+   const work=report.samples[0],pattern=`**/api/v1/works/${work.id}/preview`;
+   await context.route(pattern,route=>route.fulfill({status:200,json:{work_id:work.id,request_id:'missing-fixture',status:'missing',message:'暂无视频预览',preview:null,preparing:false}}));
+   await open(work);
    await page.getByText('暂无视频预览',{exact:true}).waitFor();assert.equal(await page.locator('#work-preview video').count(),0);await close();
+   await context.unroute(pattern);
  });
  await check('generated lists and account favorites share real previews without changing the query or preferences',async()=>{
    const headers={Origin:base,'X-Kiwi-Request':'1'},password='Synthetic preview check 123';

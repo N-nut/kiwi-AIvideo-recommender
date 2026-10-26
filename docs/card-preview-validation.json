@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-25",
-  "database": ".local\\card-preview-mvnxu6n1.db",
+  "date": "2026-10-26",
+  "database": ".local\\card-preview-mvp64fbq.db",
   "mode": "baseline",
   "checks": [
     "complete catalogue pages fill rows at wide desktop, tablet and phone widths",

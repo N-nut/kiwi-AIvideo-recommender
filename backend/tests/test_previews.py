@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import pytest
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from kiwi.database import Work, WorkPreview, utc_now
+from kiwi.database import PreviewJob, Work, WorkPreview, utc_now
 from kiwi.preview_importer import MediaError, PreviewInput, encode, import_previews, probe, run_tool
 
 ASSET = "a" * 32
@@ -66,6 +66,29 @@ def test_public_states_and_private_fields(client, record, tmp_path):
         session.get(Work, "work-a").review_status = "pending"
     assert client.get(url).status_code == 404
     assert client.get("/api/v1/works/unknown/preview").status_code == 404
+
+
+def test_automatic_preparation_is_distinct_from_unconfirmed_manual_media(client,record):
+    sessions=client.app.state.sessions;seed(sessions,record)
+    client.app.state.settings.preview_auto_enabled=True
+    with sessions.begin() as session:
+        session.add(PreviewJob(work_id='work-a',status='pending',source_key='s'*64,attempts=0,created_at=utc_now(),updated_at=utc_now()))
+    result=client.get('/api/v1/works/work-a/preview').json()
+    assert result['status']=='pending' and result['preparing'] and result['message']=='预览准备中'
+    from kiwi.database import CatalogRefresh
+    with sessions.begin() as session:
+        session.add(CatalogRefresh(id='preview-service',payload={'error_code':'browser_unavailable'}))
+    result=client.get('/api/v1/works/work-a/preview').json()
+    assert result['status']=='unavailable' and not result['preparing']
+    with sessions.begin() as session:session.delete(session.get(CatalogRefresh,'preview-service'))
+    with sessions.begin() as session:session.get(PreviewJob,'work-a').status='unavailable'
+    result=client.get('/api/v1/works/work-a/preview').json()
+    assert result['status']=='unavailable' and not result['preparing']
+    with sessions.begin() as session:
+        session.delete(session.get(PreviewJob,'work-a'))
+        session.add(WorkPreview(work_id='work-a',status='pending',clip_kind='excerpt',usage_basis='unconfirmed',source_page_url='https://example.org/source',created_at=utc_now(),updated_at=utc_now()))
+    result=client.get('/api/v1/works/work-a/preview').json()
+    assert result['status']=='pending' and not result['preparing'] and result['message']=='暂无视频预览'
 
 
 def test_range_head_and_invalidated_assets(client, record, tmp_path):

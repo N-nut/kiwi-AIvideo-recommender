@@ -1,0 +1,217 @@
+import asyncio
+import copy
+import json
+import subprocess
+import sys
+from pathlib import Path
+from uuid import uuid4
+
+import httpx
+import pytest
+from sqlalchemy import select
+
+from kiwi.catalog import CatalogManager
+from kiwi.config import Settings
+from kiwi.database import PreviewJob, Work, initialize, make_database
+from kiwi.preview_importer import MediaError
+from kiwi.preview_jobs import PreviewManager, WorkerLock
+from kiwi.preview_source import HongguoPreviewSource, source_identity, validate_media_url
+from kiwi.schemas import RefreshRequest
+from test_previews import ready
+
+
+@pytest.fixture
+def jobs(tmp_path,record,monkeypatch):
+    engine,sessions=make_database(f"sqlite:///{(tmp_path/'jobs.db').as_posix()}")
+    initialize(engine)
+    settings=Settings(ai_mode='baseline',database_url=str(engine.url),media_root=tmp_path/'media',preview_auto_enabled=True,preview_workers=2,preview_attempts=2,preview_retry_seconds=1)
+    import kiwi.preview_jobs as module
+    monkeypatch.setattr(module,'run_tool',lambda *_: b'tool version')
+    calls=[]
+    def publish(manifest,sessions,settings):
+        item=json.loads(Path(manifest).read_text())[0]
+        calls.append(item['work_id'])
+        ready(sessions,settings.media_root,work_id=item['work_id'],asset=uuid4().hex)
+        return {'ready':1,'failed':0,'items':[]}
+    monkeypatch.setattr(module,'import_previews',publish)
+    def seed(identifier,kind='漫剧'):
+        data=copy.deepcopy(record);data.update(id=identifier,title=identifier,source_meta={'provider':'hongguo','content_type':kind},content_hash='original')
+        with sessions.begin() as session:session.add(Work(**data))
+    yield sessions,settings,seed,calls
+    engine.dispose()
+
+
+class Source:
+    def __init__(self,settings):self.resolved=[]
+    async def start(self):pass
+    async def close(self):pass
+    async def resolve(self,work):
+        self.resolved.append(work['id'])
+        return {'source_page_url':'https://example.org/first-episode','url':'unused'}
+    async def download(self,info,target):Path(target).write_bytes(b'local fixture')
+
+
+async def idle(manager):
+    return await asyncio.wait_for(manager.wait_idle(),8)
+
+
+async def test_backfill_all_drama_types_reuses_ready_and_skips_comics(jobs):
+    sessions,settings,seed,calls=jobs
+    for identifier,kind in [('old','漫剧'),('new-a','AI剧'),('new-b','真人剧'),('comic','漫画')]:seed(identifier,kind)
+    ready(sessions,settings.media_root,work_id='old')
+    manager=PreviewManager(sessions,settings,Source)
+    try:
+        await manager.start();state=await idle(manager)
+        assert state['total']==3 and state['ready']==3 and state['pending']==state['running']==0
+        assert set(calls)=={'new-a','new-b'}
+        assert manager.enqueue(retry_failed=True)==0
+        assert not list(settings.media_root.parent.glob('.preview-source-*'))
+    finally:await manager.close()
+
+
+async def test_new_catalogue_records_are_queued_after_successful_commit(jobs,record):
+    sessions,settings,seed,calls=jobs
+    manager=PreviewManager(sessions,settings,Source)
+    row=copy.deepcopy(record);row.update(id='hongguo-12345678',title='新增作品',source_meta={'provider':'hongguo','content_type':'AI剧','pages':['https://hongguoduanju.com/category/ai-drama']})
+    async def collector(scope,progress,settings):
+        return [row],{'sources':[],'coverage':'complete','pages_done':1,'raw_count':1,'unique_count':1}
+    catalog=CatalogManager(sessions,settings,lambda:None,collector,manager)
+    try:
+        await catalog.start(RefreshRequest(categories=['ai-drama']));await catalog.task
+        assert catalog.state()['status']=='succeeded' and catalog.state()['result']['previews_queued']==1
+        state=await idle(manager)
+        assert state['ready']==1 and calls==['hongguo-12345678']
+        with sessions() as session:assert session.get(Work,'hongguo-12345678') is not None
+    finally:await catalog.close();await manager.close()
+
+
+async def test_refresh_failure_never_queues_uncommitted_records(jobs):
+    sessions,settings,seed,calls=jobs
+    manager=PreviewManager(sessions,settings,Source)
+    async def collector(*args,**kwargs):raise RuntimeError('failed source')
+    catalog=CatalogManager(sessions,settings,lambda:None,collector,manager)
+    try:
+        await catalog.start();await catalog.task
+        assert catalog.state()['status']=='failed'
+        with sessions() as session:assert session.scalars(select(PreviewJob)).all()==[]
+        assert calls==[]
+    finally:await catalog.close();await manager.close()
+
+
+async def test_transient_failure_retries_and_terminal_failure_can_be_requeued(jobs):
+    sessions,settings,seed,calls=jobs;seed('retry')
+    class Retry(Source):
+        async def resolve(self,work):
+            if not self.resolved:
+                self.resolved.append(work['id']);raise MediaError('download','download_failed')
+            return await super().resolve(work)
+    manager=PreviewManager(sessions,settings,Retry)
+    try:
+        await manager.start();assert (await idle(manager))['ready']==1
+        with sessions() as session:assert session.get(PreviewJob,'retry').attempts==2
+    finally:await manager.close()
+    seed('unavailable')
+    class Unsupported(Source):
+        async def resolve(self,work):raise MediaError('source','unsupported_source')
+    manager=PreviewManager(sessions,settings,Unsupported)
+    try:
+        await manager.start();state=await idle(manager)
+        assert state['unavailable']==1 and state['ready']==1
+        assert manager.enqueue(retry_failed=True)==1
+        with sessions() as session:
+            job=session.get(PreviewJob,'unavailable');assert job.status=='pending' and job.attempts==0
+    finally:await manager.close()
+
+
+async def test_restart_recovers_running_work_without_losing_original_work(jobs):
+    sessions,settings,seed,calls=jobs;seed('interrupted')
+    entered=asyncio.Event()
+    class Blocked(Source):
+        async def resolve(self,work):entered.set();await asyncio.Event().wait()
+    first=PreviewManager(sessions,settings,Blocked)
+    await first.start();await asyncio.wait_for(entered.wait(),3);await first.close()
+    with sessions() as session:
+        assert session.get(PreviewJob,'interrupted').status=='pending'
+        assert session.get(Work,'interrupted').content_hash=='original'
+    second=PreviewManager(sessions,settings,Source)
+    try:
+        await second.start();assert (await idle(second))['ready']==1
+    finally:await second.close()
+
+
+async def test_disabled_runtime_and_missing_tools_do_not_fake_success(jobs,monkeypatch):
+    sessions,settings,seed,calls=jobs;seed('pending')
+    settings.preview_auto_enabled=False
+    manager=PreviewManager(sessions,settings,Source)
+    await manager.start();assert not manager.tasks and not (await idle(manager))['enabled']
+    await manager.close()
+    settings.preview_auto_enabled=True
+    import kiwi.preview_jobs as module
+    def missing(*args):raise MediaError('tools','tool_missing')
+    monkeypatch.setattr(module,'run_tool',missing)
+    manager=PreviewManager(sessions,settings,Source)
+    try:
+        await manager.start();state=await idle(manager)
+        assert state['error_code']=='tool_missing' and state['ready']==0 and state['pending']==1
+    finally:await manager.close()
+
+
+def test_only_one_worker_process_can_own_the_media_root(tmp_path):
+    first=WorkerLock(tmp_path/'worker.lock');second=WorkerLock(tmp_path/'worker.lock')
+    try:
+        assert first.acquire();assert not second.acquire();first.close();assert second.acquire()
+    finally:first.close();second.close()
+
+
+def test_terminated_process_does_not_leave_the_importer_locked(tmp_path):
+    path=tmp_path/'import.lock'
+    code="from pathlib import Path; import sys,os; from kiwi.file_lock import FileLock; lock=FileLock(Path(sys.argv[1])); assert lock.acquire(); os._exit(0)"
+    assert subprocess.run([sys.executable,'-c',code,str(path)],check=False).returncode==0
+    assert path.exists()
+    lock=WorkerLock(path)
+    try:assert lock.acquire()
+    finally:lock.close()
+
+
+@pytest.mark.parametrize('value',['http://v3-hgweb.qznovelvod.com/video','https://127.0.0.1/private','https://v3-hgweb.qznovelvod.com.attacker.test/video','https://user:secret@v3-hgweb.qznovelvod.com/video','https://hongguoduanju.com/admin'])
+def test_media_hosts_and_public_paths_are_restricted(value):
+    with pytest.raises(MediaError):validate_media_url(value)
+
+
+def test_source_requires_exact_work_and_source_ids():
+    work={'id':'hongguo-12345678','source_url':'https://hongguoduanju.com/detail?series_id=12345678','source_meta':{'provider':'hongguo'}}
+    assert source_identity(work)=='12345678'
+    for changes in [{'source_url':'https://hongguoduanju.com/detail?series_id=87654321'},{'id':'work-a'},{'source_url':'https://hongguoduanju.com.attacker.test/detail?series_id=12345678'}]:
+        with pytest.raises(MediaError):source_identity({**work,**changes})
+
+
+def test_cdn_redirect_target_is_allowed_only_for_the_observed_hash_host():
+    assert validate_media_url('https://'+'a'*48+'.v.smtcdns.com/video')
+    with pytest.raises(MediaError):validate_media_url('https://attacker.v.smtcdns.com/video')
+
+
+async def test_download_rejects_redirect_escape_and_oversized_content(tmp_path):
+    settings=Settings(preview_source_max_bytes=5)
+    source=HongguoPreviewSource(settings);await source.client.aclose()
+    info={'url':'https://v3-hgweb.qznovelvod.com/video','source_page_url':'https://hongguoduanju.com/player/12345678'}
+    try:
+        source.client=httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(302,headers={'Location':'http://127.0.0.1/secret'})))
+        with pytest.raises(MediaError,match='media_host_rejected'):await source.download(info,tmp_path/'source.mp4')
+        await source.client.aclose()
+        source.client=httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200,content=b'123456')))
+        with pytest.raises(MediaError,match='source_size_limit'):await source.download(info,tmp_path/'source.mp4')
+    finally:await source.close()
+
+
+async def test_normal_cdn_redirect_preserves_browser_headers_and_streams_to_disk(tmp_path):
+    source=HongguoPreviewSource(Settings());await source.client.aclose()
+    visits=[]
+    def handler(request):
+        visits.append(request)
+        assert request.headers['user-agent']=='browser-test' and request.headers['referer']=='https://hongguoduanju.com/player/12345678'
+        return httpx.Response(302,headers={'Location':'https://'+'a'*48+'.v.smtcdns.com/clip'}) if len(visits)==1 else httpx.Response(200,content=b'video')
+    source.client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result=await source.download({'url':'https://v3-hgweb.qznovelvod.com/video','source_page_url':'https://example.org','referer':'https://hongguoduanju.com/player/12345678','user_agent':'browser-test'},tmp_path/'source.mp4')
+        assert result==5 and (tmp_path/'source.mp4').read_bytes()==b'video' and len(visits)==2
+    finally:await source.close()

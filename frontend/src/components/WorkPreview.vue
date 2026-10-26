@@ -17,7 +17,8 @@ const readingCoverFailed = ref(false);
 const blocked = ref(false);
 const mediaError = ref(false);
 const media = shallowRef<PreviewMedia|null>(null);
-const status = ref<'loading'|'ready'|'missing'|'error'>('loading');
+const status = ref<'loading'|'ready'|'missing'|'preparing'|'error'>('loading');
+let preparationTimer: ReturnType<typeof setTimeout>|undefined;
 const lane = latestRequest();
 const coverFailed = ref(false);
 const buffering = ref(false);
@@ -50,6 +51,7 @@ function close(restoreFocus = false, pointer=lastPointer) {
   closing = true;
   try {
     intent.cancel();
+    clearTimeout(preparationTimer);
     observer?.disconnect();
     revision++;
     lane.cancel();
@@ -103,6 +105,7 @@ async function play() {
 function failMedia() { stopMedia(); status.value='error'; mediaError.value=true; blocked.value=false; }
 
 async function loadPreview() {
+  clearTimeout(preparationTimer);
   if(!active.value||isComic.value) return;
   const current=revision,workId=active.value.work.id,request=lane.begin();
   stopMedia(); media.value=null; status.value='loading'; blocked.value=false; mediaError.value=false;
@@ -111,7 +114,9 @@ async function loadPreview() {
     if(!request.current()||current!==revision||active.value?.work.id!==workId) return;
     if(result.work_id!==workId) throw new Error('Unexpected work');
     if(result.status!=='ready'||!result.preview) {
-      status.value=result.status==='unavailable'?'error':'missing'; return;
+      status.value=result.preparing?'preparing':result.status==='unavailable'?'error':'missing';
+      if(result.preparing) preparationTimer=setTimeout(()=>{if(current===revision&&active.value?.work.id===workId) void loadPreview();},3000);
+      return;
     }
     mediaRevision++;
     media.value=result.preview; status.value='ready'; buffering.value=true;
@@ -139,6 +144,7 @@ async function open(value: { work: Work; anchor: HTMLElement }) {
   if (!value.anchor.isConnected || document.querySelector('dialog[open]')) return;
   if (active.value?.anchor === value.anchor && active.value.work.id===value.work.id) return;
   stopMedia();
+  clearTimeout(preparationTimer);
   lane.cancel(); media.value=null; status.value='loading';coverFailed.value=false;
   if(shown) {panel.value?.hidePopover?.();shown=false;}
   observer?.disconnect();
@@ -234,7 +240,7 @@ defineExpose({ enter, leave, close });
           </template>
           <div v-else class="preview-placeholder">
             <img :src="!coverFailed&&active.work.cover_url?active.work.cover_url:poster" alt="" referrerpolicy="no-referrer" @error="coverFailed=true">
-            <div class="preview-status" role="status" aria-live="polite"><span>{{status==='loading'?'正在加载预览…':status==='missing'?'暂无视频预览':'视频暂不可用'}}</span><button v-if="status==='error'" class="preview-retry" @click="loadPreview">重试</button></div>
+            <div class="preview-status" role="status" aria-live="polite"><span>{{status==='loading'?'正在加载预览…':status==='preparing'?'预览准备中…':status==='missing'?'暂无视频预览':'视频暂不可用'}}</span><button v-if="status==='error'" class="preview-retry" @click="loadPreview">重试</button></div>
           </div>
           </template>
           <button class="preview-close" :aria-label="isComic?'关闭漫画预览':'关闭视频预览'" @click="close(true,$event)">×</button>

@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     preview_output_max_bytes: int = Field(default=20 * 1024 * 1024, gt=0)
     preview_probe_timeout: float = Field(default=10, gt=0, le=60)
     preview_process_timeout: float = Field(default=120, gt=0, le=600)
+    preview_auto_enabled: bool = True
+    preview_workers: int = Field(default=2, ge=1, le=3)
+    preview_browser_channel: str = "msedge" if os.name == "nt" else "chromium"
+    preview_node_path: str = "node"
+    preview_playwright_module: str = ""
+    preview_fetch_timeout: float = Field(default=60, ge=5, le=180)
+    preview_retry_seconds: float = Field(default=60, ge=1, le=3600)
+    preview_attempts: int = Field(default=3, ge=1, le=3)
 
     @field_validator("media_root")
     @classmethod

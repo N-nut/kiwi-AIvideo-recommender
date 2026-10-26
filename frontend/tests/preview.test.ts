@@ -162,9 +162,9 @@ describe('shared hover video preview', () => {
     await wrapper.find('[aria-controls=work-preview]').trigger('click',{pointerType:'touch'});expect(wrapper.emitted('preview')?.[0]?.[2]).toBe(true);
   });
   it.each(['missing','pending'])('shows a cover and no simulated fallback for %s',async(status)=>{
-    fetchPreview.mockResolvedValueOnce({ok:true,json:async()=>({...ready(),status,preview:null})});
+    fetchPreview.mockResolvedValueOnce({ok:true,json:async()=>({...ready(),status,preview:null,preparing:status==='pending'})});
     const api=mountPreview();api.enter(workFixture({cover_url:'https://example.org/cover.jpg'}),anchor,true);await vi.advanceTimersByTimeAsync(0);
-    expect(video()).toBeNull();expect(panel().textContent).toContain('暂无视频预览');expect(play).not.toHaveBeenCalled();
+    expect(video()).toBeNull();expect(panel().textContent).toContain(status==='pending'?'预览准备中':'暂无视频预览');expect(play).not.toHaveBeenCalled();
     expect(panel().querySelector('img')?.src).toBe('https://example.org/cover.jpg');expect(panel().textContent).not.toContain('模拟');
   });
   it('refetches metadata after a service failure and after playback error, never reuses a failed URL',async()=>{
@@ -176,6 +176,16 @@ describe('shared hover video preview', () => {
     fetchPreview.mockResolvedValueOnce({ok:true,json:async()=>({...ready(),preview:{...ready().preview!,video_url:'/new-version.mp4'}})});
     panel().querySelector<HTMLButtonElement>('.preview-retry')!.click();await vi.advanceTimersByTimeAsync(0);
     expect(video()?.getAttribute('src')).toBe('/new-version.mp4');expect(fetchPreview).toHaveBeenCalledTimes(3);
+  });
+  it('polls preparing metadata until ready and cancels preparation polling after close',async()=>{
+    fetchPreview.mockResolvedValueOnce({ok:true,json:async()=>({...ready(),status:'pending',preview:null,preparing:true})});
+    const api=mountPreview();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);
+    expect(panel().textContent).toContain('预览准备中');expect(video()).toBeNull();
+    await vi.advanceTimersByTimeAsync(3000);expect(video()).not.toBeNull();expect(video()?.muted).toBe(false);
+    api.close();
+    fetchPreview.mockResolvedValueOnce({ok:true,json:async()=>({...ready(),status:'pending',preview:null,preparing:true})});
+    api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);api.close();
+    const count=fetchPreview.mock.calls.length;await vi.advanceTimersByTimeAsync(10000);expect(fetchPreview).toHaveBeenCalledTimes(count);
   });
   it('ignores late metadata on switching, retrying and closing, and aborts previous fetches',async()=>{
     const responses:Array<(value:unknown)=>void>=[];

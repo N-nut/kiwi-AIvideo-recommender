@@ -17,6 +17,7 @@ from pydantic import Field, StrictBool, field_validator
 from .database import Work, WorkPreview, utc_now
 from .previews import DRAMA_TYPES, ready_file
 from .schemas import StrictModel
+from .file_lock import FileLock
 
 log = logging.getLogger("kiwi.media")
 PROFILE = {"version": 1, "codec": "libx264", "audio": "aac", "crf": 23, "pixel_format": "yuv420p", "long_edge": 1280, "short_edge": 720}
@@ -149,15 +150,12 @@ def import_previews(manifest, sessions, settings, check_only=False):
         raise MediaError("manifest", "invalid_manifest") from None
     report = {"check_only": check_only, "ready": 0, "pending": 0, "skipped": 0, "failed": 0, "items": []}
     root = settings.media_root.resolve()
-    lock = root.parent / f".{root.name}.import.lock"
+    lock = FileLock(root.parent / f".{root.name}.import.lock")
     acquired = False
     if not check_only:
         root.mkdir(parents=True, exist_ok=True)
-        try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(fd)
-            acquired = True
-        except FileExistsError:
+        acquired = lock.acquire()
+        if not acquired:
             raise MediaError("publish", "import_busy") from None
     try:
         for item in items:
@@ -234,5 +232,5 @@ def import_previews(manifest, sessions, settings, check_only=False):
                     shutil.rmtree(stage_path)
     finally:
         if acquired:
-            lock.unlink()
+            lock.close()
     return report

@@ -10,7 +10,8 @@ from .providers import BaselineAI, LiveAI
 
 def main():
     parser = argparse.ArgumentParser(description="Kiwi database and data import")
-    parser.add_argument("command", choices=["init", "import", "import-previews"])
+    parser.add_argument("command", choices=["init", "import", "import-previews", "sync-previews"])
+    parser.add_argument("--retry-failed", action="store_true")
     parser.add_argument("--manifest")
     parser.add_argument("--check-only", action="store_true")
     parser.add_argument("--file", default=str(ROOT / "data/works.json"))
@@ -39,6 +40,29 @@ def main():
         finally:
             engine.dispose()
     initialize(engine)
+    if args.command == "sync-previews":
+        from .preview_jobs import PreviewManager
+        async def sync():
+            manager = PreviewManager(sessions, settings)
+            try:
+                if args.retry_failed:
+                    manager.enqueue(retry_failed=True)
+                await manager.start()
+                last = None
+                def progress(state):
+                    nonlocal last
+                    stamp = (state["ready"], state["unavailable"], state["error_code"])
+                    if stamp != last:
+                        print(json.dumps(state, ensure_ascii=False), flush=True)
+                        last = stamp
+                result = await manager.wait_idle(progress)
+                return 1 if result["unavailable"] or result["error_code"] else 0
+            finally:
+                await manager.close()
+        try:
+            raise SystemExit(asyncio.run(sync()))
+        finally:
+            engine.dispose()
     if args.command == "import":
         from pathlib import Path
         data = json.loads(Path(args.file).read_text(encoding="utf-8"))
