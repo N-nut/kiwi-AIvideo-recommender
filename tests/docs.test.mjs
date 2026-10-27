@@ -4,6 +4,12 @@ import { readFile, stat } from 'node:fs/promises';
 
 const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url), new URL('../docs/实现与验收.md', import.meta.url), new URL('../data/审核说明.md', import.meta.url), new URL('../docs/媒体预览.md', import.meta.url)];
 
+function technicalSection(source, number) {
+  const start=source.search(new RegExp(`^## ${number}\\.`, 'm'));
+  assert.notEqual(start,-1,`技术方案缺少第 ${number} 节`);
+  return source.slice(start).split(/\r?\n## \d+\./)[0];
+}
+
 test('个人空间产品方案覆盖四项功能、账号边界和验收，明确待实现且不展示注册时间', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const space=source.match(/^### 3\.10 用户个人空间（产品方案，待实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
@@ -20,6 +26,68 @@ test('个人空间产品方案覆盖四项功能、账号边界和验收，明�
   for(const requirement of ['昵称占用','并发争用','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
   assert.doesNotMatch(space,/昵称可修改，允许重复|同名昵称的两个账号/,'昵称须唯一');
   assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');
+});
+
+test('个人空间技术设计对应当前产品版本，区分学习基础、待实现接口和安全验收', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const version=product.match(/^版本：(v[\d.]+)/m)?.[1];
+  assert.ok(version,'产品文档须声明版本');
+  assert.ok(source.includes(`[产品设计文档 ${version}]`),'技术方案应对齐当前产品文档版本');
+  assert.doesNotMatch(product,/待技术设计与实现|补充资料保存、画像口径、密码更新与会话失效的技术方案/,'技术设计完成后须同步产品文档进度');
+  const migration=await readFile(new URL('../backend/migrations/versions/0005_preview_jobs.py',import.meta.url),'utf8');
+  const revision=migration.match(/^revision = "([^"]+)"/m)?.[1];
+  assert.ok(revision,'既有媒体任务迁移须声明版本');
+  const section=technicalSection(source,13);
+  assert.ok(section.includes(`down_revision="${revision}"`),'新增迁移须衔接实际 revision，而非文件名');
+  assert.match(section,/^## 13\. 用户个人空间技术方案（待实现）/);
+  assert.match(section,/接口、页面及功能测试尚未编写/,'不能将技术设计称为功能交付');
+  for(const requirement of ['Python + FastAPI + 现有 Vue 3','不代表已经掌握该工具','0006_user_profiles.py',
+    'create_all()','uq_users_nickname_key','NFKC','casefold()','多个 NULL','保存本人当前昵称',
+    '并发正确性由唯一索引保证','不展示注册时间','服务端 Session','extra="forbid"',
+    'PATCH /api/v1/me/profile','GET /api/v1/me/profile','GET /api/v1/me/space-summary','POST /api/v1/me/password',
+    'total + unavailable_count','build_profile','不调用大模型','no_valid_favorites','no_tags',
+    'Argon2id','BEGIN IMMEDIATE','FOR UPDATE','全部 `user_sessions`','锁之外',
+    '不能在撤销后补发有效会话','提交前','只删除当前会话','结果暂未确认','auth.scope()',
+    '账号代次和请求序号','不改变身份代次','不覆盖用户当次输入','320','受控屏障']) {
+    assert.ok(section.includes(requirement),`技术方案缺少约定：${requirement}`);
+  }
+});
+
+test('个人空间计划响应不泄露内部信息，收藏与兴趣统计示例口径一致', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const section=technicalSection(source,13);
+  const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
+  assert.equal(examples.length,3,'分别给出资料、字段错误和收藏画像结构');
+  const forbidden=new Set(['created_at','nickname_key','password','password_hash','token','token_hash','cookie','user_id','favorite_ids']);
+  function checkKeys(value) {
+    if(!value || typeof value!=='object') return;
+    for(const [key,child] of Object.entries(value)) {
+      assert.ok(!forbidden.has(key),`个人空间响应不能暴露 ${key}`);
+      checkKeys(child);
+    }
+  }
+  for(const example of examples) { assert.ok(example.request_id);checkKeys(example); }
+  const {profile}=examples.find(example=>example.profile);
+  assert.deepEqual(Object.keys(profile).sort(),['avatar_id','id','nickname','username']);
+  assert.ok(profile.id && profile.username && profile.nickname && profile.avatar_id);
+  const {error}=examples.find(example=>example.error);
+  assert.equal(error.code,'nickname_taken');
+  assert.deepEqual(error.fields,['nickname']);
+  assert.equal(error.field_messages.nickname,error.message);
+  const {favorites,interest}=examples.find(example=>example.interest);
+  assert.equal(favorites.total,favorites.available+favorites.unavailable);
+  assert.ok(interest.analyzed_count>0 && interest.analyzed_count<=favorites.available);
+  assert.equal(interest.status,'ready');
+  for(const group of ['content_types','genres','themes']) {
+    const tags=interest[group];
+    assert.ok(tags.length<=5);
+    assert.equal(new Set(tags.map(tag=>tag.label)).size,tags.length,'标签不得重复计数');
+    for(const tag of tags) assert.ok(tag.label && Number.isInteger(tag.count) && tag.count>0 && tag.count<=interest.analyzed_count);
+    assert.deepEqual(tags.map(tag=>tag.count),tags.map(tag=>tag.count).sort((a,b)=>b-a),'按真实数量降序');
+  }
+  assert.equal(interest.content_types.reduce((sum,tag)=>sum+tag.count,0),interest.analyzed_count);
+  assert.ok(interest.genres.length || interest.themes.length,'画像 ready 需要真实风格标签');
 });
 
 test('README、产品设计和技术方案中的本地文档链接指向实际文件', async () => {
@@ -70,7 +138,7 @@ test('文档表格各行列数一致，接口与字段约定不会因漏写分�
 
 test('推荐接口的文档示例在数量、来源和隐私字段上自洽', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
-  const section = source.slice(source.indexOf('## 11.')).split(/\r?\n## \d+\./)[0];
+  const section = technicalSection(source,11);
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)];
   assert.ok(examples.length, '新方案须提供可校验的响应结构示例');
   const forbidden = new Set(['password', 'password_hash', 'token', 'token_hash', 'cookie', 'user_id', 'profile', 'favorite_ids']);
@@ -109,7 +177,7 @@ test('推荐接口的文档示例在数量、来源和隐私字段上自洽', as
 
 test('真实媒体实现文档的公开响应与状态、资源地址和内部字段约定一致', async () => {
   const source = await readFile(new URL('../docs/技术方案.md', import.meta.url), 'utf8');
-  const section = source.slice(source.indexOf('## 12.'));
+  const section = technicalSection(source,12);
   assert.match(section, /^## 12\. 真实片段接入与预览（已实现，全库自动准备）/);
   const examples = [...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
   assert.deepEqual(examples.map(example=>example.status), ['ready','missing']);
