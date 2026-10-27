@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-27",
+  "database": ".local\\detail-evidence-mvq5afmo.db",
+  "checks": [
+    "real source introduction and tags appear once with no empty evidence section",
+    "only meaningful judgments and reason references remain, with repeated source text linked above",
+    "desktop, tablet and narrow phone layouts wrap correctly with visible close and action buttons",
+    "reference links move focus to the original text and reopening resets the collapsed state",
+    "switching back to a real work removes synthetic explanations and preserves source actions"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "left": 360,
+      "right": 1080,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "left": 24,
+      "right": 744,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "left": 16,
+      "right": 374,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "left": 16,
+      "right": 304,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    }
+  ],
+  "synthetic_judgment_case": true,
+  "page_errors": []
+}
