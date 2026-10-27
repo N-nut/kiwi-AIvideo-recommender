@@ -111,7 +111,7 @@ try{
    await page.reload();await page.locator('.logout-button').waitFor();await page.getByRole('button',{name:'发现好剧',exact:false}).click();
    await page.locator('#query').fill('想看修仙玄幻题材，穿越主题的故事');
    await page.getByRole('button',{name:'理解我的口味',exact:true}).click();
-   await page.getByRole('button',{name:'确认偏好，生成片单',exact:true}).click();
+   await page.locator('.recognition-dialog').getByRole('button',{name:'核对无误，生成片单',exact:true}).click();
    const card=page.locator('.results-section .drama-card').filter({has:page.getByRole('heading',{name:report.samples[0].title,exact:true})}).first();await card.waitFor();
    const before={query:await page.locator('#query').inputValue(),chips:await page.locator('.preference-chips').innerText(),results:await page.locator('.results-section').innerText()};
    await card.locator('[aria-controls=work-preview]').click();await page.locator('#work-preview video').waitFor();

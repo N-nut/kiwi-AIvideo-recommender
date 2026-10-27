@@ -69,7 +69,7 @@ try{
  });
  let favorite;
  await check('real favorite mutation refreshes total and actual interest tags without altering the active list',async()=>{
-  await discover(page);await page.locator('#query').fill('想看修仙成长');await page.getByRole('button',{name:'理解我的口味',exact:true}).click();await page.getByRole('button',{name:'确认偏好，生成片单',exact:true}).click();await page.locator('.results-section .skeleton').first().waitFor({state:'hidden'});
+  await discover(page);await page.locator('#query').fill('想看修仙成长');await page.getByRole('button',{name:'理解我的口味',exact:true}).click();await page.locator('.recognition-dialog').getByRole('button',{name:'核对无误，生成片单',exact:true}).click();await page.locator('.results-section .skeleton').first().waitFor({state:'hidden'});
   const before={query:await page.locator('#query').inputValue(),chips:await page.locator('.preference-chips').innerText(),titles:await page.locator('.results-section h3').allTextContents()};assert(before.titles.length);
   await page.getByRole('button',{name:/片库/}).click();const data=await(await page.request.get(`${base}/api/v1/works?content_type=${encodeURIComponent('漫剧')}&genre=${encodeURIComponent('修仙')}&page_size=50`)).json();favorite=data.items.find(w=>w.themes.length);assert(favorite);
   await page.locator('#catalog-search').fill(favorite.title);await page.locator('.catalog-search').press('Enter');const card=page.locator('.drama-card').filter({has:page.getByRole('heading',{name:favorite.title,exact:true})}).first();

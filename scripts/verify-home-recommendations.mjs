@@ -24,18 +24,20 @@ const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','
   {cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/home-recommendations-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
 let browser;
-const report={date:'2026-10-25',strategy_version:'favorites-tags-v1',database:preparation.database,public_works:preparation.public_works,
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),strategy_version:'favorites-tags-v1',database:preparation.database,public_works:preparation.public_works,
   mode:'baseline',checks:[],viewports:[],page_errors:[],external_covers_blocked:true};
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function check(name,test){await test();report.checks.push(name);console.log(`Passed: ${name}`);}
 async function defaultPrompts(page){await page.waitForFunction(()=>document.querySelector('#favorite-prompts-title')?.textContent==='换个口味试试：'&&document.querySelectorAll('.favorite-prompt-examples button').length===4);}
-async function home(page){await page.getByRole('button',{name:/发现好剧/}).click();await page.waitForFunction(()=>!document.querySelector('.featured-status[role=status]')?.textContent.includes('正在加载'));}
+async function home(page){await page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:/发现好剧/}).click();await page.waitForFunction(()=>!document.querySelector('.featured-status[role=status]')?.textContent.includes('正在加载'));}
 async function signIn(page,name,register=false){
   await page.locator('.account-button').click();if(register)await page.locator('.auth-switch').click();
   await page.locator('#auth-username').fill(name);await page.locator('#auth-password').fill('Synthetic browser password 123');
   if(register)await page.locator('#auth-confirmation').fill('Synthetic browser password 123');
   await page.locator('.auth-dialog button[type=submit]').click();await page.locator('.auth-dialog').waitFor({state:'hidden'});
   await page.locator('.account-button').filter({hasText:name}).waitFor();
+  await page.locator('.personal-space').waitFor();
+  await home(page);
 }
 async function saveFromCatalog(page,work){
   await page.getByRole('button',{name:/片库/}).click();await page.locator('#catalog-search').fill(work.title);
@@ -101,7 +103,7 @@ try{
   });
   await check('private 503 uses public fallback and retry restores personalization without changing the query',async()=>{
     await page.locator('#query').fill('想看修仙成长');await page.getByRole('button',{name:'理解我的口味',exact:true}).click();
-    await page.getByRole('button',{name:'确认偏好，生成片单',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.skeleton'));
+    await page.locator('.recognition-dialog').getByRole('button',{name:'核对无误，生成片单',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.skeleton'));
     const before={query:await page.locator('#query').inputValue(),chips:await page.locator('.preference-chips').innerText(),results:await page.locator('.results-section').innerText()};
     await a.route('**/api/v1/me/home-recommendations',route=>route.fulfill({status:503,json:{error:{message:'验收模拟服务异常'}}}));
     // Switching auth by restoring the page also discards user edits, so trigger the existing refresh through a successful import.

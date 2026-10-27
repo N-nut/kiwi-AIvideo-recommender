@@ -35,8 +35,8 @@ try {
   await mkdir('docs/screenshots',{recursive:true});
   await page.goto(base);await page.getByRole('button',{name:'登录 / 注册',exact:true}).waitFor();
   await check('guest recommendation remains available',async()=>{
-    await page.getByRole('button',{name:'理解我的口味'}).click();await page.getByRole('button',{name:/确认偏好，生成片单/}).waitFor();
-    await page.getByRole('button',{name:/确认偏好，生成片单/}).click();await page.waitForFunction(()=>!document.querySelector('.skeleton'));
+    await page.getByRole('button',{name:'理解我的口味'}).click();await page.locator('.recognition-dialog').waitFor();
+    await page.locator('.recognition-dialog').getByRole('button',{name:'核对无误，生成片单',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.skeleton'));
     assert(!(await page.locator('.auth-dialog').isVisible()));
   });
   await catalog(page);

@@ -86,6 +86,7 @@ describe('preference confirmation flow',()=>{
     const w=mount(App);await flushPromises();await findButton(w,'理解我的口味').trigger('click');await flushPromises();await findButton(w,'确认偏好').trigger('click');await flushPromises();
     expect(w.find('.generation-guide').exists()).toBe(false);expect(w.find('.results-section').text()).toContain(status==='empty'?'这一种口味，还没有遇到':'有些条件需要你确认');
     expect(w.find('.result-status').text()).toContain('请检查当前条件');await findButton(w,'调整我的偏好').trigger('click');expect(w.find('.preference-dialog').attributes('open')).toBeDefined();
+    expect(w.find('.taste-state').text()).toBe(status==='empty'?'暂无匹配':'待调整');
     await findButton(w,'确认修改').trigger('click');expect(w.find('.generation-guide').exists()).toBe(true);w.unmount();
   });
   it('keeps the guide usable when the carousel load fails and allows a separate retry',async()=>{

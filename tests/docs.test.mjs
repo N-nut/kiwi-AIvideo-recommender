@@ -10,6 +10,32 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
+test('推荐反馈与换一批仅为待核对产品方案，覆盖范围、撤销、硬条件与异常', async () => {
+  const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=source.match(/^### 3\.11 推荐反馈＋换一批（产品方案，待核对、未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
+  assert.ok(section,'反馈与换批须有独立草案');
+  assert.match(source,/\| 推荐反馈＋换一批 \|[^\n]+\| 产品方案待核对，尚未实现/);
+  for(const requirement of ['不新增反馈接口、数据表','不感兴趣','已看过','推荐反馈管理','撤销','游客继续浏览和生成片单',
+    '不删除或自动新增收藏','不推断用户讨厌整类题材','不重新解析原始描述','不自动放宽必须条件或明确排除项',
+    '此前成功展示过','没有更多符合当前条件的作品','重新浏览本轮','失败保留上批','账号切换','迟到响应','键盘']) {
+    assert.ok(section.includes(requirement),`反馈方案缺少：${requirement}`);
+  }
+  assert.match(source,/^### 6\.2 推荐反馈与换批验收（待核对、未实现）/m);
+});
+
+test('口味推荐说明明确识别提示、独立确认及分别加载，与反馈草案区分', async () => {
+  const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=source.match(/^### 3\.4 首页轮播与操作指引\r?\n([\s\S]*?)(?=^### 3\.5)/m)?.[0];
+  assert.ok(section);
+  for(const requirement of ['接近等宽','浅绿色卡片','偏爱风格／必须满足／明确排除','正在识别偏好','不展示作品卡片骨架',
+    '您的偏好已识别','如有不符可手动调整','核对无误，生成片单','关闭及 Esc','等待你确认','识别失败','迟到响应']) {
+    assert.ok(section.includes(requirement),`口味推荐缺少：${requirement}`);
+  }
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const ui=technicalSection(technical,6);
+  for(const requirement of ['requestKind','recognition-dialog','PreferenceSummary.vue','680px','700px','Ctrl+Enter','不新增模型调用']) assert.ok(ui.includes(requirement),requirement);
+});
+
 test('个人空间产品说明覆盖四项功能、账号边界和验收，与已实现状态一致', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const space=source.match(/^### 3\.10 用户个人空间（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];

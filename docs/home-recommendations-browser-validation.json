@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-25",
+  "date": "2026-10-27",
   "strategy_version": "favorites-tags-v1",
-  "database": ".local\\home-recommendations-mvnbv7wi.db",
+  "database": ".local\\home-recommendations-mvqib3ea.db",
   "public_works": 434,
   "mode": "baseline",
   "checks": [

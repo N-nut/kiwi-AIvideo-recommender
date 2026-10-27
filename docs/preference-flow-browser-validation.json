@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-27",
+  "mode": "baseline",
+  "database": ".local\\preference-flow-mvqigpct.db",
+  "public_works": 434,
+  "checks": [
+    "balanced composer layout and readable preferences from 320 to 2184 pixels",
+    "parsing shows recognition progress, not empty-result skeletons; success requires confirmation",
+    "Escape preserves preferences and shows an explicit waiting state; manual edits are used without reparsing",
+    "parse failure retains input, reports an error and allows explicit retry without a success notice",
+    "a parse completing after navigation cannot open a notice over the catalogue",
+    "unsupported constraints prompt adjustment and prevent keyboard generation"
+  ],
+  "viewports": [
+    {
+      "width": 2184,
+      "height": 1100,
+      "query_width": 680,
+      "preferences_width": 1078,
+      "input_width": 680,
+      "input_height": 112,
+      "same_row": true,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1100,
+      "query_width": 513.40625,
+      "preferences_width": 513.40625,
+      "input_width": 513.40625,
+      "input_height": 112,
+      "same_row": true,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 1000,
+      "query_width": 344,
+      "preferences_width": 344,
+      "input_width": 344,
+      "input_height": 112,
+      "same_row": true,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "query_width": 324,
+      "preferences_width": 324,
+      "input_width": 324,
+      "input_height": 112,
+      "same_row": true,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "query_width": 326,
+      "preferences_width": 326,
+      "input_width": 326,
+      "input_height": 108,
+      "same_row": false,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "query_width": 256,
+      "preferences_width": 256,
+      "input_width": 256,
+      "input_height": 108,
+      "same_row": false,
+      "horizontal_overflow": false,
+      "panel_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "synthetic_faults": [
+    "delayed parse",
+    "parse 503",
+    "delayed recommendation"
+  ],
+  "external_covers_blocked": true
+}

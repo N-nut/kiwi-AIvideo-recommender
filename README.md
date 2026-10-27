@@ -176,6 +176,10 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 正式页面提供真实账号与服务端收藏，旧 Demo.html 仍是离线演示。收藏驱动轮播与提示词、全库及新增剧集自动预览准备已实现；素材可播放情况以真实来源及文件验证为准。真实双设备及 HTTPS 部署、多轮对话、协同过滤及重排序属于后续范围。
 
+口味推荐区在桌面并列展示需求与分组偏好，超宽屏输入区限制为 680px，手机改为单列。点击“理解我的口味”先识别偏好，成功后弹出核对提示，可直接确认生成、手动调整或关闭；关闭不会生成片单，下方明确显示等待确认。只有确认生成时才显示作品骨架；解析失败、冲突及暂不支持的条件分别提示，不混作片单加载失败。
+
+“推荐反馈＋换一批”仅补充到 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批产品方案待核对未实现)，当前待核对，尚未实现接口、反馈保存或换批。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
+
 ## 个人空间
 
 登录后点击账号区或头像进入个人空间。昵称按 NFKC／casefold 规范化后全站唯一，用户名只读；六款预设头像和昵称统一保存。收藏总数包含漫画与不可用资料；兴趣画像只统计有效剧集收藏，显示真实标签及数量。资料与概览可分别重试，未确认保存的草稿不影响账号区。

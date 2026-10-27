@@ -16,6 +16,7 @@ import LegacyImport from './components/LegacyImport.vue';
 import WorkCard from './components/WorkCard.vue';
 import WorkPreview from './components/WorkPreview.vue';
 import PreferenceEditor from './components/PreferenceEditor.vue';
+import PreferenceSummary from './components/PreferenceSummary.vue';
 import FeaturedCarousel from './components/FeaturedCarousel.vue';
 import CatalogPagination from './components/CatalogPagination.vue';
 import logo from '../../demo/assets/kiwi-logo.svg';
@@ -23,6 +24,8 @@ import logo from '../../demo/assets/kiwi-logo.svg';
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
 const prefs = ref<Preferences>(emptyPreferences());
 const parsed = ref(false); const busy = ref(false); const phase = ref(''); const error = ref('');
+const requestKind=ref<'parse'|'recommend'|null>(null);
+const parsing=computed(()=>busy.value&&requestKind.value==='parse');
 const auth=useAuth();
 const library = useLibrary(auth);
 const shelf = useCatalog(library,auth);
@@ -39,6 +42,7 @@ const syncDetails = ref(false);
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const refreshLane = latestRequest(); let disposed=false;
 const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>();
+const recognition=ref<HTMLDialogElement>();
 const login=ref<InstanceType<typeof AuthDialog>>(),legacy=ref<InstanceType<typeof LegacyImport>>();
 const preview = ref<InstanceType<typeof WorkPreview>>();
 const detailScroll = ref<HTMLElement>();
@@ -51,11 +55,17 @@ const pendingView=ref('');
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
 function choosePrompt(text:string) {
-  lane.cancel();busy.value=false;parsed.value=false;prefs.value=emptyPreferences();result.value=null;error.value='';query.value=text;
+  closeRecognition();lane.cancel();busy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();result.value=null;error.value='';query.value=text;
 }
 const updating = computed(() => refreshStarting.value || refresh.value.status==='running');
 const updatedTime = computed(() => refresh.value.last_success_at ? new Date(refresh.value.last_success_at).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '尚未同步');
-const chips = computed(() => [...prefs.value.soft_preferences.genres,...prefs.value.soft_preferences.themes,...(prefs.value.soft_preferences.pace?[`节奏${prefs.value.soft_preferences.pace}`]:[]),...prefs.value.required.map(r=>`必须 ${fieldNames[r.field]}：${typeof r.value==='boolean'?(r.value?'有':'无'):r.value}`),...prefs.value.excluded_features.map(f=>`不要${fieldNames[f]}`),...prefs.value.excluded_genres.map(g=>`不要${g}`)]);
+const preferenceGroups=computed(()=>[
+  {label:'偏爱风格',kind:'soft',values:[...prefs.value.soft_preferences.genres,...prefs.value.soft_preferences.themes,...(prefs.value.soft_preferences.pace?[`节奏${prefs.value.soft_preferences.pace}`]:[])]},
+  {label:'必须满足',kind:'required',values:prefs.value.required.map(r=>`${fieldNames[r.field]}：${typeof r.value==='boolean'?(r.value?'有':'无'):r.value}`)},
+  {label:'明确排除',kind:'exclude',values:[...prefs.value.excluded_features.map(f=>`不要${fieldNames[f]}`),...prefs.value.excluded_genres.map(g=>`不要${g}`)]},
+]);
+const preferenceIssues=computed(()=>[...prefs.value.conflicts,...prefs.value.unresolved_constraints]);
+const recognitionTitle=computed(()=>preferenceIssues.value.length?'有些偏好需要调整':'您的偏好已识别');
 const detailIntro=computed(()=>selected.value?.original_intro.split('\n\n来源标签：')[0]||'');
 const detailTags=computed(()=>selected.value?[...new Set([...selected.value.genres,...selected.value.themes,...(selected.value.source_meta?.tags||[])])]:[]);
 const comparableText=(value:string)=>value.normalize('NFKC').replace(/\s+/g,'');
@@ -100,33 +110,42 @@ function revealDetailReference(reference:'intro'|'tags') {
   const target=detailScroll.value?.querySelector<HTMLElement>(reference==='intro'?'.detail-intro':'.detail-tags');
   target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
 }
-watch(query, () => { lane.cancel(); busy.value=false; parsed.value=false; prefs.value=emptyPreferences(); result.value=null; error.value=''; });
+watch(query, () => { closeRecognition();lane.cancel(); busy.value=false;requestKind.value=null; parsed.value=false; prefs.value=emptyPreferences(); result.value=null; error.value=''; });
+watch(view,()=>{if(view.value!=='discover')closeRecognition();});
+function closeRecognition(){if(recognition.value?.open)recognition.value.close();}
+function showRecognition(){if(view.value==='discover'&&parsed.value&&!busy.value&&!recognition.value?.open)recognition.value?.showModal();}
 function message(text:string) { clearTimeout(toastTimer); toast.value=text; toastTimer=setTimeout(()=>toast.value='',3000); }
 function fail(exc: unknown) { error.value=exc instanceof APIError?`${exc.message}${exc.requestId?`（请求 ${exc.requestId.slice(0,8)}）`:''}`:'无法连接服务，请检查后端后重试。'; }
 async function parse() {
+  if(busy.value)return;
   if (!query.value.trim()) { error.value='先说说想看的故事吧。'; return; }
-  const request=lane.begin(); busy.value=true; error.value=''; phase.value='正在理解你的口味…';
+  closeRecognition();
+  const request=lane.begin(); busy.value=true;requestKind.value='parse'; error.value=''; phase.value='正在理解你的口味…';
   try {
     const data=await api<{preferences:Preferences}>('/api/v1/preferences/parse',{text:query.value},request.signal);
     if (!request.current()) return;
     prefs.value=data.preferences; parsed.value=true; result.value=null;
+    void nextTick(()=>{if(request.current()&&!disposed)showRecognition();});
   } catch(exc) { if(request.current()) fail(exc); }
-  finally { if(request.current()) busy.value=false; }
+  finally { if(request.current()){busy.value=false;requestKind.value=null;} }
 }
 async function generate() {
+  if(busy.value)return;
   if (!parsed.value) { await parse(); return; }
-  const request=lane.begin(); busy.value=true; error.value=''; phase.value='正在检索资料，整理片单…';
+  if(preferenceIssues.value.length){showRecognition();return;}
+  closeRecognition();
+  const request=lane.begin(); busy.value=true;requestKind.value='recommend'; error.value=''; phase.value='正在检索资料，整理片单…';
   try {
     const data=await api<Recommendation>('/api/v1/recommendations',{preferences:structuredClonePlain(prefs.value),limit:3},request.signal);
     if (!request.current()) return;
     result.value=data;
     if(data.status==='needs_confirmation') error.value=data.warnings.join('；');
   } catch(exc) { if(request.current()) fail(exc); }
-  finally { if(request.current()) busy.value=false; }
+  finally { if(request.current()){busy.value=false;requestKind.value=null;} }
 }
 function structuredClonePlain<T>(value:T):T { return JSON.parse(JSON.stringify(value)); }
-function edit() { draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
-function saveEditor(value: Preferences) { lane.cancel(); busy.value=false; value.conflicts=[]; prefs.value=structuredClonePlain(value); parsed.value=true; result.value=null; error.value=''; editor.value?.close(); }
+function edit() { closeRecognition();draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
+function saveEditor(value: Preferences) { lane.cancel(); busy.value=false;requestKind.value=null; value.conflicts=[]; prefs.value=structuredClonePlain(value); parsed.value=true; result.value=null; error.value=''; editor.value?.close(); }
 const loadCatalog=()=>shelf.load();
 async function loadHealth() {
   try { const response=await fetch('/health/ready'); if(!disposed) health.value=await response.json(); }
@@ -299,39 +318,44 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       <div v-if="home.notice.value" class="featured-status" role="status">{{home.notice.value}} <button class="text-button" @click="home.load">重试个性化推荐</button></div>
       <p v-if="home.data.value?.warnings.length" class="featured-status" role="status">{{home.data.value.warnings.join('；')}}</p>
       <section class="composer" aria-labelledby="composer-title">
-        <div class="section-top"><div><h2 id="composer-title">今天，想看点什么？</h2></div></div>
+        <div class="section-top composer-heading"><div><h2 id="composer-title">今天，想看点什么？</h2></div><span class="composer-flow">写下需求 <span aria-hidden="true">→</span> 核对偏好 <span aria-hidden="true">→</span> 生成片单</span></div>
         <div class="composer-grid">
           <div class="query-column">
-            <label class="sr-only" for="query">描述你的观剧需求</label>
-            <textarea id="query" v-model="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
+            <label class="query-label" for="query">描述你的观剧需求</label>
+            <p id="query-help" class="query-help">说说喜欢的题材、剧情，以及不想看的内容。</p>
+            <textarea id="query" v-model="query" maxlength="300" rows="3" aria-describedby="query-help" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
             <div class="input-bottom prompt-intro"><span id="favorite-prompts-title">{{home.promptTitle.value}}</span><span class="query-count">{{query.length}} / 300</span></div>
             <div class="example-buttons favorite-prompt-examples" role="group" aria-labelledby="favorite-prompts-title"><button type="button" class="example-button" v-for="prompt in home.prompts.value" :key="prompt.label" @click="choosePrompt(prompt.text)">{{prompt.label}}</button></div>
             <p v-if="error" class="field-error" role="alert">{{error}}</p>
           </div>
-          <div class="taste-panel">
-            <div class="taste-heading"><strong>你的偏好</strong><button class="text-button" @click="edit" :disabled="!parsed||busy">调整 ↗</button></div>
-            <div class="preference-chips" aria-live="polite"><span v-if="!parsed" class="empty-preferences">先识别偏好，再由你确认。</span><span v-for="chip in chips" :key="chip" :class="['taste-chip',{exclude:chip.startsWith('不要')}]">{{chip}}</span></div>
-            <p v-if="prefs.conflicts.length||prefs.unresolved_constraints.length" class="constraint-warning">{{[...prefs.conflicts,...prefs.unresolved_constraints].join('；')}}。请调整偏好。</p>
-            <p v-else>{{parsed?'确认后按当前偏好生成，也可以调整。':'明确排除的内容会严格筛选。'}}</p>
-            <button id="recommend-button" class="primary-button" :disabled="busy" @click="generate"><span>{{busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span><span aria-hidden="true">{{busy?'◌':'›'}}</span></button>
+          <div :class="['taste-panel',{recognized:parsed}]" role="region" aria-labelledby="taste-title" :aria-busy="busy">
+            <div class="taste-heading"><h3 id="taste-title">你的偏好</h3><span class="taste-state">{{parsing?'识别中':busy?'生成中':parsed?(preferenceIssues.length||result?.status==='needs_confirmation'?'待调整':result?(result.items.length?'已生成片单':'暂无匹配'):'待确认'):'待识别'}}</span><button class="text-button" @click="edit" :disabled="!parsed||busy">调整 ↗</button></div>
+            <PreferenceSummary v-if="parsed" class="preference-chips" :groups="preferenceGroups"/>
+            <div v-else class="preference-chips preference-placeholder"><span class="empty-preferences">先识别偏好，再由你确认。</span><p>题材、剧情特色和排除项会整理在这里，方便你检查与调整。</p></div>
+            <p v-if="preferenceIssues.length" class="constraint-warning" role="alert">{{preferenceIssues.join('；')}}。请调整偏好。</p>
+            <p v-else class="taste-next-note">{{parsing?'正在识别，完成后会提示你核对。':result?(result.status==='needs_confirmation'?'请调整待确认的条件后重新生成。':result.items.length?'片单已按以上偏好生成，可继续调整偏好。':'暂时没有符合条件的作品，可调整偏好后重试。'):parsed?'请核对以上偏好，确认后才会生成片单。':'点击下方按钮识别偏好，不会直接生成片单。'}}</p>
+            <button id="recommend-button" class="primary-button" :disabled="busy||parsed&&!!preferenceIssues.length" @click="generate"><span>{{busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span><span aria-hidden="true">{{busy?'◌':'›'}}</span></button>
             <button v-if="parsed&&!busy" class="text-button reparse" @click="parse">重新理解原始描述</button>
           </div>
         </div>
       </section>
       <section class="results-section" :aria-busy="busy" aria-labelledby="results-title">
-        <div class="section-top result-top"><div><h2 id="results-title">{{busy?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'请调整偏好'):'你的片单'}}</h2></div><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span></div>
+        <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'请调整偏好'):'你的片单'}}</h2></div><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span></div>
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
-        <div v-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
+        <div v-if="parsing" class="parse-progress" role="status"><span class="parse-progress-icon" aria-hidden="true">◌</span><div><strong>正在理解你的观剧需求</strong><p>识别完成后会请你核对偏好，确认后再生成片单。</p></div></div>
+        <div v-else-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
         <div v-else-if="result&&!result.items.length" class="empty-state"><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':'这一种口味，还没有遇到'}}</h3><p>可以主动调整偏好后重试，明确排除的条件不会自动放宽。</p><button class="secondary-button" @click="edit">调整我的偏好</button></div>
         <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
-        <div v-else class="empty-state generation-guide">
-          <h3>三步生成你的片单</h3>
-          <ol class="generation-steps">
+        <div v-else :class="['empty-state','generation-guide',{'confirmation-guide':parsed}]">
+          <h3>{{parsed?(preferenceIssues.length?'请先调整待确认条件':'偏好已识别，等待你确认'):'三步生成你的片单'}}</h3>
+          <p v-if="parsed" class="confirmation-guide-copy">当前还没有生成片单。{{preferenceIssues.length?'请手动调整或移除暂不支持的条件。':'核对上方偏好区，点击“确认偏好，生成片单”即可继续。'}}</p>
+          <button v-if="parsed" class="secondary-button" @click="showRecognition">再次核对偏好</button>
+          <ol v-else class="generation-steps">
             <li><strong>写下想看的故事</strong><p>在上方描述题材、剧情偏好和不想看的内容，例如“想看修仙逆袭，不要后宫”。</p></li>
             <li><strong>检查识别出的偏好</strong><p>点击“理解我的口味”，确认题材、必须条件和排除项；有偏差时点击“调整”。</p></li>
             <li><strong>确认并生成片单</strong><p>点击“确认偏好，生成片单”，从已有资料中查找最多 3 部作品。点开作品可查看详情与来源。</p></li>
           </ol>
-          <p class="source-note">资料未知或条件过严时，可能没有匹配结果。你可以主动调整条件，系统不会自动放宽明确排除项。</p>
+          <p v-if="!parsed" class="source-note">资料未知或条件过严时，可能没有匹配结果。你可以主动调整条件，系统不会自动放宽明确排除项。</p>
         </div>
       </section>
     </section>
@@ -372,6 +396,14 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       <p v-if="refreshError" class="field-error" role="alert">{{refreshError}}</p>
       <div class="dialog-actions"><button type="submit" class="primary-button" :disabled="updating||!selectedCategories.length&&!includeHotRank">{{refreshStarting?'正在启动…':'开始更新'}}</button></div>
     </form>
+  </dialog>
+  <dialog ref="recognition" class="recognition-dialog" aria-labelledby="recognition-title" aria-describedby="recognition-description" @cancel.prevent="closeRecognition">
+    <div class="dialog-heading"><h2 id="recognition-title">{{recognitionTitle}}</h2><button type="button" class="icon-button" aria-label="关闭偏好识别提示" @click="closeRecognition">×</button></div>
+    <p id="recognition-description">{{preferenceIssues.length?'以下条件需要调整或移除，请核对后手动调整。':'请核对您的偏好，如有不符可手动调整。确认后才会生成片单。'}}</p>
+    <PreferenceSummary :groups="preferenceGroups"/>
+    <p v-if="preferenceIssues.length" class="recognition-warning" role="alert">{{preferenceIssues.join('；')}}</p>
+    <p class="recognition-note">{{preferenceIssues.length?'暂不生成片单，请先处理待确认条件。':'偏好已整理完成，当前尚未生成片单。'}}</p>
+    <div class="dialog-actions"><button type="button" class="primary-button" :disabled="busy||!!preferenceIssues.length" autofocus @click="generate">核对无误，生成片单 <span aria-hidden="true">›</span></button><button type="button" class="secondary-button" @click="edit">手动调整偏好</button></div>
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
   <WorkPreview ref="preview" />
