@@ -10,7 +10,7 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
-test('推荐反馈与换一批仅为待核对产品方案，覆盖范围、撤销、硬条件与异常', async () => {
+test('推荐反馈与换一批保留待核对产品要求和未实现边界', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=source.match(/^### 3\.11 推荐反馈＋换一批（产品方案，待核对、未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
   assert.ok(section,'反馈与换批须有独立草案');
@@ -21,6 +21,55 @@ test('推荐反馈与换一批仅为待核对产品方案，覆盖范围、撤�
     assert.ok(section.includes(requirement),`反馈方案缺少：${requirement}`);
   }
   assert.match(source,/^### 6\.2 推荐反馈与换批验收（待核对、未实现）/m);
+});
+
+test('反馈换批技术方案衔接现有迁移、鉴权和请求限制，保持待实现边界', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=technicalSection(source,14);
+  assert.match(section,/^## 14\. 推荐反馈与换一批技术方案（待实现）/);
+  assert.ok(section.includes('尚未编写或验收'));
+  assert.ok(product.includes('技术方案第 14 节'));
+  assert.doesNotMatch(source,/尚未进入技术设计或功能实现/);
+  const migration=await readFile(new URL('../backend/migrations/versions/0006_user_profiles.py',import.meta.url),'utf8');
+  const revision=migration.match(/^revision = "([^"]+)"/m)?.[1];
+  assert.ok(revision);assert.ok(section.includes(`down_revision="${revision}"`));
+  const middleware=await readFile(new URL('../backend/kiwi/main.py',import.meta.url),'utf8');
+  const bytes=Number(middleware.match(/if size > ([\d_]+):/)?.[1]?.replaceAll('_',''));
+  assert.ok(bytes>0);assert.ok(section.includes(bytes.toLocaleString('en-US')+' 字节'));
+  for(const requirement of ['Python + FastAPI + 现有 Vue 3','SQLAlchemy 2.0','Alembic','user_work_feedback','0007_user_work_feedback.py',
+    'profile_upgrade.py','create_all()','auth.write()','复合主键','expected_revision','If-Match','412 precondition_failed','漫画可反馈',
+    '不全局放开 PUT／DELETE 正文','POST /api/v1/me/recommendations','公开接口即使带 Cookie','NOT EXISTS',
+    '前 10 条','稳定顺序的补取','search_incomplete','has_more=null','content_hash','完整、最近确认的反馈快照',
+    'complete=false','shownIds','TextEncoder','不截断','auth.scope()','latestRequest','新账号不能继承旧账号去重依据',
+    '不自动追加一次模型请求','待实现验收','不证明功能已经实现']) {
+    assert.ok(section.includes(requirement),`反馈换批技术方案缺少：${requirement}`);
+  }
+});
+
+test('反馈与换批 JSON 示例的状态、版本、请求字段及隐私约定一致', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const section=technicalSection(source,14);
+  const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
+  assert.equal(examples.length,4,'提供反馈输入、保存结果、换批输入和耗尽片段');
+  const [patch,saved,batch,exhausted]=examples;
+  assert.deepEqual(Object.keys(patch).sort(),['expected_revision','status']);
+  assert.equal(patch.status,'not_interested');assert.equal(patch.expected_revision,null);
+  assert.ok(saved.request_id);assert.equal(saved.feedback.status,patch.status);
+  assert.deepEqual(Object.keys(saved.feedback).sort(),['revision','status','updated_at','work_id']);
+  assert.match(saved.feedback.revision,/^[a-f0-9]{32}$/);assert.ok(Number.isFinite(Date.parse(saved.feedback.updated_at)));
+  assert.deepEqual(Object.keys(batch).sort(),['exclude_work_ids','limit','preferences']);
+  assert.equal(batch.limit,3);assert.equal(batch.preferences.schema_version,1);
+  assert.ok(batch.exclude_work_ids.length<=200);assert.equal(new Set(batch.exclude_work_ids).size,batch.exclude_work_ids.length);
+  assert.equal(batch.exclude_work_ids[0],saved.feedback.work_id);
+  for(const id of batch.exclude_work_ids)assert.ok(typeof id==='string'&&[...id].length>=1&&[...id].length<=80);
+  assert.deepEqual(batch.preferences.soft_preferences.genres,['修仙']);assert.deepEqual(batch.preferences.excluded_features,[]);
+  assert.ok(Buffer.byteLength(JSON.stringify(batch),'utf8')<=24000);
+  assert.equal(exhausted.status,'empty');assert.deepEqual(exhausted.items,[]);
+  assert.deepEqual(exhausted.batch,{state:'exhausted',has_more:false});assert.ok(exhausted.warnings[0].includes('没有更多'));
+  const forbidden=new Set(['user_id','username','nickname','password','password_hash','token','token_hash','cookie','database_url']);
+  function check(value){if(!value||typeof value!=='object')return;for(const [key,child] of Object.entries(value)){assert.ok(!forbidden.has(key),`示例不能暴露 ${key}`);check(child);}}
+  examples.forEach(check);
 });
 
 test('口味推荐说明明确识别提示、独立确认及分别加载，与反馈草案区分', async () => {
