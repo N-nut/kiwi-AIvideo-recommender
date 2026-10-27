@@ -10,14 +10,15 @@ test('个人空间产品方案覆盖四项功能、账号边界和验收，明�
   assert.ok(space,'个人空间须有独立产品方案');
   assert.match(source,/\| 用户个人空间 \|[^\n]+\| 产品方案已明确，待实现/);
   for(const heading of ['入口与页面组织','个人资料','收藏概览','兴趣画像','账号安全','状态与账号隔离']) assert.ok(space.includes(`#### ${heading}`),heading);
-  for(const requirement of ['独立个人空间','用户名只读','昵称可修改，允许重复','预设头像','不展示注册时间','不复制整套收藏列表',
+  for(const requirement of ['独立个人空间','用户名只读','不允许重复','忽略英文字母大小写后判重','昵称已被使用，请换一个','保存本人当前昵称','多人并发修改','预设头像','不展示注册时间','不复制整套收藏列表',
     '画像只读','根据 X 部有效剧集收藏整理','不推断用户明确排除','不覆盖用户当次输入','当前密码','确认新密码','8～64',
     '当前及其他已登录会话失效','只退出当前会话','结果未知','客户端传入身份','迟到响应不能显示旧账号内容','用户确认后导入']) {
     assert.ok(space.includes(requirement),`个人空间缺少约定：${requirement}`);
   }
   const acceptance=source.match(/^### 6\.1 个人空间验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[0];
   assert.ok(acceptance,'个人空间须有独立待实现验收范围');
-  for(const requirement of ['同名昵称','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
+  for(const requirement of ['昵称占用','并发争用','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
+  assert.doesNotMatch(space,/昵称可修改，允许重复|同名昵称的两个账号/,'昵称须唯一');
   assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');
 });
 
