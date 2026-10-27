@@ -4,6 +4,23 @@ import { readFile, stat } from 'node:fs/promises';
 
 const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url), new URL('../docs/实现与验收.md', import.meta.url), new URL('../data/审核说明.md', import.meta.url), new URL('../docs/媒体预览.md', import.meta.url)];
 
+test('个人空间产品方案覆盖四项功能、账号边界和验收，明确待实现且不展示注册时间', async () => {
+  const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const space=source.match(/^### 3\.10 用户个人空间（产品方案，待实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
+  assert.ok(space,'个人空间须有独立产品方案');
+  assert.match(source,/\| 用户个人空间 \|[^\n]+\| 产品方案已明确，待实现/);
+  for(const heading of ['入口与页面组织','个人资料','收藏概览','兴趣画像','账号安全','状态与账号隔离']) assert.ok(space.includes(`#### ${heading}`),heading);
+  for(const requirement of ['独立个人空间','用户名只读','昵称可修改，允许重复','预设头像','不展示注册时间','不复制整套收藏列表',
+    '画像只读','根据 X 部有效剧集收藏整理','不推断用户明确排除','不覆盖用户当次输入','当前密码','确认新密码','8～64',
+    '当前及其他已登录会话失效','只退出当前会话','结果未知','客户端传入身份','迟到响应不能显示旧账号内容','用户确认后导入']) {
+    assert.ok(space.includes(requirement),`个人空间缺少约定：${requirement}`);
+  }
+  const acceptance=source.match(/^### 6\.1 个人空间验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[0];
+  assert.ok(acceptance,'个人空间须有独立待实现验收范围');
+  for(const requirement of ['同名昵称','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
+  assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');
+});
+
 test('README、产品设计和技术方案中的本地文档链接指向实际文件', async () => {
   for (const document of documents) {
     const source = await readFile(document, 'utf8');
