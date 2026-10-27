@@ -358,7 +358,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       </section>
       <section :class="['sidebar-account',{active:view==='personal-space'}]" aria-label="账号与个人空间">
         <div class="account-identity">
-          <button class="account-avatar" aria-label="进入个人空间" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount"><PresetAvatar :id="auth.user.value?.avatar_id"/></button>
+          <button class="account-avatar" aria-label="进入个人空间" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount"><PresetAvatar :id="auth.user.value?.avatar_id" :src="auth.user.value?.avatar_url"/></button>
           <div class="account-copy">
             <button v-if="auth.user.value" class="account-button" :title="auth.user.value.username" :aria-current="view==='personal-space'?'page':undefined" @click="openAccount">{{auth.user.value.nickname||auth.user.value.username}}</button>
             <button v-else class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册'}}</button>

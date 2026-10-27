@@ -155,7 +155,7 @@ test('个人空间响应不泄露内部信息，收藏与兴趣统计示例口�
   }
   for(const example of examples) { assert.ok(example.request_id);checkKeys(example); }
   const {profile}=examples.find(example=>example.profile);
-  assert.deepEqual(Object.keys(profile).sort(),['avatar_id','id','nickname','username']);
+  assert.deepEqual(Object.keys(profile).sort(),['avatar_id','avatar_url','id','nickname','username']);
   assert.ok(profile.id && profile.username && profile.nickname && profile.avatar_id);
   const {error}=examples.find(example=>example.error);
   assert.equal(error.code,'nickname_taken');
@@ -174,6 +174,13 @@ test('个人空间响应不泄露内部信息，收藏与兴趣统计示例口�
   }
   assert.equal(interest.content_types.reduce((sum,tag)=>sum+tag.count,0),interest.analyzed_count);
   assert.ok(interest.genres.length || interest.themes.length,'画像 ready 需要真实风格标签');
+});
+
+test('照片头像和布局契约保留账号隐私、正文限制、系统头像与真实迁移',async()=>{
+  const technical=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),13);
+  for(const text of ['0008_user_avatars.py','down_revision="0007"','user_avatars','avatar_image','avatar_url','5 MB','16,000','24,000 字节',
+    'Pillow 13.0.0','EXIF','auth.write()','GET /api/v1/me/avatar/{asset_id}','no-store','nosniff','不写入 localStorage','space-side','not-allowed'])assert.ok(technical.includes(text),text);
+  for(const name of ['backend/kiwi/avatars.py','backend/migrations/versions/0008_user_avatars.py','backend/tests/test_avatars.py','frontend/src/avatar.ts','frontend/tests/avatar.test.ts','scripts/verify-profile-polish.mjs'])assert.ok((await stat(new URL('../'+name,import.meta.url))).isFile(),name);
 });
 
 test('README、产品设计和技术方案中的本地文档链接指向实际文件', async () => {

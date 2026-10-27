@@ -18,7 +18,7 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from .database import User, UserSession, as_utc, utc_now
+from .database import User, UserAvatar, UserSession, as_utc, utc_now
 
 COOKIE = "kiwi_session"
 passwords = PasswordHash.recommended()
@@ -150,7 +150,7 @@ class AuthManager:
             if stored is None or as_utc(stored.expires_at) <= self.now():
                 return None
             user = session.get(User, stored.user_id)
-            return public_user(user) if user else None
+            return public_user(user, session.get(UserAvatar, user.id)) if user else None
 
     def issue(self, session, user_id, request):
         previous = request.cookies.get(COOKIE)
@@ -198,8 +198,9 @@ def token_digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def public_user(user):
-    return {"id": user.id, "username": user.username, "nickname": user.nickname, "avatar_id": user.avatar_id or "kiwi-default"}
+def public_user(user, avatar=None):
+    return {"id": user.id, "username": user.username, "nickname": user.nickname, "avatar_id": user.avatar_id or "kiwi-default",
+            "avatar_url": f"/api/v1/me/avatar/{avatar.asset_id}" if avatar else None}
 
 
 def get_current_user(request: Request):
@@ -254,7 +255,7 @@ def login(body: LoginInput, request: Request, response: Response):
     auth.cleanup()
     with auth.write(request, user.id, expected_hash=user.password_hash, require_session=False) as (session, current_user):
         token = auth.issue(session, user.id, request)
-        result = public_user(current_user)
+        result = public_user(current_user, session.get(UserAvatar, user.id))
     auth.cookie(response, token)
     return {"user": result}
 

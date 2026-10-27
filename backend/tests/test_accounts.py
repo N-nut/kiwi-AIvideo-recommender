@@ -57,7 +57,7 @@ def test_real_argon2id_and_cookie_without_plaintext(tmp_path):
     with TestClient(app, base_url="http://127.0.0.1:8000", headers=HEADERS) as client:
         result = register(client, "  Test_User  ")
         assert result.status_code == 201
-        assert set(result.json()["user"]) == {"id", "username", "nickname", "avatar_id"}
+        assert set(result.json()["user"]) == {"id", "username", "nickname", "avatar_id", "avatar_url"}
         assert result.json()["user"]["username"] == "Test_User"
         cookie = result.headers['set-cookie']
         assert 'HttpOnly' in cookie and 'SameSite=lax' in cookie and 'Path=/' in cookie

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import presets from '../../../data/avatar-presets.json';
-const props=defineProps<{id?:string}>();
+const props=defineProps<{id?:string;src?:string|null}>();
+const failed=ref(false);watch(()=>props.src,()=>{failed.value=false;});
+function imageError(event:Event){if((event.currentTarget as HTMLImageElement).getAttribute('src')===props.src)failed.value=true;}
 const avatar=computed(()=>presets.find(item=>item.id===props.id)||presets[0]!);
 </script>
 <template>
-  <svg class="preset-avatar" viewBox="0 0 64 64" aria-hidden="true" :style="{background:avatar.color,color:avatar.accent}">
+  <img v-if="src&&!failed" :key="src" class="preset-avatar photo-avatar" :src="src" alt="" @error="imageError">
+  <svg v-else class="preset-avatar" viewBox="0 0 64 64" aria-hidden="true" :style="{background:avatar.color,color:avatar.accent}">
     <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
       <template v-if="avatar.kind==='kiwi'"><ellipse cx="30" cy="34" rx="16" ry="13"/><path d="M39 26q7-14 12-7l-2 10 9 3-11 2M20 46l-3 6m16-5 3 5M18 31q-7-1-6 6"/><circle cx="45" cy="25" r="1" fill="currentColor"/></template>
       <template v-else-if="avatar.kind==='leaf'"><path d="M17 46C8 20 35 13 48 15c2 20-8 40-31 31Zm1 0 23-23m-15 5 1 10 10 1"/></template>

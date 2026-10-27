@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-27",
+  "mode": "baseline",
+  "database": ".local\\profile-polish-mvqrv3q0.db",
+  "public_works": 434,
+  "checks": [
+    "carousel fills the visual column with a larger poster and previews; feedback is two labelled icons",
+    "photo selection is a local draft, cancellation keeps the server untouched, and presets remain selectable",
+    "personal space uses independent columns without an empty row, including narrow screens",
+    "a photo survives refresh and an independent login while another account cannot read it",
+    "preset selection can be cancelled, then explicitly replaces a photo; invalid files leave the confirmed avatar intact",
+    "failed photo save retains the preview and can retry; disabled and saving controls use the forbidden cursor",
+    "both feedback icons disable with a forbidden cursor while saving and do not generate a list"
+  ],
+  "viewports": [
+    {
+      "surface": "carousel",
+      "width": 2384,
+      "height": 1100,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 48,
+      "poster_width": 294,
+      "hero_width": 2064,
+      "hero_height": 490,
+      "thumbnails": true
+    },
+    {
+      "surface": "carousel",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 58,
+      "poster_width": 273,
+      "hero_width": 1120,
+      "hero_height": 459,
+      "thumbnails": true
+    },
+    {
+      "surface": "carousel",
+      "width": 1024,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 41,
+      "poster_width": 198,
+      "hero_width": 760,
+      "hero_height": 361,
+      "thumbnails": true
+    },
+    {
+      "surface": "carousel",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 18,
+      "poster_width": 185,
+      "hero_width": 720,
+      "hero_height": 345,
+      "thumbnails": true
+    },
+    {
+      "surface": "carousel",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 14,
+      "poster_width": 106,
+      "hero_width": 358,
+      "hero_height": 308,
+      "thumbnails": false
+    },
+    {
+      "surface": "carousel",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false,
+      "copy_visual_gap": 14,
+      "poster_width": 106,
+      "hero_width": 288,
+      "hero_height": 348,
+      "thumbnails": false
+    },
+    {
+      "surface": "personal-space",
+      "width": 2384,
+      "height": 1100,
+      "horizontal_overflow": false,
+      "profile_top": 132,
+      "summary_top": 132,
+      "summary_feedback_gap": 18,
+      "columns": 2
+    },
+    {
+      "surface": "personal-space",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "profile_top": 132,
+      "summary_top": 132,
+      "summary_feedback_gap": 18,
+      "columns": 2
+    },
+    {
+      "surface": "personal-space",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false,
+      "profile_top": 370,
+      "summary_top": 370,
+      "summary_feedback_gap": 18,
+      "columns": 2
+    },
+    {
+      "surface": "personal-space",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "profile_top": 320,
+      "summary_top": 975,
+      "summary_feedback_gap": 17,
+      "columns": 1
+    },
+    {
+      "surface": "personal-space",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false,
+      "profile_top": 329,
+      "summary_top": 1095,
+      "summary_feedback_gap": 17,
+      "columns": 1
+    }
+  ],
+  "page_errors": [],
+  "synthetic_photos": true,
+  "faults": [
+    "profile 503",
+    "delayed profile write",
+    "delayed feedback write"
+  ]
+}

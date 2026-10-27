@@ -136,8 +136,9 @@ describe('confirmed recommendation batches',()=>{
   });
 });
 
-it('feedback menu is independent, keyboard operable and emits explicit targets',async()=>{
-  const w=mount(FeedbackMenu,{props:{title:'测试'}});stops.push(()=>w.unmount());await w.find('details').trigger('keydown',{key:'Escape'});
+it('feedback icons are independent, labelled buttons and emit explicit targets',async()=>{
+  const w=mount(FeedbackMenu,{props:{title:'测试'}});stops.push(()=>w.unmount());expect(w.findAll('svg')).toHaveLength(2);
+  expect(w.find('[role="group"]').attributes('aria-label')).toContain('测试');expect(w.findAll('button')[1]!.attributes('aria-label')).toBe('已看过');
   await w.findAll('button')[1]!.trigger('click');expect(w.emitted('select')).toEqual([['watched']]);await w.setProps({busy:true});expect(w.find('button').attributes('disabled')).toBeDefined();
 });
 

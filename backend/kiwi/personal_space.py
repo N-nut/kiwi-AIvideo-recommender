@@ -1,9 +1,10 @@
 """Session-owned profiles, request-local interest summaries and password changes."""
 import json
 import unicodedata
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Path, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -11,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from . import auth as auth_module
 from .auth import get_current_user, problem, public_user
 from .config import ROOT
-from .database import Favorite, User, UserSession, Work
+from .database import Favorite, User, UserAvatar, UserSession, Work, utc_now
 from .home_recommendations import build_profile
 
 AVATARS = {item["id"] for item in json.loads((ROOT / "data/avatar-presets.json").read_text(encoding="utf-8"))}
@@ -35,6 +36,7 @@ class ProfileInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     nickname: str = Field(default=None, max_length=200)
     avatar_id: str = Field(default=None, max_length=32)
+    avatar_image: str = Field(default=None, min_length=4, max_length=21_336, repr=False)
 
     @field_validator("nickname")
     @classmethod
@@ -52,6 +54,8 @@ class ProfileInput(BaseModel):
     def not_empty(self):
         if not self.model_fields_set:
             raise ValueError("请提交要修改的资料")
+        if {"avatar_id", "avatar_image"} <= self.model_fields_set:
+            raise ValueError("请选择照片或系统头像其中一种")
         return self
 
 
@@ -84,13 +88,28 @@ def profile(request: Request, user: CurrentUser):
 @router.patch("/profile")
 def update_profile(body: ProfileInput, request: Request, user: CurrentUser):
     no_query(request)
+    image = None
+    if "avatar_image" in body.model_fields_set:
+        from .avatars import prepare_avatar
+        request.app.state.auth.limiter.take(("avatar_upload", user["id"]), 20, 60)
+        image = prepare_avatar(body.avatar_image)
     try:
-        with request.app.state.auth.write(request, user["id"]) as (_, stored):
+        with request.app.state.auth.write(request, user["id"]) as (session, stored):
+            avatar = session.get(UserAvatar, user["id"])
             if "nickname" in body.model_fields_set:
                 stored.nickname, stored.nickname_key = nickname_parts(body.nickname)
             if "avatar_id" in body.model_fields_set:
                 stored.avatar_id = body.avatar_id
-            result = public_user(stored)
+                if avatar is not None:
+                    session.delete(avatar)
+                    avatar = None
+            if image is not None:
+                if avatar is None:
+                    avatar = UserAvatar(user_id=user["id"])
+                    session.add(avatar)
+                avatar.asset_id, avatar.image, avatar.updated_at = uuid.uuid4().hex, image, utc_now()
+            session.flush()
+            result = public_user(stored, avatar)
     except IntegrityError as exc:
         original = exc.orig
         if (getattr(getattr(original, "diag", None), "constraint_name", None) == "uq_users_nickname_key"
@@ -98,6 +117,16 @@ def update_profile(body: ProfileInput, request: Request, user: CurrentUser):
             raise problem(409, "nickname_taken", "昵称已被使用，请换一个", ["nickname"]) from None
         raise
     return {"request_id": request.state.request_id, "profile": result}
+
+
+@router.get("/avatar/{asset_id}")
+def avatar_image(asset_id: Annotated[str, Path(pattern=r"^[a-f0-9]{32}$")], request: Request, user: CurrentUser):
+    no_query(request)
+    with request.app.state.sessions() as session:
+        avatar = session.get(UserAvatar, user["id"])
+        if avatar is None or avatar.asset_id != asset_id:
+            raise problem(404, "avatar_unavailable", "头像已更新，请重新读取资料")
+        return Response(avatar.image, media_type="image/jpeg", headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
 
 
 def summarize(rows):

@@ -13,6 +13,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4", "pgvector>=0.3,<1", "httpx>=0.28,<1",
   "langchain-openai>=1,<2", "langchain-core>=1,<2",
   "pwdlib[argon2]>=0.3,<1",
+  "Pillow>=13,<14",
 ]
 [project.optional-dependencies]
 test = ["pytest>=8,<10", "pytest-asyncio>=0.25,<2"]

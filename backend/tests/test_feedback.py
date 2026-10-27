@@ -215,7 +215,7 @@ def test_0006_upgrade_backup_repeat_constraints_and_original_values(tmp_path,mon
         if not versioned:connection.exec_driver_sql('DROP TABLE alembic_version')
     initialize(engine);initialize(engine)
     with engine.connect() as connection:
-        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0007'
+        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0008'
         assert connection.exec_driver_sql('SELECT * FROM works').all() == before
         assert connection.exec_driver_sql('PRAGMA foreign_key_check').all() == []
     schema=inspect(engine)

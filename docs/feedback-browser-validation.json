@@ -1,7 +1,7 @@
 {
   "date": "2026-10-27",
   "mode": "baseline",
-  "database": ".local\\feedback-mvqpz2un.db",
+  "database": ".local\\feedback-mvqrces9.db",
   "public_works": 434,
   "checks": [
     "guest can generate and switch batches using identical confirmed preferences without reparsing",
@@ -9,7 +9,7 @@
     "same-batch undo restores the card at its position after server detail verification",
     "private feedback excludes future batches and home but preserves favorites and the confirmed input",
     "management, independent same-account restore, status changes and stale deletion are consistent",
-    "feedback and batch controls fit desktop, tablet and narrow mobile; keyboard opens and closes the menu",
+    "feedback and batch controls fit desktop, tablet and narrow mobile; keyboard focuses labelled feedback icons",
     "batch failure retains cards and shown IDs; leaving and returning does not reset the round",
     "carousel feedback removes only the selected slide without filling the vacancy or generating recommendations",
     "existing real preview still serves verified media ranges after using feedback",

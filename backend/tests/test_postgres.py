@@ -73,8 +73,15 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                 result=client.get('/api/v1/works',params={'q':query}).json()
                 assert result['total']==1 and result['items'][0]['id']=='work-0'
             assert register(client).status_code==201
+            from test_avatars import encoded_photo
+            photo=client.patch('/api/v1/me/profile',json={'avatar_image':encoded_photo()})
+            assert photo.status_code==200
+            avatar_url=photo.json()['profile']['avatar_url']
+            assert client.get(avatar_url).headers['content-type']=='image/jpeg'
+            assert client.get('/api/v1/auth/me').json()['user']['avatar_url']==avatar_url
             profile=client.patch('/api/v1/me/profile',json={'nickname':'  Ｋｉｗｉ  ','avatar_id':'kiwi-leaf'})
             assert profile.status_code==200 and profile.json()['profile']['nickname']=='Ｋｉｗｉ'
+            assert profile.json()['profile']['avatar_url'] is None and client.get(avatar_url).status_code==404
             assert profile.headers['cache-control']=='no-store'
             assert client.patch('/api/v1/me/profile',json={'nickname':'kiwi'}).status_code==200
             assert register(client,'user_a').status_code==409

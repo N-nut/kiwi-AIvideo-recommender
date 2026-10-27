@@ -1,7 +1,7 @@
 import { getCurrentScope, onScopeDispose, ref } from 'vue';
 import { api, APIError, latestRequest } from './api';
 
-export interface User { id:string; username:string; nickname:string|null; avatar_id:string }
+export interface User { id:string; username:string; nickname:string|null; avatar_id:string;avatar_url?:string|null }
 export class StaleAccount extends Error {}
 
 export function useAuth() {

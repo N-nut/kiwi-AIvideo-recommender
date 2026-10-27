@@ -39,8 +39,8 @@ try{
   const requests=actions.filter(a=>a.path==='/api/v1/recommendations');assert.deepEqual(requests[1].body.preferences,requests[0].body.preferences);assert.deepEqual(requests[1].body.exclude_work_ids,firstIds);
  });
  await check('cancelled guest feedback leaves input, preferences and cards; registration continues just the selected feedback',async()=>{
-  feedbackId=nextIds[0];await cards().first().locator('.feedback-menu summary').click();await cards().first().getByRole('button',{name:'已看过',exact:true}).click();await page.locator('.auth-dialog[open]').waitFor();await page.getByRole('button',{name:'关闭登录',exact:true}).click();assert.deepEqual(await ids(),nextIds);
-  await cards().first().locator('.feedback-menu summary').click();await cards().first().getByRole('button',{name:'已看过',exact:true}).click();await page.getByRole('button',{name:'还没有账号？注册',exact:true}).click();
+  feedbackId=nextIds[0];await cards().first().getByRole('button',{name:'已看过',exact:true}).click();await page.locator('.auth-dialog[open]').waitFor();await page.getByRole('button',{name:'关闭登录',exact:true}).click();assert.deepEqual(await ids(),nextIds);
+  await cards().first().getByRole('button',{name:'已看过',exact:true}).click();await page.getByRole('button',{name:'还没有账号？注册',exact:true}).click();
   await page.locator('#auth-username').fill(username);await page.locator('#auth-password').fill(password);await page.locator('#auth-confirmation').fill(password);await page.getByRole('button',{name:'注册并登录',exact:true}).click();
   await page.waitForFunction(id=>![...document.querySelectorAll('.results-section .drama-card')].some(el=>el.dataset.workId===id),feedbackId);
   const data=await(await context.request.get(`${base}/api/v1/me/feedback/${feedbackId}`)).json();assert.equal(data.feedback.status,'watched');firstVersion=data.feedback.revision;
@@ -52,7 +52,7 @@ try{
  });
  await check('private feedback excludes future batches and home but preserves favorites and the confirmed input',async()=>{
   await generate();feedbackId=(await ids())[0];await context.request.put(`${base}/api/v1/me/favorites/${feedbackId}`,{headers:writeHeaders});
-  await cards().first().locator('.feedback-menu summary').click();await cards().first().getByRole('button',{name:'不感兴趣',exact:true}).click();
+  await cards().first().getByRole('button',{name:'不感兴趣',exact:true}).click();
   await page.waitForFunction(id=>!document.querySelector(`.results-section [data-work-id="${id}"]`),feedbackId);
   const data=await(await context.request.get(`${base}/api/v1/me/feedback/${feedbackId}`)).json();firstVersion=data.feedback.revision;
   assert.equal(data.feedback.status,'not_interested');assert.equal((await(await context.request.get(`${base}/api/v1/me/favorites`)).json()).total,1);
@@ -78,11 +78,11 @@ try{
   await page.getByRole('button',{name:'已看过',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.feedback-list')?.textContent.includes('已看过'));
   await page.getByRole('button',{name:'撤销反馈',exact:true}).click();await page.getByText('这个分类还没有反馈。',{exact:true}).waitFor();
  });
- await check('feedback and batch controls fit desktop, tablet and narrow mobile; keyboard opens and closes the menu',async()=>{
+ await check('feedback and batch controls fit desktop, tablet and narrow mobile; keyboard focuses labelled feedback icons',async()=>{
   await page.getByRole('button',{name:/发现好剧/}).click();await generate();await mkdir(shots,{recursive:true});
   for(const [width,height] of [[1440,1000],[768,1024],[390,844],[320,740]]){
    await page.setViewportSize({width,height});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-   const menu=cards().first().locator('.feedback-menu summary');await menu.focus();await page.keyboard.press('Enter');assert(await cards().first().locator('.feedback-menu').evaluate(el=>el.open));await page.keyboard.press('Escape');
+   const icon=cards().first().getByRole('button',{name:'已看过',exact:true});await icon.focus();assert(await icon.evaluate(el=>el===document.activeElement));assert.equal(await icon.locator('svg').count(),1);
    report.viewports.push({width,height,horizontal_overflow:false});if(width===1440||width===390)await page.screenshot({path:resolve(shots,`feedback-${width===1440?'desktop':'mobile'}.png`),fullPage:true});
   }
  });
@@ -98,7 +98,7 @@ try{
  await check('carousel feedback removes only the selected slide without filling the vacancy or generating recommendations',async()=>{
   const oldCount=await page.locator('.featured-pages button').count(),oldTitle=await page.locator('.featured-copy h1').innerText();
   const count=actions.filter(a=>a.path.endsWith('/recommendations')&&a.method==='POST').length;
-  await page.locator('.featured-copy .feedback-menu summary').click();await page.locator('.featured-copy').getByRole('button',{name:'已看过',exact:true}).click();
+  await page.locator('.featured-copy').getByRole('button',{name:'已看过',exact:true}).click();
   await page.waitForFunction(title=>document.querySelector('.featured-copy h1')?.textContent!==title,oldTitle);
   assert.equal(await page.locator('.featured-pages button').count(),oldCount-1);assert.equal(actions.filter(a=>a.path.endsWith('/recommendations')&&a.method==='POST').length,count);
   assert.equal(await page.locator('#query').inputValue(),'想看都市成长');

@@ -51,7 +51,7 @@ describe('six real-cover featured slides',()=>{
     wrapper.unmount();expect(vi.getTimerCount()).toBe(0);
   });
   it('retains access to details when a cover fails and handles an empty catalog',async()=>{
-    wrapper=mount(FeaturedCarousel,{props:{works:works()}});await wrapper.find('img').trigger('error');
+    wrapper=mount(FeaturedCarousel,{props:{works:works()}});await wrapper.find('.featured-poster img').trigger('error');
     expect(wrapper.find('.featured-cover-fallback').text()).toContain('封面暂不可用');await wrapper.find('.featured-detail').trigger('click');expect(wrapper.emitted('detail')![0]![0]).toMatchObject({id:'featured-0'});
     await wrapper.setProps({works:[]});expect(wrapper.find('.featured-empty').exists()).toBe(true);expect(wrapper.find('.featured-controls').exists()).toBe(false);
   });
