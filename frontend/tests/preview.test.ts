@@ -198,14 +198,27 @@ describe('shared hover video preview', () => {
     api.close();responses[1]({ok:true,json:async()=>ready('new-work')});await vi.advanceTimersByTimeAsync(0);
     expect(video()).toBeNull();expect(play).not.toHaveBeenCalled();
   });
-  it('shows reading material for a comic without loading or playing video', async () => {
-    const api=mountPreview();api.enter(workFixture({source_meta:{provider:'hongguo',content_type:'漫画',tags:[],pages:[],rank:null,heat:null,episode_count:null,chapter_count:30}}),anchor,true);
+  it.each([1024,390])('shows only the unsupported comic message at %i px without requesting media', async (width) => {
+    vi.stubGlobal('innerWidth',width);
+    const api=mountPreview();api.enter(workFixture({cover_url:'https://example.org/comic.jpg',source_meta:{provider:'hongguo',content_type:'漫画',tags:[],pages:[],rank:null,heat:null,episode_count:null,chapter_count:30}}),anchor,true);
     await vi.advanceTimersByTimeAsync(0);
-    expect(panel().getAttribute('aria-label')).toContain('阅读资料预览');expect(video()).toBeNull();
-    expect(play).not.toHaveBeenCalled();expect(panel().textContent).toContain('30 话');
+    expect(panel().getAttribute('aria-label')).toContain('漫画预览');
+    expect(panel().querySelector('[role=status]')!.textContent).toBe('漫画暂不支持预览');
+    expect(panel().querySelector('img,video,svg,canvas')).toBeNull();
+    expect(panel().querySelector('.preview-video-tools')).toBeNull();expect(panel().textContent).not.toContain('30 话');
+    expect(play).not.toHaveBeenCalled();
     expect(fetchPreview).not.toHaveBeenCalled();
     panel().querySelector<HTMLButtonElement>('.preview-close')!.click();await vi.advanceTimersByTimeAsync(0);
     expect(panel().querySelector('.preview-reading')).toBeNull();
+  });
+  it('unloads the previous video when switching to a comic message',async()=>{
+    const api=mountPreview();api.enter(workFixture(),anchor,true);await vi.advanceTimersByTimeAsync(0);
+    const old=video()!;expect(old.getAttribute('src')).toBeTruthy();fetchPreview.mockClear();
+    api.enter(workFixture({id:'comic',source_meta:{provider:'hongguo',content_type:'漫画',tags:[],pages:[],rank:null,heat:null,episode_count:null}}),anchor,true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(old.hasAttribute('src')).toBe(false);expect(pause).toHaveBeenCalled();
+    expect(panel().querySelector('img,video,svg,canvas')).toBeNull();expect(panel().textContent).toContain('漫画暂不支持预览');
+    expect(fetchPreview).not.toHaveBeenCalled();
   });
   it('expands below the source card on a narrow screen instead of covering its content',async()=>{
     vi.stubGlobal('innerWidth',390);

@@ -13,7 +13,6 @@ const video = ref<HTMLVideoElement>();
 const playing = ref(false);
 const muted = ref(false);
 const isComic = computed(()=>active.value?.work.source_meta?.content_type==='漫画');
-const readingCoverFailed = ref(false);
 const blocked = ref(false);
 const mediaError = ref(false);
 const media = shallowRef<PreviewMedia|null>(null);
@@ -151,7 +150,6 @@ async function open(value: { work: Work; anchor: HTMLElement }) {
   const current = ++revision;
   layout.value=sidePreviewPosition(value.anchor.getBoundingClientRect(),{width:document.documentElement.clientWidth||window.innerWidth,height:window.innerHeight});
   active.value = value;
-  readingCoverFailed.value=false;
   blocked.value = false;
   mediaError.value = false;
   await nextTick();
@@ -226,10 +224,10 @@ defineExpose({ enter, leave, close });
 
 <template>
   <Teleport :to="inline && active?active.anchor:'body'">
-    <section v-show="!!active" ref="panel" id="work-preview" :class="['drama-preview','work-preview',{'preview-inline':inline}]" :popover="inline?undefined:'manual'" :data-placement="layout.side" role="dialog" :aria-label="`${active?.work.title||'作品'}${isComic?'阅读资料预览':'视频预览'}`" :style="position" @pointerenter="keep" @pointerleave="leave()" @focusin="keep" @focusout="leave()">
+    <section v-show="!!active" ref="panel" id="work-preview" :class="['drama-preview','work-preview',{'preview-inline':inline}]" :popover="inline?undefined:'manual'" :data-placement="layout.side" role="dialog" :aria-label="`${active?.work.title||'作品'}${isComic?'漫画预览':'视频预览'}`" :style="position" @pointerenter="keep" @pointerleave="leave()" @focusin="keep" @focusout="leave()">
       <template v-if="active">
         <div class="preview-media" :style="media?{aspectRatio:`${media.width}/${media.height}`}:undefined">
-          <div v-if="isComic" class="preview-reading"><img :src="!readingCoverFailed&&active.work.cover_url?active.work.cover_url:poster" :alt="`${active.work.title}封面`" referrerpolicy="no-referrer" @error="readingCoverFailed=true" @load="reposition"><span>漫画资料预览 · {{active.work.source_meta?.chapter_count?`${active.work.source_meta.chapter_count} 话`:'章节资料待补充'}}</span></div>
+          <div v-if="isComic" class="preview-reading" role="status">漫画暂不支持预览</div>
           <template v-else>
           <template v-if="status==='ready'&&media">
             <video :key="`${active.work.id}-${mediaRevision}`" ref="video" :src="media.video_url" :poster="media.poster_url||active.work.cover_url||poster" :muted="muted" loop playsinline preload="metadata" :aria-label="`${active.work.title}${label}`" @play="mediaState($event,'play')" @pause="mediaState($event,'pause')" @loadedmetadata="mediaState($event,'metadata')" @loadeddata="mediaState($event,'loaded')" @playing="mediaState($event,'loaded')" @waiting="mediaState($event,'waiting')" @volumechange="mediaState($event,'volume')" @error="mediaState($event,'error')"></video>

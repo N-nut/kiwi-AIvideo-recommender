@@ -79,9 +79,7 @@
 .collection-options label,.rank-option {display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
 .collection-options input,.rank-option input {accent-color:#608035;width:16px;height:16px}
 .rank-option {margin:18px 0}
-.preview-reading {height:250px;background:#263334;position:relative;text-align:center}
-.preview-reading img {height:100%;max-width:100%;object-fit:contain}
-.preview-reading span {position:absolute;bottom:0;left:0;right:0;background:#17241edb;color:#fff;padding:9px;font-size:11px}
+.preview-reading {height:250px;background:#263334;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;font-size:14px;text-align:center}
 @media(min-width:1600px) {.drama-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
 @media(max-width:760px) {.drama-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card-body{padding:13px}.poster-button{aspect-ratio:2 / 3}}
 @media(max-width:480px) {.drama-grid{grid-template-columns:minmax(0,1fr);max-width:320px;margin-inline:auto}.catalog-pagination{gap:12px}.sync-scope{font-size:10px}.collection-dialog{padding:20px}.catalog-filters{gap:6px;flex-wrap:wrap}.filter-button{padding:7px 10px}}

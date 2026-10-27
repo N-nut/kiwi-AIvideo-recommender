@@ -118,9 +118,42 @@ try{
     const api=await(await context.request.get(`${base}/api/v1/works?page=${last}&page_size=12`)).json();
     assert.equal(await page.locator('.catalog-grid .drama-card').count(),api.items.length);assert.deepEqual(report.page_errors,[]);
   });
+  await check('comic previews show only the unsupported message on desktop and touch without requesting media',async()=>{
+    const result=await(await context.request.get(`${base}/api/v1/works?${new URLSearchParams({content_type:'漫画',page_size:'1'})}`)).json();
+    const comic=result.items[0];assert(comic,'A real comic record is required');
+    const desktop=page;
+    async function comicMessage(touch=false){
+      const mediaRequests=[];
+      const observe=request=>{if(new URL(request.url()).pathname===`/api/v1/works/${comic.id}/preview`)mediaRequests.push(request.url());};
+      page.on('request',observe);
+      try{
+        await closePreview();
+        const filter=page.locator('.content-type-filters').getByRole('button',{name:'漫画',exact:true});
+        if(touch)await filter.tap();else await filter.click();
+        await page.locator('.catalog-search input').fill(comic.title);
+        const card=page.locator('.catalog-grid .drama-card').filter({has:page.getByRole('heading',{name:comic.title,exact:true})}).first();
+        await card.waitFor();const button=card.locator('[aria-controls=work-preview]');
+        if(touch)await button.tap();else await button.click();
+        assert.equal(await page.locator('#work-preview .preview-reading').innerText(),'漫画暂不支持预览');
+        assert.equal(await page.locator('#work-preview').getAttribute('data-placement')==='inline',touch);
+        assert.equal(await page.locator('#work-preview img,#work-preview video,#work-preview svg,#work-preview canvas').count(),0);
+        assert.equal(await page.locator('#work-preview .preview-video-tools').count(),0);assert.deepEqual(mediaRequests,[]);
+        await page.locator('#work-preview').scrollIntoViewIfNeeded();
+        await page.screenshot({path:resolve(root,`docs/screenshots/comic-preview-${touch?'phone':'desktop'}.png`)});
+        if(touch)await page.locator('#work-preview .preview-close').tap();else await page.locator('#work-preview .preview-close').click();
+      }finally{page.off('request',observe);}
+    }
+    await page.setViewportSize({width:1440,height:1000});await comicMessage();
+    const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+    try{
+      page=await touch.newPage();page.on('pageerror',error=>report.page_errors.push(error.message));
+      await page.goto(base);await page.getByRole('button',{name:/片库/}).tap();await ready();await comicMessage(true);
+    }finally{page=desktop;await touch.close();}
+    assert.deepEqual(report.page_errors,[]);
+  });
   await writeFile(resolve(root,'docs/card-preview-validation.json'),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({checks:report.checks.length,viewports:report.viewports.length,page_errors:report.page_errors}));
 }finally{
-  if(page&&report.checks.length<7)await page.screenshot({path:resolve(root,'.local/card-preview-failure.png')}).catch(()=>{});
+  if(page&&report.checks.length<8)await page.screenshot({path:resolve(root,'.local/card-preview-failure.png')}).catch(()=>{});
   await browser?.close();if(server.exitCode===null){server.kill();await Promise.race([new Promise(done=>server.once('exit',done)),pause(3000)]);}log.end();
 }
