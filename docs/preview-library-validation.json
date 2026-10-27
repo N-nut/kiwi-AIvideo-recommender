@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-10-26T11:36:55.878297+00:00",
+  "checked_at": "2026-10-27T03:10:14.342357+00:00",
   "read_only": true,
   "state": {
     "total": 360,
-    "ready": 358,
+    "ready": 359,
     "pending": 0,
     "running": 0,
-    "unavailable": 2,
+    "unavailable": 1,
     "enabled": true,
     "error_code": null,
     "active": false
@@ -17,44 +17,19 @@
     "漫剧": 120,
     "漫画": 74
   },
-  "verified_files": 358,
-  "audio_files": 358,
-  "media_bytes": 472613508,
+  "verified_files": 359,
+  "audio_files": 359,
+  "media_bytes": 474196573,
   "failures": [],
-  "audited_assets": 358,
-  "business_tables": {
-    "works": {
-      "count": 434,
-      "unchanged": true
-    },
-    "users": {
-      "count": 1,
-      "unchanged": true
-    },
-    "user_sessions": {
-      "count": 1,
-      "unchanged": true
-    },
-    "favorites": {
-      "count": 8,
-      "unchanged": true
-    }
-  },
-  "business_data_unchanged": true,
+  "audited_assets": 359,
   "unavailable_reasons": {
-    "source_http_404": 1,
-    "episode_identity_mismatch": 1
+    "source_http_404": 1
   },
   "unavailable_works": [
     {
       "work_id": "hongguo-7694560624101035070",
       "title": "野骨也成，绕指柔",
       "error_code": "source_http_404"
-    },
-    {
-      "work_id": "hongguo-7696822712345299993",
-      "title": "被咬之后：我与四大尸王成了兄弟",
-      "error_code": "episode_identity_mismatch"
     }
   ],
   "passed": true

@@ -12,10 +12,10 @@ from sqlalchemy import select
 
 from kiwi.catalog import CatalogManager
 from kiwi.config import Settings
-from kiwi.database import PreviewJob, Work, initialize, make_database
+from kiwi.database import Favorite, PreviewJob, User, Work, initialize, make_database, public_work, utc_now
 from kiwi.preview_importer import MediaError
-from kiwi.preview_jobs import PreviewManager, WorkerLock
-from kiwi.preview_source import HongguoPreviewSource, source_identity, validate_media_url
+from kiwi.preview_jobs import PreviewManager, WorkerLock, source_key
+from kiwi.preview_source import HongguoPreviewSource, source_identity, source_update, validate_media_url
 from kiwi.schemas import RefreshRequest
 from test_previews import ready
 
@@ -36,6 +36,8 @@ def jobs(tmp_path,record,monkeypatch):
     monkeypatch.setattr(module,'import_previews',publish)
     def seed(identifier,kind='漫剧'):
         data=copy.deepcopy(record);data.update(id=identifier,title=identifier,source_meta={'provider':'hongguo','content_type':kind},content_hash='original')
+        if identifier.startswith('hongguo-'):
+            data['source_url']='https://hongguoduanju.com/detail?series_id='+identifier.removeprefix('hongguo-')
         with sessions.begin() as session:session.add(Work(**data))
     yield sessions,settings,seed,calls
     engine.dispose()
@@ -49,6 +51,92 @@ class Source:
         self.resolved.append(work['id'])
         return {'source_page_url':'https://example.org/first-episode','url':'unused'}
     async def download(self,info,target):Path(target).write_bytes(b'local fixture')
+
+
+def renamed_info(identifier='hongguo-12345678'):
+    sid=identifier.removeprefix('hongguo-')
+    return {'series_id':sid,'title':'来源最新名称','episode_id':'23456789','first_episode_id':'23456789',
+        'source_data':{'series_id':sid,'series_name':'来源最新名称','series_intro':'少年穿越末世，在异界冒险成长。',
+            'series_cover':'https://p3-novel.byteimg.com/new.image','tags':['末世','穿越'],'episode_cnt':183,
+            'rank_label':'热播漫剧榜第49名','heat':'5271万热度'}}
+
+
+@pytest.mark.parametrize('change',['series','episode','metadata','cover'])
+def test_rename_requires_matching_ids_first_episode_and_complete_source_data(change):
+    work={'id':'hongguo-12345678','title':'旧名','source_url':'https://hongguoduanju.com/detail?series_id=12345678','source_meta':{'provider':'hongguo','content_type':'漫剧'}}
+    info=renamed_info()
+    row=source_update(work,info)
+    assert row['id']==work['id'] and row['title']==info['title']
+    assert row['source_meta']['episode_count']==183 and row['source_meta']['rank']==49
+    info['source_data']['rank_label']='热播漫剧榜第100名'
+    assert source_update(work,info)['source_meta']['rank']==100
+    if change=='series':info['series_id']='87654321'
+    elif change=='episode':info['episode_id']='87654321'
+    elif change=='metadata':info['source_data']['series_id']='87654321'
+    else:info['source_data']['series_cover']='https://attacker.test/cover'
+    with pytest.raises(MediaError):source_update(work,info)
+
+
+async def test_renamed_work_syncs_source_data_without_changing_id_or_favorites(jobs):
+    sessions,settings,seed,calls=jobs;identifier='hongguo-12345678';seed(identifier)
+    with sessions.begin() as session:
+        session.add(User(id='fixture-user',username='fixture',username_key='fixture',password_hash='fixture-hash',created_at=utc_now()))
+        session.flush();session.add(Favorite(user_id='fixture-user',work_id=identifier,created_at=utc_now()))
+        work=session.get(Work,identifier);work.embedding=[1.0]+[0.0]*1023;work.embedding_model=settings.embedding_model;work.embedding_dimension=1024
+    class Renamed(Source):
+        async def resolve(self,work):
+            info=await super().resolve(work);info['source_record']=source_update(work,renamed_info(identifier));return info
+    manager=PreviewManager(sessions,settings,Renamed)
+    try:
+        await manager.start();assert (await idle(manager))['ready']==1
+        with sessions() as session:
+            work=session.get(Work,identifier)
+            assert work.title=='来源最新名称' and work.cover_url.endswith('/new.image')
+            assert work.source_meta['tags']==['末世','穿越'] and work.source_meta['episode_count']==183
+            assert work.source_meta['heat']=='5271万热度' and work.source_meta['rank']==49
+            assert work.embedding is None and work.embedding_model is None
+            assert session.get(Favorite,('fixture-user',identifier)) is not None
+            assert len(session.scalars(select(Work)).all())==1
+            assert session.get(PreviewJob,identifier).source_key==source_key(work)
+        assert manager.enqueue(retry_failed=True)==0 and calls==[identifier]
+    finally:await manager.close()
+
+
+async def test_404_keeps_existing_work_and_unavailable_state(jobs):
+    sessions,settings,seed,calls=jobs;identifier='hongguo-12345678';seed(identifier)
+    with sessions() as session:before=public_work(session.get(Work,identifier))
+    class Missing(Source):
+        async def resolve(self,work):raise MediaError('source','source_http_404')
+    manager=PreviewManager(sessions,settings,Missing)
+    try:
+        await manager.start();assert (await idle(manager))['unavailable']==1
+        assert manager.enqueue(retry_failed=True)==0 and calls==[]
+        with sessions() as session:
+            assert public_work(session.get(Work,identifier))==before
+            assert session.get(PreviewJob,identifier).error_code=='source_http_404'
+    finally:await manager.close()
+
+
+async def test_source_sync_rebuilds_embeddings_and_rejects_a_concurrent_newer_record(jobs):
+    from pydantic import SecretStr
+    from conftest import FakeAI
+    sessions,settings,seed,calls=jobs;identifier='hongguo-12345678';seed(identifier)
+    settings.ai_mode='live';settings.dashscope_api_key=SecretStr('synthetic-fixture')
+    with sessions() as session:work=public_work(session.get(Work,identifier))
+    row=source_update(work,renamed_info(identifier));provider=FakeAI()
+    manager=PreviewManager(sessions,settings,Source,lambda:provider)
+    updated=await manager.sync_source(work,row)
+    assert updated['title']==row['title'] and provider.calls==1
+    with sessions() as session:assert session.get(Work,identifier).embedding==[1.0]+[0.0]*1023
+    class Concurrent(FakeAI):
+        async def embed(self,texts):
+            with sessions.begin() as session:
+                current=session.get(Work,identifier);current.title='并发保存的新资料';current.content_hash='newer'
+            return await super().embed(texts)
+    row['title']='再改名'
+    other=PreviewManager(sessions,settings,Source,Concurrent)
+    with pytest.raises(ValueError,match='同步期间已改变'):await other.sync_source(updated,row)
+    with sessions() as session:assert session.get(Work,identifier).title=='并发保存的新资料'
 
 
 async def idle(manager):

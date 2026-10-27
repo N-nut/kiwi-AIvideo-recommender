@@ -1,0 +1,43 @@
+{
+  "checked_at": "2026-10-27T03:10:11.928754+00:00",
+  "source_url": "https://hongguoduanju.com/detail?series_id=7696822712345299993",
+  "work_id": "hongguo-7696822712345299993",
+  "before_title": "被咬之后：我与四大尸王成了兄弟",
+  "after_title": "我与四大尸王成了兄弟之末世躺赢指南",
+  "changed_fields": [
+    "title",
+    "cover_url",
+    "source_meta",
+    "collected_at"
+  ],
+  "source_tags": [
+    "末世",
+    "穿越",
+    "求生",
+    "都市"
+  ],
+  "episode_count": 183,
+  "rank": 49,
+  "heat": "5271万热度",
+  "embedding_rebuilt": true,
+  "new_title_search_verified": true,
+  "preview_ready": true,
+  "duration_ms": 15024,
+  "audio_codecs": [
+    "aac"
+  ],
+  "source_404_unchanged": true,
+  "other_works_unchanged": true,
+  "accounts_sessions_favorites_unchanged": true,
+  "preview_state": {
+    "total": 360,
+    "ready": 359,
+    "pending": 0,
+    "running": 0,
+    "unavailable": 1,
+    "enabled": true,
+    "error_code": null,
+    "active": false
+  },
+  "public_validation_database": ".local\\source-sync-public-copy-08b2208e.db"
+}

@@ -11,6 +11,21 @@ const findButton=(wrapper:ReturnType<typeof mount>,text:string)=>wrapper.findAll
 beforeEach(()=>{localStorage.clear();HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
 afterEach(()=>vi.unstubAllGlobals());
 describe('preference confirmation flow',()=>{
+  it('reloads renamed catalogue records when background preparation finishes',async()=>{
+    vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});
+    let active=true,title='旧作品名称';
+    const fetcher=vi.fn((url:string)=>url==='/api/v1/catalog/refresh'?response({status:'succeeded',message:'已更新',previews:{enabled:true,total:1,ready:active?0:1,pending:active?1:0,running:0,unavailable:0,active}}):url.startsWith('/api/v1/works?')?response({items:[workFixture({title})],total:1}):initial(url));
+    vi.stubGlobal('fetch',fetcher);const w=mount(App);
+    try{
+      await flushPromises();await w.find('textarea').setValue('保留我的观剧需求');
+      await findButton(w,'片库').trigger('click');await flushPromises();expect(w.find('.drama-card h3').text()).toBe('旧作品名称');
+      active=false;title='来源最新名称';await vi.advanceTimersByTimeAsync(2000);await flushPromises();
+      expect(w.find('.drama-card h3').text()).toBe('来源最新名称');
+      await findButton(w,'发现好剧').trigger('click');await flushPromises();
+      expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe('保留我的观剧需求');
+      expect(fetcher.mock.calls.some(([url])=>url==='/api/v1/recommendations')).toBe(false);
+    }finally{w.unmount();vi.useRealTimers();}
+  });
   it('continues polling media progress after the catalogue finishes without overwriting input',async()=>{
     vi.useFakeTimers({toFake:['setTimeout','clearTimeout']});
     let progress={enabled:true,total:2,ready:1,pending:1,running:0,unavailable:0,active:true};

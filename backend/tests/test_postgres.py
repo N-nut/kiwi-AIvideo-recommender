@@ -42,6 +42,9 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
         changed=copy.deepcopy(rows[0]);changed['title']='updated'
         with pytest.raises(RuntimeError): await import_works([changed],sessions,Fail(),settings,update=True)
         with sessions() as session: assert session.get(Work,'work-0').title=='Test 0'
+        with pytest.raises(ValueError,match='同步期间已改变'):
+            await import_works([changed],sessions,FakeAI(),settings,update=True,expected_hashes={'work-0':'stale-source-hash'})
+        with sessions() as session: assert session.get(Work,'work-0').title=='Test 0'
         # Exercise the account migration, real session lookup, ON CONFLICT and FK
         # constraints over the same disposable PostgreSQL wire connection.
         from fastapi.testclient import TestClient

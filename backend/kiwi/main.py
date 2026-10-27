@@ -37,7 +37,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     settings = settings or Settings()
     engine, sessions = make_database(settings.database_url)
     provider_factory = provider_factory or (lambda: LiveAI(settings) if settings.ai_mode == "live" else BaselineAI())
-    previews = PreviewManager(sessions, settings, preview_source_factory)
+    previews = PreviewManager(sessions, settings, preview_source_factory, provider_factory)
     catalog = CatalogManager(sessions, settings, provider_factory, collector, previews)
 
     @asynccontextmanager

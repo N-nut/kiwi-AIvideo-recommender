@@ -14,6 +14,8 @@ from .preview_importer import MediaError, import_previews, run_tool
 from .preview_source import HongguoPreviewSource
 from .previews import DRAMA_TYPES, ready_file
 from .file_lock import FileLock as WorkerLock
+from .importer import import_works
+from .providers import LiveAI
 
 log = logging.getLogger("kiwi")
 USAGE = "用户指定从红果公开第一集截取用于本机开发验证；不代表来源方授予对外传播许可。"
@@ -30,9 +32,10 @@ def source_key(work):
 
 
 class PreviewManager:
-    def __init__(self, sessions, settings, source_factory=None):
+    def __init__(self, sessions, settings, source_factory=None, provider_factory=None):
         self.sessions, self.settings = sessions, settings
         self.source_factory = source_factory or HongguoPreviewSource
+        self.provider_factory = provider_factory or (lambda: LiveAI(settings))
         self.source = None
         self.tasks = []
         self.start_task = None
@@ -85,7 +88,7 @@ class PreviewManager:
                     continue
                 if job and job.status == "running":
                     continue
-                if not job or job.source_key != key or (retry_failed and job.status == "unavailable") or job.status == "ready":
+                if not job or job.source_key != key or (retry_failed and job.status == "unavailable" and job.error_code != 'source_http_404') or job.status == "ready":
                     timestamp = utc_now()
                     if job is None:
                         job = PreviewJob(work_id=work.id, created_at=timestamp)
@@ -170,6 +173,8 @@ class PreviewManager:
         with tempfile.TemporaryDirectory(prefix=".preview-source-", dir=self.settings.media_root.parent) as folder:
             folder = Path(folder)
             info = await self.source.resolve(work)
+            if info.get('source_record'):
+                work = await self.sync_source(work, info['source_record'])
             await self.source.download(info, folder / "source.mp4")
             with self.sessions() as session:
                 current=session.get(Work,work['id'])
@@ -190,6 +195,28 @@ class PreviewManager:
                     raise
                 if result["failed"]:
                     raise MediaError("publish", result["items"][0]["error"])
+
+    async def sync_source(self, work, row):
+        from .preview_source import source_identity
+        if row.get('id') != work['id'] or source_identity(row) != source_identity(work):
+            raise MediaError('source', 'episode_identity_mismatch')
+        with self.sessions() as session:
+            current = session.get(Work, work['id'])
+            if not current or not eligible(current) or source_key(current) != source_key(work):
+                raise MediaError('source', 'source_changed')
+            expected_hash = current.content_hash
+        can_embed = self.settings.ai_mode == 'live' and bool(self.settings.dashscope_api_key.get_secret_value())
+        settings = self.settings if can_embed else self.settings.model_copy(update={'ai_mode':'baseline'})
+        await import_works([row], self.sessions, self.provider_factory() if can_embed else None,
+            settings, update=True, source_sync=True, expected_hashes={work['id']:expected_hash})
+        with self.sessions.begin() as session:
+            current = session.get(Work, work['id'])
+            if not current or not eligible(current) or current.title != row['title']:
+                raise MediaError('source', 'source_changed')
+            job = session.get(PreviewJob, work['id'])
+            if job:
+                job.source_key = source_key(current)
+            return public_work(current)
 
     async def worker(self):
         while not self.stopping:

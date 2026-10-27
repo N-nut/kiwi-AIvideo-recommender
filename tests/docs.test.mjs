@@ -135,5 +135,5 @@ test('真实片段预览文档区分已验证样本、来源边界与待完成�
   assert.match(source, /首版不提供完整剧集站内播放/);
   for (const requirement of ['更新漫剧库成功保存后','预览准备中','重启恢复','默认有声','漫画暂不支持预览','不显示封面或章节画面']) assert.ok(section.includes(requirement), requirement);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  for (const requirement of ['0005_preview_jobs.py','sync-previews --retry-failed','preparing','preview_jobs','有限','首集 ID']) assert.ok(technical.includes(requirement),requirement);
+  for (const requirement of ['0005_preview_jobs.py','sync-previews --retry-failed','preparing','preview_jobs','有限','首集 ID','同一作品更名','预期内容指纹','404']) assert.ok(technical.includes(requirement),requirement);
 });

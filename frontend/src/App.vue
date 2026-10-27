@@ -100,12 +100,13 @@ function scheduleRefresh() {
   if(!disposed && (refresh.value.status==='running'||refresh.value.previews?.active)) refreshTimer=setTimeout(()=>void pollRefresh(),2000);
 }
 async function acceptRefresh(state:CatalogRefresh, finished=false) {
+  const mediaFinished=!!refresh.value.previews?.active&&!state.previews?.active;
   refresh.value=state;
   if(state.cooldown&&state.status!=='succeeded') message('刚刚尝试过更新，请稍后再试');
-  if(state.status==='succeeded'&&finished) {
+  if((state.status==='succeeded'&&finished)||mediaFinished) {
     home.invalidate();
     await Promise.all([shelf.reload(),loadHealth()]);
-    message(state.cooldown?'刚刚已更新，请稍后再次同步':state.message);
+    if(finished) message(state.cooldown?'刚刚已更新，请稍后再次同步':state.message);
   }
   scheduleRefresh();
 }

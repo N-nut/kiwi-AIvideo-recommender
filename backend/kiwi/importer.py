@@ -4,7 +4,7 @@ import json
 import math
 import unicodedata
 
-from sqlalchemy import select
+from sqlalchemy import select, update as update_rows
 
 from .database import Work, utc_now
 from .crawler import CATEGORY_LABELS, merge_source_metadata
@@ -24,7 +24,7 @@ def normalized_title(title):
     return "".join(c for c in unicodedata.normalize("NFKC", title).casefold() if c.isalnum())
 
 
-async def import_works(raw, sessions, provider, settings, update=False, reembed=False, source_sync=False, progress=None):
+async def import_works(raw, sessions, provider, settings, update=False, reembed=False, source_sync=False, progress=None, expected_hashes=None):
     """Validate the complete batch and embed before a single atomic transaction."""
     items = [WorkInput.model_validate(row) for row in raw]
     filtered_unclassified=0
@@ -117,7 +117,14 @@ async def import_works(raw, sessions, provider, settings, update=False, reembed=
                         embedding_model=settings.embedding_model if vector is not None else None,
                         embedding_dimension=settings.embedding_dimension if vector is not None else None,
                         embedded_at=(embedded_at or utc_now()) if vector is not None else None)
-            session.merge(Work(**data))
+            if expected_hashes is None:
+                session.merge(Work(**data))
+            else:
+                # Compare and update in one SQL statement on SQLite and PostgreSQL.
+                result = session.execute(update_rows(Work).where(Work.id == item.id,
+                    Work.content_hash == expected_hashes.get(item.id), Work.review_status == 'approved').values(**data))
+                if result.rowcount != 1:
+                    raise ValueError('作品资料在同步期间已改变，已保留较新的资料')
     result = {"imported": len(staged), "skipped": skipped, "failed": 0}
     if source_sync:
         # Source refresh is always upsert; unseen and unselected works survive.

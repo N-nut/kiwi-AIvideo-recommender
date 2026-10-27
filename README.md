@@ -144,6 +144,8 @@ node scripts/verify-home-recommendations.mjs
 
 媒体接口、自动准备、离线导入清单、工具配置及备份说明见 [媒体预览操作说明](docs/媒体预览.md)。服务启动补齐全库 AI剧、漫剧和真人剧，每次更新保存新增作品后继续后台准备，不等待视频生成才刷新资料。运行 `python -m kiwi sync-previews --retry-failed` 可独立补齐；实际覆盖见 [片库媒体检查](docs/preview-library-validation.json)。需要 FFmpeg/ffprobe、Node 与项目 Playwright 依赖（`npm ci`），Windows 默认复用 Edge。真实文件不随 Git 分发；来源不可用时保留明确提示。
 
+同一源站作品更名时，进一步核对详情页和首集，自动同步现名、简介、封面、标签、集数与榜单资料，并更新检索索引及片库显示；作品 ID 和收藏关联保留。来源 404 的作品保持当前不可用提示。实际同步记录见 [源站同步验证](docs/source-sync-validation.json)。
+
 准备好 `.env` 后：
 
 ```powershell

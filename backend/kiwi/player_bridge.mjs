@@ -20,7 +20,10 @@ function identity(seriesId){
     const detail=value.seriesDetail;
     if(detail&&String(detail.series_id)===seriesId){
       const first=detail.vid_list?.[0],episode=value.vid||value.publicVideoSeo?.itemId;
-      if(first&&episode)return {title:detail.series_name,series_id:String(detail.series_id),episode_id:String(episode),first_episode_id:String(first)};
+      const social=value.seriesSocialInfo||{};
+      return {title:detail.series_name,series_id:String(detail.series_id),episode_id:episode?String(episode):null,first_episode_id:first?String(first):null,
+        source_data:{series_id:String(detail.series_id),series_name:detail.series_name,series_intro:detail.series_intro,series_cover:detail.series_cover,
+          tags:detail.tags,episode_cnt:detail.episode_cnt,rank_label:social.rank_label,heat:social.hot_score_data?.text}};
     }
     queue.push(...Object.values(value));
   }
@@ -43,7 +46,16 @@ input.on('line',line=>{
       const url=await page.locator('video').evaluate(v=>v.currentSrc);
       stage='metadata';
       const info=await page.evaluate(identity,request.series_id);
-      if(String(info.series_id)!==request.series_id||info.title!==request.title||!info.episode_id||info.episode_id!==info.first_episode_id)throw Error('episode_identity_mismatch');
+      if(!info||String(info.series_id)!==request.series_id||!info.episode_id||info.episode_id!==info.first_episode_id)throw Error('episode_identity_mismatch');
+      if(info.title!==request.title){
+        // A rename is resolved against the canonical detail page, by stable ID.
+        stage='source_metadata';const detailPage=await jobContext.newPage();
+        const detailResponse=await detailPage.goto(`https://hongguoduanju.com/detail?series_id=${request.series_id}`,{waitUntil:'domcontentloaded',timeout:25000});
+        if(!detailResponse||detailResponse.status()>=400)throw Error(`source_http_${detailResponse?.status()||'missing'}`);
+        const detail=await detailPage.evaluate(identity,request.series_id);
+        if(!detail||detail.series_id!==info.series_id||detail.title!==info.title||detail.first_episode_id!==info.first_episode_id)throw Error('episode_identity_mismatch');
+        info.source_data=detail.source_data;await detailPage.close();
+      }
       info.url=url;
       info.user_agent=await page.evaluate(()=>navigator.userAgent);
       info.referer=page.url();

@@ -4,12 +4,15 @@ import re
 import json
 import os
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
 
 from .preview_importer import MediaError
+from .crawler import CATEGORY_LABELS, normalize
+from .schemas import WorkInput
 
 
 def source_identity(work):
@@ -34,6 +37,29 @@ def validate_media_url(value):
     except (ValueError, TypeError):
         raise MediaError("source", "media_host_rejected") from None
     return value
+
+
+def source_update(work, info):
+    """Accept a rename only with complete canonical metadata for the same ID."""
+    series_id = source_identity(work)
+    if (str(info.get('series_id')) != series_id or not info.get('episode_id')
+            or info['episode_id'] != info.get('first_episode_id')):
+        raise MediaError('source', 'episode_identity_mismatch')
+    if info.get('title') == work['title']:
+        return None
+    raw = info.get('source_data') or {}
+    if str(raw.get('series_id')) != series_id or raw.get('series_name') != info.get('title'):
+        raise MediaError('source', 'episode_identity_mismatch')
+    try:
+        key = next(key for key, kind in CATEGORY_LABELS.items()
+                   if kind == (work.get('source_meta') or {}).get('content_type') and key != 'comic')
+        page = f'https://hongguoduanju.com/detail?series_id={series_id}'
+        row = normalize(raw, key, datetime.now(timezone.utc).date().isoformat(), page)
+        rank = re.fullmatch(r'热播(?:漫剧|短剧|AI剧|真人剧)榜第([1-9][0-9]{0,2})名', raw.get('rank_label') or '')
+        row['source_meta'].update(rank=int(rank[1]) if rank else None, heat=raw.get('heat'))
+        return WorkInput.model_validate(row).model_dump(mode='json')
+    except Exception:
+        raise MediaError('source', 'source_metadata_invalid') from None
 
 
 class HongguoPreviewSource:
@@ -91,10 +117,8 @@ class HongguoPreviewSource:
             async with self.write_lock:
                 self.process.stdin.write((json.dumps({"request_id":request_id,"series_id":series_id,"title":work["title"]},ensure_ascii=False)+"\n").encode())
                 await self.process.stdin.drain()
-            info=await asyncio.wait_for(future,60)
-            if (str(info.get("series_id"))!=series_id or info.get("title")!=work["title"] or not info.get("episode_id")
-                    or info["episode_id"]!=info.get("first_episode_id")):
-                raise MediaError("source","episode_identity_mismatch")
+            info=await asyncio.wait_for(future,90)
+            info['source_record'] = source_update(work, info)
             info["url"]=validate_media_url(info["url"])
             info["source_page_url"]=f"https://hongguoduanju.com/player/{series_id}/{info['episode_id']}"
             return info
