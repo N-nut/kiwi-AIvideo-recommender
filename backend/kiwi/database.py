@@ -113,6 +113,19 @@ class Favorite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class UserWorkFeedback(Base):
+    __tablename__ = "user_work_feedback"
+    __table_args__ = (
+        CheckConstraint("status IN ('not_interested', 'watched')", name="ck_feedback_status"),
+        Index("ix_feedback_user_status_updated_work", "user_id", "status", "updated_at", "work_id"),
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="CASCADE"), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20))
+    revision: Mapped[str] = mapped_column(String(32))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 # Only the explicitly retired seed IDs; other manually imported data is preserved.
 RETIRED_IDS = tuple(f"bili-{i}" for i in (
     45128,102888,42977,102887,28092,103017,102867,32556,32430,102998,100171,102872,
@@ -137,7 +150,7 @@ def make_database(url):
 
 
 def initialize(engine):
-    if engine.dialect.name == "sqlite" and (inspect(engine).has_table("users") or inspect(engine).has_table("alembic_version")):
+    if engine.dialect.name == "sqlite":
         from .profile_upgrade import upgrade_local_profiles
         upgrade_local_profiles(engine)
     if engine.dialect.name == "postgresql":

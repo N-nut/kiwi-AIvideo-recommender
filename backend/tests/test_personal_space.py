@@ -264,7 +264,7 @@ def test_old_sqlite_upgrade_backup_and_repeat_preserve_all_rows(tmp_path, monkey
             columns = ','.join(c['name'] for c in inspect(connection).get_columns(name) if c['name'] not in {'nickname','nickname_key','avatar_id'})
             assert connection.exec_driver_sql(f'SELECT {columns} FROM {name}').all() == before[name]
         assert connection.exec_driver_sql('SELECT nickname,nickname_key,avatar_id FROM users').one() == (None, None, 'kiwi-default')
-        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0006'
+        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0007'
         assert connection.exec_driver_sql('PRAGMA foreign_key_check').all() == []
     backups = list(tmp_path.glob('*.bak'));assert len(backups) == 1
     import sqlite3

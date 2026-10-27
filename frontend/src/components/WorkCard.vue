@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import type { Work } from '../types';
+import type { FeedbackStatus, Work } from '../types';
+import FeedbackMenu from './FeedbackMenu.vue';
 import { workArt } from '../presentation';
 import { posterArt } from '../../../demo/art.mjs';
-const props = defineProps<{ work: Work; index: number; saved: boolean; favoriteBusy?:boolean; favoriteReady?:boolean }>();
-const emit = defineEmits<{ favorite: [id: string]; detail: [work: Work]; preview: [work: Work, anchor: HTMLElement, immediate: boolean]; previewLeave: [anchor: HTMLElement] }>();
+const props = defineProps<{ work: Work; index: number; saved: boolean; favoriteBusy?:boolean; favoriteReady?:boolean; feedbackEnabled?:boolean;feedbackBusy?:boolean;feedbackStatus?:FeedbackStatus }>();
+const emit = defineEmits<{ feedback:[work:Work,status:FeedbackStatus];favorite: [id: string]; detail: [work: Work]; preview: [work: Work, anchor: HTMLElement, immediate: boolean]; previewLeave: [anchor: HTMLElement] }>();
 const art = computed(() => workArt(props.work));
 const coverFailed = ref(false);
 watch(() => props.work.cover_url, () => { coverFailed.value=false; });
@@ -23,7 +24,7 @@ function focusPreview(event: FocusEvent) {
 function leavePreview(event: Event) { emit('previewLeave', event.currentTarget as HTMLElement); }
 </script>
 <template>
-  <article class="drama-card" @pointerenter="preview($event)" @pointerleave="leavePreview" @focusin="focusPreview" @focusout="leavePreview">
+  <article class="drama-card" :data-work-id="work.id" @pointerenter="preview($event)" @pointerleave="leavePreview" @focusin="focusPreview" @focusout="leavePreview">
     <button :class="['poster-button',{'has-cover':hasCover}]" @click="$emit('detail',work)" :aria-label="`查看《${work.title}》资料依据`">
       <img v-if="hasCover" class="source-cover" :src="work.cover_url!" :alt="`${work.title}封面`" loading="lazy" referrerpolicy="no-referrer" @error="coverFailed=true">
       <div v-else class="poster-svg" v-html="poster"></div><span class="poster-tag">{{work.source_meta?.content_type || work.genres[0] || '作品'}}</span>
@@ -34,6 +35,7 @@ function leavePreview(event: Event) { emit('previewLeave', event.currentTarget a
       <p v-if="work.source_meta?.rank" class="source-rank">红果热播榜 #{{work.source_meta.rank}} <span>{{work.source_meta.heat}}</span></p>
       <div class="match-box"><span v-if="work.reason" class="match-label">推荐理由</span><p>{{work.reason || work.summary}}</p><div v-if="work.caveats?.length" class="caveat">留意：{{work.caveats.join('；')}}</div></div>
       <div class="card-footer"><span>{{work.reason_mode==='template'?'资料摘录':work.reason_mode==='model'?'引用已校验':'来源资料'}}</span><div class="card-actions"><button class="text-button" :aria-label="work.source_meta?.content_type==='漫画'?`查看《${work.title}》预览提示`:`预览《${work.title}》视频片段`" aria-haspopup="dialog" aria-controls="work-preview" @click="preview($event,true)">预览</button><button class="text-button" @click="$emit('detail',work)">详情</button></div></div>
+      <FeedbackMenu v-if="feedbackEnabled" :title="work.title" :busy="feedbackBusy" :status="feedbackStatus" @select="emit('feedback',work,$event)"/>
     </div>
   </article>
 </template>

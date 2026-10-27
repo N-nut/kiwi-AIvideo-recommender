@@ -178,7 +178,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 口味推荐区在桌面并列展示需求与分组偏好，超宽屏输入区限制为 680px，手机改为单列。点击“理解我的口味”先识别偏好，成功后弹出核对提示，可直接确认生成、手动调整或关闭；关闭不会生成片单，下方明确显示等待确认。只有确认生成时才显示作品骨架；解析失败、冲突及暂不支持的条件分别提示，不混作片单加载失败。
 
-“推荐反馈＋换一批”的要求见 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批产品方案待核对未实现)，[技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案待实现)已补充反馈表、接口、公私推荐过滤、本轮去重及验收契约；功能仍待实现，本次不创建反馈接口或迁移。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
+“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0007，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
 
 ## 个人空间
 

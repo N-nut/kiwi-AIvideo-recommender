@@ -5,9 +5,9 @@ import logging
 import json
 import time
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 
-from .database import Favorite, PUBLIC_WORK_FIELDS, Work
+from .database import Favorite, PUBLIC_WORK_FIELDS, UserWorkFeedback, Work
 from .schemas import GENRES, THEMES, HomeRecommendationResponse, PublicWork
 
 DRAMA_TYPES = {"真人剧", "漫剧", "AI剧"}
@@ -121,8 +121,11 @@ def home_recommendations(sessions, request_id, user_id=None):
         if user_id is not None:
             rows = session.execute(select(*columns).join(Favorite, Favorite.work_id == Work.id).where(Favorite.user_id == user_id)).mappings()
             favorites = [dict(row) for row in rows]
-        rows = session.execute(select(*columns).where(Work.review_status == "approved", Work.cover_url.is_not(None),
-            Work.source_meta["content_type"].as_string().in_(sorted(DRAMA_TYPES)))).mappings()
+        query = select(*columns).where(Work.review_status == "approved", Work.cover_url.is_not(None),
+            Work.source_meta["content_type"].as_string().in_(sorted(DRAMA_TYPES)))
+        if user_id is not None:
+            query = query.where(~exists(select(1).where(UserWorkFeedback.user_id == user_id, UserWorkFeedback.work_id == Work.id)))
+        rows = session.execute(query).mappings()
         candidates = [dict(row) for row in rows]
     favorite_ids = {work["id"] for work in favorites}
     result = build_recommendations(favorites, candidates, favorite_ids, request_id)

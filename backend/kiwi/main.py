@@ -27,6 +27,7 @@ from .home_recommendations import home_recommendations
 from .previews import router as previews_router
 from .preview_jobs import PreviewManager
 from .personal_space import router as personal_space_router
+from .feedback import reject_query, router as feedback_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -63,6 +64,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     app.include_router(favorites_router)
     app.include_router(previews_router)
     app.include_router(personal_space_router)
+    app.include_router(feedback_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -71,7 +73,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
         def finish(response):
             response.headers["X-Request-ID"] = request.state.request_id
-            if private or request.url.path == "/api/v1/home/recommendations" or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
+            if private or request.url.path in {"/api/v1/home/recommendations", "/api/v1/recommendations"} or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
                 response.headers["Cache-Control"] = "no-store"
             return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.
@@ -159,6 +161,13 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     async def recommendations(body: RecommendationRequest, request: Request):
         result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id), settings.request_timeout)
         log.info(json.dumps({"request_id": result["request_id"], "stage_ms": result["timings_ms"], "candidates": len(result["candidate_ids"]), "mode": settings.ai_mode, "usage": result["usage"]}))
+        return result
+
+    @app.post("/api/v1/me/recommendations")
+    async def private_recommendations(body: RecommendationRequest, request: Request, user=Depends(get_current_user)):
+        reject_query(request)
+        result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id, user["id"]), settings.request_timeout)
+        get_current_user(request)  # Revocation during generation also invalidates this result.
         return result
 
     def home_response(request, user_id=None):

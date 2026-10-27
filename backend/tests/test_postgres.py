@@ -120,6 +120,31 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                 assert client.get('/api/v1/home/recommendations').json()['prompts_mode']=='default'
             finally:
                 sqlite_engine.dispose()
+            # Feedback uses the real PostgreSQL table, NOT EXISTS filtering and
+            # conditional deletion; favorites and the profile are unchanged.
+            feedback=client.patch('/api/v1/me/feedback/home-similar',json={'status':'watched','expected_revision':None})
+            assert feedback.status_code==200 and feedback.headers['cache-control']=='no-store'
+            first=feedback.json()['feedback']
+            assert client.patch('/api/v1/me/feedback/home-similar',json={'status':'watched','expected_revision':None}).json()['feedback']==first
+            changed=client.patch('/api/v1/me/feedback/home-similar',json={'status':'not_interested','expected_revision':first['revision']}).json()['feedback']
+            assert changed['revision']!=first['revision']
+            assert client.delete('/api/v1/me/feedback/home-similar',headers={'If-Match':'"'+first['revision']+'"'}).status_code==412
+            assert 'home-similar' not in [w['id'] for w in client.get('/api/v1/me/home-recommendations').json()['items']]
+            assert 'home-similar' in [w['id'] for w in client.get('/api/v1/home/recommendations').json()['items']]
+            body={'preferences':{'soft_preferences':{'genres':['修仙']}},'exclude_work_ids':['home-favorite','home-public','work-0','work-1','work-2','home-comic','home-no-cover']}
+            assert client.post('/api/v1/me/recommendations',json=body).json()['status']=='empty'
+            assert client.post('/api/v1/recommendations',json=body).json()['items'][0]['id']=='home-similar'
+            assert client.get('/api/v1/me/feedback?status=not_interested').json()['total']==1
+            assert client.get('/api/v1/me/feedback/state').json()['complete'] is True
+            with client.app.state.engine.begin() as connection:
+                connection.execute(text("""DO $$ BEGIN
+                    BEGIN
+                        UPDATE user_work_feedback SET status='bad';
+                        RAISE EXCEPTION 'Expected feedback check rejection';
+                    EXCEPTION WHEN check_violation THEN NULL;
+                    END;
+                END $$"""))
+            assert client.delete('/api/v1/me/feedback/home-similar',headers={'If-Match':'"'+changed['revision']+'"'}).status_code==204
             assert register(client,'User_B').status_code==201
             assert client.get('/api/v1/me/favorites').json()['total']==0
             assert client.get('/api/v1/me/space-summary').json()['interest']['status']=='no_favorites'

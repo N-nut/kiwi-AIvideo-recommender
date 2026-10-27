@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '../src/useAuth';
 import { useLibrary } from '../src/library';
 import { useHomeRecommendations } from '../src/useHomeRecommendations';
+import { useFeedback } from '../src/useFeedback';
 import FeaturedCarousel from '../src/components/FeaturedCarousel.vue';
 import App from '../src/App.vue';
 import { homeFixture, workFixture } from './work-fixture';
@@ -22,6 +23,7 @@ function setup(initialUser:string|null='Alpha') {
     if(url.endsWith('/auth/me'))return failMe?response({error:{message:'检查失败'}},503):response({user:user?{id:user,username:user,nickname:null,avatar_id:'kiwi-default'}:null});
     if(url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:user,username:user,nickname:null,avatar_id:'kiwi-default'}});}
     if(url.endsWith('/auth/logout')){user=null;return response(null,204);}
+    if(url.endsWith('/feedback/state'))return response({items:[],complete:true});
     if(url==='/api/v1/home/recommendations')return failPublic?response({error:{message:'公开内容加载失败'}},503):response(homeFixture());
     if(url.endsWith('/me/home-recommendations')) {
       const body=failPrivate?{error:{message:'个性化失败'}}:personalized(style),status=failPrivate||200;
@@ -41,7 +43,7 @@ function setup(initialUser:string|null='Alpha') {
     throw Error(url);
   });vi.stubGlobal('fetch',fetcher);
   const scope=effectScope();stops.push(()=>scope.stop());
-  const state=scope.run(()=>{const auth=useAuth(),library=useLibrary(auth),view=ref('discover');return {auth,library,view,home:useHomeRecommendations(auth,library,view)};})!;
+  const state=scope.run(()=>{const auth=useAuth(),library=useLibrary(auth),view=ref('discover'),feedback=useFeedback(auth);return {auth,library,view,feedback,home:useHomeRecommendations(auth,library,view,feedback)};})!;
   return {...state,fetcher,held,style:(value:string)=>style=value,hold:(value=true)=>hold=value,
     failPrivate:(value=503)=>failPrivate=value,failPublic:(value=true)=>failPublic=value,failWrite:(value=true)=>failWrite=value,failMe:(value=true)=>failMe=value};
 }
@@ -117,7 +119,7 @@ it('uses server ordering and identifies only genuine favorite matches in the car
 
 it('background refresh preserves input, confirmed preferences and the generated list; prompt clicks require new confirmation',async()=>{
   const s=setup();const original=s.fetcher.getMockImplementation()!;
-  s.fetcher.mockImplementation((url:string,options?:RequestInit)=>url.endsWith('/preferences/parse')?response({preferences:emptyPreferences()}):url==='/api/v1/recommendations'?response({status:'success',items:[workFixture()],warnings:[],timings_ms:{}}):original(url,options));
+  s.fetcher.mockImplementation((url:string,options?:RequestInit)=>url.endsWith('/preferences/parse')?response({preferences:emptyPreferences()}):['/api/v1/recommendations','/api/v1/me/recommendations'].includes(url)?response({status:'success',items:[workFixture()],warnings:[],timings_ms:{}}):original(url,options));
   const w=mount(App);stops.push(()=>w.unmount());await flushPromises();
   const button=(text:string)=>w.findAll('button').find(b=>b.text().includes(text))!;
   await w.find('#query').setValue('正在编辑的需求');await button('理解我的口味').trigger('click');await flushPromises();await button('确认偏好').trigger('click');await flushPromises();

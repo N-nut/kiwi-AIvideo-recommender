@@ -1,16 +1,17 @@
 import type { PreviewResponse } from './types';
 export const getPreview = (id:string, signal?:AbortSignal) => api<PreviewResponse>(`/api/v1/works/${encodeURIComponent(id)}/preview`, undefined, signal);
 export class APIError extends Error {
-  constructor(message: string, public requestId?: string, public status?: number, public fields: Record<string,string> = {}, public retryAfter?:number) { super(message); }
+  constructor(message: string, public requestId?: string, public status?: number, public fields: Record<string,string> = {}, public retryAfter?:number, public code?:string) { super(message); }
 }
-export async function api<T>(path: string, body?: unknown, signal?: AbortSignal, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
+export async function api<T>(path: string, body?: unknown, signal?: AbortSignal, method = body === undefined ? 'GET' : 'POST', conditions?:{ifMatch:string}): Promise<T> {
   const headers: Record<string,string> = body === undefined ? {} : {'Content-Type':'application/json'};
   if (method !== 'GET' && path.startsWith('/api/v1/')) headers['X-Kiwi-Request']='1';
+  if(conditions) headers['If-Match']=conditions.ifMatch;
   const response = await fetch(path, { method, credentials:'same-origin',
     headers, body: body === undefined ? undefined : JSON.stringify(body), signal });
   if (response.ok && response.status === 204) return undefined as T;
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new APIError(data.error?.message || data.detail || '服务暂时不可用，请重试', data.request_id, response.status, data.error?.field_messages || {}, Number(response.headers.get('Retry-After'))||undefined);
+  if (!response.ok) throw new APIError(data.error?.message || data.detail || '服务暂时不可用，请重试', data.request_id, response.status, data.error?.field_messages || {}, Number(response.headers.get('Retry-After'))||undefined,data.error?.code);
   return data as T;
 }
 // A completed request from a previous input must never overwrite current edits.

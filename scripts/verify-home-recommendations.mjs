@@ -120,9 +120,10 @@ try{
     await page.waitForFunction(()=>document.querySelector('#favorite-prompts-title')?.textContent==='根据您的收藏，猜您喜欢：');
   });
   await check('logout and account switch clear old personalization while preserving the active list',async()=>{
-    const query=await page.locator('#query').inputValue(),list=await page.locator('.results-section').innerText();
+    const query=await page.locator('#query').inputValue(),list=await page.locator('.results-section .drama-card').allTextContents();
     await page.getByRole('button',{name:'退出',exact:true}).click();await page.getByRole('button',{name:'登录 / 注册',exact:true}).waitFor();await defaultPrompts(page);
-    assert.equal(await page.locator('#query').inputValue(),query);assert.equal((await page.locator('.results-section').innerText()).replace(/[♡♥]/g,''),list.replace(/[♡♥]/g,''));
+    assert.equal(await page.locator('#query').inputValue(),query);assert.deepEqual((await page.locator('.results-section .drama-card').allTextContents()).map(text=>text.replace(/[♡♥]/g,'')),list.map(text=>text.replace(/[♡♥]/g,'')));
+    assert((await page.locator('.batch-status').innerText()).includes('上次结果'));assert(await page.getByRole('button',{name:'换一批',exact:true}).isDisabled());
     await signIn(page,nameB);await page.waitForFunction(()=>document.querySelector('#favorite-prompts-title')?.textContent==='根据您的收藏，猜您喜欢：');
     assert.deepEqual(await page.locator('.favorite-prompt-examples button').allTextContents(),report.account_b.prompts);
     const count=posts.length;await page.locator('.favorite-prompt-examples button').first().click();

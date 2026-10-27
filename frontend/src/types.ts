@@ -21,7 +21,11 @@ export interface Work {
   source_meta?: { provider: 'hongguo'; content_type: '真人剧' | '漫剧' | 'AI剧' | '漫画' | '未标注'; tags: string[]; pages: string[]; categories?: string[]; rank: number | null; heat: string | null; episode_count: number | null; chapter_count?: number | null; classification_note?: string } | null;
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }
-export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string }
+export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string; batch?:{state:'ready'|'exhausted';has_more:boolean|null}|null }
+export type FeedbackStatus='not_interested'|'watched';
+export interface Feedback {work_id:string;status:FeedbackStatus;revision:string;updated_at:string}
+export interface FeedbackItem extends Feedback {available:boolean;work:{id:string;title:string;cover_url:string|null}|null}
+export const feedbackLabels:Record<FeedbackStatus,string>={not_interested:'不感兴趣',watched:'已看过'};
 export interface HomeWorkItem extends Work {
   basis: 'favorites' | 'public';
   matched_features: {content_type:string[];genres:string[];themes:string[]};

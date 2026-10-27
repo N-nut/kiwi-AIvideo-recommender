@@ -244,14 +244,26 @@ async def test_ranking_refresh_preserves_category_evidence_and_provenance(databa
     assert provider.calls==1
 
 
-async def test_existing_sqlite_upgrade_removes_only_retired_seed(database,baseline_settings,record):
+async def test_existing_sqlite_upgrade_removes_only_retired_seed(record,tmp_path,monkeypatch):
+    # Build an actual historical 0001 installation; a current schema with
+    # arbitrarily removed tables must be rejected by the upgrade validator.
+    from alembic import command
+    from alembic.config import Config
+    from kiwi.database import make_database
+    from kiwi.config import ROOT
+    url=f"sqlite:///{(tmp_path/'legacy.db').as_posix()}";monkeypatch.setenv('DATABASE_URL',url)
+    command.upgrade(Config(str(ROOT/'backend/alembic.ini')),'0001')
+    engine,database=make_database(url)
     legacy=copy.deepcopy(record);legacy.update(id='bili-45128',title='旧种子作品')
-    await import_works([record,legacy],database,None,baseline_settings);engine=database.kw['bind']
     with engine.begin() as c:
-        c.execute(text('DROP TABLE catalog_refresh'));c.execute(text('ALTER TABLE works DROP COLUMN cover_url'));c.execute(text('ALTER TABLE works DROP COLUMN source_meta'))
+        values={**record,'content_hash':'a'*64}
+        c.execute(text('INSERT INTO works (id,title,original_intro,summary,genres,themes,pace,harem,romance,tragic,source_url,collected_at,evidence,review_status,review_note,content_hash) VALUES (:id,:title,:original_intro,:summary,:genres,:themes,:pace,:harem,:romance,:tragic,:source_url,:collected_at,:evidence,:review_status,:review_note,:content_hash)'),
+            [{**values,**{key:json.dumps(value) for key,value in values.items() if key in ('genres','themes','evidence')}},
+             {**values,'id':legacy['id'],'title':legacy['title'],**{key:json.dumps(value) for key,value in values.items() if key in ('genres','themes','evidence')}}])
     initialize(engine);initialize(engine)
     assert {'cover_url','source_meta'}<={c['name'] for c in inspect(engine).get_columns('works')}
     with database() as s: assert list(s.scalars(select(Work.id)))==[record['id']]
+    engine.dispose()
 
 
 def summary(rows):

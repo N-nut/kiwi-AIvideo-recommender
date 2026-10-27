@@ -15,6 +15,7 @@ const passwordLabels={current_password:'当前密码',new_password:'新密码',c
   <section class="personal-space" aria-labelledby="space-title">
     <header class="space-heading"><div><h1 id="space-title">个人空间</h1><p>你的资料、收藏与观剧兴趣</p></div><button class="text-button" @click="emit('navigate','discover')">返回发现好剧 ↗</button></header>
     <div class="space-grid">
+      <section class="space-card"><div class="space-card-heading"><h2>推荐反馈</h2><button class="text-button" @click="emit('navigate','feedback')">推荐反馈管理 ↗</button></div><p class="source-note">查看或撤销不感兴趣、已看过的作品。</p></section>
       <section class="space-card profile-card" aria-labelledby="profile-title" :aria-busy="profileLoading||saving">
         <div class="space-card-heading"><h2 id="profile-title">个人资料</h2><button class="text-button" :disabled="profileLoading||saving" @click="space.loadProfile">重新读取资料</button></div>
         <p v-if="profileError" class="field-error" role="alert">{{profileError}} <button class="text-button" @click="space.loadProfile">重试资料</button></p>

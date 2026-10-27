@@ -1,7 +1,11 @@
 import asyncio
 import time
 
-from .database import public_work
+from sqlalchemy import select
+
+from .auth import problem
+from .database import Work, public_work
+from .feedback import feedback_versions
 from .providers import ProviderError
 from .repository import retrieve
 from .rules import FEATURE_NAMES, satisfies, soft_matches
@@ -53,12 +57,12 @@ def validate_reasons(batch, works):
     return result
 
 
-async def recommend(request, sessions, provider, settings, request_id):
+async def recommend(request, sessions, provider, settings, request_id, user_id=None):
     start = time.perf_counter()
     prefs = request.preferences
     result = {"request_id": request_id, "status": "success", "preferences": prefs.model_dump(),
               "items": [], "warnings": [], "timings_ms": {}, "mode": settings.ai_mode,
-              "candidate_ids": [], "usage": {"calls": 0, "tokens": 0}}
+              "candidate_ids": [], "usage": {"calls": 0, "tokens": 0}, "batch": None}
     if prefs.conflicts or prefs.unresolved_constraints or not prefs.meaningful:
         result.update(status="needs_confirmation", warnings=prefs.conflicts + prefs.unresolved_constraints or ["请补充题材或剧情偏好"])
         return result
@@ -69,51 +73,73 @@ async def recommend(request, sessions, provider, settings, request_id):
     result["timings_ms"]["embedding"] = round((time.perf_counter() - start) * 1000, 2)
     tick = time.perf_counter()
     with sessions() as session:
-        candidates = retrieve(session, prefs, vector, settings)
+        # Read one consistent catalogue/feedback snapshot, then release it before
+        # generation. SQLite needs an explicit BEGIN for repeatable SELECTs.
+        if session.bind.dialect.name == "sqlite":
+            session.connection().exec_driver_sql("BEGIN")
+        else:
+            session.connection(execution_options={"isolation_level": "REPEATABLE READ"})
+        versions = feedback_versions(session, user_id) if user_id is not None else None
         scored = []
-        for work, similarity in candidates:
-            if not satisfies(work, prefs):
-                continue
-            matches, _ = soft_matches(work, prefs)
-            soft = prefs.soft_preferences
-            has_soft = bool(soft.genres or soft.themes or soft.pace)
-            if has_soft and not matches and (similarity is None or similarity < settings.semantic_only_threshold):
-                continue
-            if similarity is not None and similarity < settings.min_similarity:
-                continue
-            score = (similarity or 0) + 0.08 * len(matches)
-            scored.append((work, score, similarity))
+        offset, exhausted = 0, False
+        while len(scored) < request.limit:
+            if time.perf_counter()-start >= settings.request_timeout-0.3:
+                raise TimeoutError()
+            size = min(settings.recommendation_scan_batch, settings.recommendation_scan_limit-offset)
+            if size <= 0:
+                raise ProviderError("search_incomplete", "本次检索尚未完成，请重试；上次片单已保留")
+            candidates = retrieve(session, prefs, vector, settings, exclude_work_ids=request.exclude_work_ids,
+                                  user_id=user_id, offset=offset, limit=size+1)
+            exhausted = len(candidates) <= size
+            window = candidates[:size]
+            offset += len(window)
+            result["candidate_ids"].extend(w.id for w, _ in window)
+            for work, similarity in window:
+                if not satisfies(work, prefs) or template_reason(work, prefs) is None:
+                    continue
+                matches, _ = soft_matches(work, prefs)
+                soft = prefs.soft_preferences
+                has_soft = bool(soft.genres or soft.themes or soft.pace)
+                if has_soft and not matches and (similarity is None or similarity < settings.semantic_only_threshold):
+                    continue
+                if similarity is not None and similarity < settings.min_similarity:
+                    continue
+                scored.append((work, (similarity or 0) + 0.08 * len(matches), similarity))
+            if exhausted:
+                break
         scored.sort(key=lambda x: (-x[1], x[0].id))
         unique = {w.id: (w, score, similarity) for w, score, similarity in scored}
         selected = list(unique.values())[:request.limit]
-        result["candidate_ids"] = [w.id for w, _ in candidates]
-        result["timings_ms"]["retrieval"] = round((time.perf_counter() - tick) * 1000, 2)
-        if not selected:
-            result.update(status="empty", warnings=["作品库中没有资料足以确认满足条件的相关作品。未知信息也会被严格排除；可主动调整条件。"])
-        else:
-            tick = time.perf_counter()
-            reasons = {}
-            if settings.ai_mode == "live":
-                try:
-                    # Reserve time for validation and the HTTP response inside the shared budget.
-                    remaining = settings.request_timeout - (time.perf_counter() - start) - 0.3
-                    if remaining <= 0:
-                        raise TimeoutError()
-                    batch = await asyncio.wait_for(provider.reasons(prefs, [public_work(w) for w, _, _ in selected]), remaining)
-                    reasons = validate_reasons(batch, [w for w, _, _ in selected])
-                except (ProviderError, ValueError, TimeoutError):
-                    result["warnings"].append("推荐理由生成失败或引用未通过校验，已使用审核资料的证据模板。")
-            for work, score, similarity in selected:
-                if not satisfies(work, prefs):
-                    continue
-                reason = reasons.get(work.id) or template_reason(work, prefs)
-                if reason:
-                    # Program-derived differences cannot be suppressed by a model response.
-                    reason["caveats"] = list(dict.fromkeys(reason["caveats"] + soft_matches(work, prefs)[1]))
-                    result["items"].append({**public_work(work), **reason, "score": round(score, 5), "similarity": similarity})
-            result["timings_ms"]["generation"] = round((time.perf_counter() - tick) * 1000, 2)
-    if not result["items"] and result["status"] == "success":
-        result.update(status="empty", warnings=["候选作品没有足够的有效证据，未输出推荐。"])
+        exhausted = exhausted and len(unique) <= request.limit
+        hashes = {w.id: w.content_hash for w, _, _ in selected}
+    result["batch"] = {"state": "exhausted" if exhausted else "ready", "has_more": False if exhausted else None}
+    result["timings_ms"]["retrieval"] = round((time.perf_counter() - tick) * 1000, 2)
+    if not selected:
+        result.update(status="empty", warnings=["没有更多符合当前条件的作品。未知信息也会被严格排除；可主动调整条件。"])
+    else:
+        tick = time.perf_counter()
+        reasons = {}
+        if settings.ai_mode == "live":
+            try:
+                remaining = settings.request_timeout - (time.perf_counter() - start) - 0.3
+                if remaining <= 0:
+                    raise TimeoutError()
+                batch = await asyncio.wait_for(provider.reasons(prefs, [public_work(w) for w, _, _ in selected]), remaining)
+                reasons = validate_reasons(batch, [w for w, _, _ in selected])
+            except (ProviderError, ValueError, TimeoutError):
+                result["warnings"].append("推荐理由生成失败或引用未通过校验，已使用审核资料的证据模板。")
+        for work, score, similarity in selected:
+            reason = reasons.get(work.id) or template_reason(work, prefs)
+            reason["caveats"] = list(dict.fromkeys(reason["caveats"] + soft_matches(work, prefs)[1]))
+            result["items"].append({**public_work(work), **reason, "score": round(score, 5), "similarity": similarity})
+        result["timings_ms"]["generation"] = round((time.perf_counter() - tick) * 1000, 2)
+    # A model await must not publish candidates invalidated by a concurrent write.
+    with sessions() as session:
+        if user_id is not None and feedback_versions(session, user_id) != versions:
+            raise problem(409, "feedback_changed", "反馈已变化，请重新生成；上次片单已保留")
+        current = dict(session.execute(select(Work.id, Work.content_hash).where(Work.id.in_(hashes), Work.review_status == "approved")).all()) if hashes else {}
+        if current != hashes:
+            raise problem(409, "catalog_changed", "作品资料已变化，请重新生成；上次片单已保留")
     result["timings_ms"]["total"] = round((time.perf_counter() - start) * 1000, 2)
     result["usage"] = {"calls": provider.calls, "tokens": provider.tokens}
     return result

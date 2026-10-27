@@ -10,25 +10,25 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
-test('推荐反馈与换一批保留待核对产品要求和未实现边界', async () => {
+test('推荐反馈与换一批说明与已实现状态及产品边界一致', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const section=source.match(/^### 3\.11 推荐反馈＋换一批（产品方案，待核对、未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
-  assert.ok(section,'反馈与换批须有独立草案');
-  assert.match(source,/\| 推荐反馈＋换一批 \|[^\n]+\| 产品方案待核对，尚未实现/);
-  for(const requirement of ['不新增反馈接口、数据表','不感兴趣','已看过','推荐反馈管理','撤销','游客继续浏览和生成片单',
+  const section=source.match(/^### 3\.11 推荐反馈＋换一批（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
+  assert.ok(section,'反馈与换批须有独立产品要求');
+  assert.match(source,/\| 推荐反馈＋换一批 \|[^\n]+\| 已实现账号反馈/);
+  for(const requirement of ['服务端','不感兴趣','已看过','推荐反馈管理','撤销','游客继续浏览和生成片单',
     '不删除或自动新增收藏','不推断用户讨厌整类题材','不重新解析原始描述','不自动放宽必须条件或明确排除项',
     '此前成功展示过','没有更多符合当前条件的作品','重新浏览本轮','失败保留上批','账号切换','迟到响应','键盘']) {
     assert.ok(section.includes(requirement),`反馈方案缺少：${requirement}`);
   }
-  assert.match(source,/^### 6\.2 推荐反馈与换批验收（待核对、未实现）/m);
+  assert.match(source,/^### 6\.2 推荐反馈与换批验收/m);
 });
 
-test('反馈换批技术方案衔接现有迁移、鉴权和请求限制，保持待实现边界', async () => {
+test('反馈换批技术契约衔接实际迁移、鉴权、请求限制与验证模块', async () => {
   const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=technicalSection(source,14);
-  assert.match(section,/^## 14\. 推荐反馈与换一批技术方案（待实现）/);
-  assert.ok(section.includes('尚未编写或验收'));
+  assert.match(section,/^## 14\. 推荐反馈与换一批技术方案（已实现）/);
+  assert.ok(section.includes('已实施并完成本地验证'));
   assert.ok(product.includes('技术方案第 14 节'));
   assert.doesNotMatch(source,/尚未进入技术设计或功能实现/);
   const migration=await readFile(new URL('../backend/migrations/versions/0006_user_profiles.py',import.meta.url),'utf8');
@@ -42,9 +42,14 @@ test('反馈换批技术方案衔接现有迁移、鉴权和请求限制，保�
     '不全局放开 PUT／DELETE 正文','POST /api/v1/me/recommendations','公开接口即使带 Cookie','NOT EXISTS',
     '前 10 条','稳定顺序的补取','search_incomplete','has_more=null','content_hash','完整、最近确认的反馈快照',
     'complete=false','shownIds','TextEncoder','不截断','auth.scope()','latestRequest','新账号不能继承旧账号去重依据',
-    '不自动追加一次模型请求','待实现验收','不证明功能已经实现']) {
+    '不自动追加一次模型请求','功能验收','不代替接口、迁移、并发和浏览器验证']) {
     assert.ok(section.includes(requirement),`反馈换批技术方案缺少：${requirement}`);
   }
+  for(const file of ['backend/kiwi/feedback.py','backend/migrations/versions/0007_user_work_feedback.py','backend/tests/test_feedback.py',
+    'frontend/src/useFeedback.ts','frontend/src/useRecommendationBatches.ts','frontend/src/components/FeedbackManager.vue',
+    'frontend/src/components/FeedbackMenu.vue','frontend/tests/feedback.test.ts','scripts/verify-feedback.mjs'])assert.ok((await stat(new URL('../'+file,import.meta.url))).isFile(),file);
+  const feedbackMigration=await readFile(new URL('../backend/migrations/versions/0007_user_work_feedback.py',import.meta.url),'utf8');
+  assert.match(feedbackMigration,/revision = "0007"/);assert.match(feedbackMigration,/down_revision = "0006"/);
 });
 
 test('反馈与换批 JSON 示例的状态、版本、请求字段及隐私约定一致', async () => {
@@ -72,7 +77,7 @@ test('反馈与换批 JSON 示例的状态、版本、请求字段及隐私约�
   examples.forEach(check);
 });
 
-test('口味推荐说明明确识别提示、独立确认及分别加载，与反馈草案区分', async () => {
+test('口味推荐说明明确识别提示、独立确认及分别加载，与反馈操作区分', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=source.match(/^### 3\.4 首页轮播与操作指引\r?\n([\s\S]*?)(?=^### 3\.5)/m)?.[0];
   assert.ok(section);
@@ -97,7 +102,7 @@ test('个人空间产品说明覆盖四项功能、账号边界和验收，与�
     assert.ok(space.includes(requirement),`个人空间缺少约定：${requirement}`);
   }
   const acceptance=source.match(/^### 6\.1 个人空间验收\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[0];
-  assert.ok(acceptance,'个人空间须有独立待实现验收范围');
+  assert.ok(acceptance,'个人空间须有独立验收范围');
   for(const requirement of ['昵称占用','并发争用','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
   assert.doesNotMatch(space,/昵称可修改，允许重复|同名昵称的两个账号/,'昵称须唯一');
   assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');

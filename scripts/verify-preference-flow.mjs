@@ -103,7 +103,7 @@ try{
   assert(await page.locator('#recommend-button').isDisabled());await page.keyboard.press('Escape');await page.locator('#query').press('Control+Enter');await notice().waitFor();assert.equal(recommendationCount(),1);
   await modal.getByRole('button',{name:'手动调整偏好',exact:true}).click();await page.locator('.editor-warning button').first().click();await page.getByRole('button',{name:'确认修改',exact:false}).click();assert(await page.locator('#recommend-button').isEnabled());
  });
- assert(!actions.some(action=>/feedback|batch/.test(action.path)),'Feedback and batch switching remain design-only');assert.deepEqual(report.page_errors,[]);
+ assert(!actions.some(action=>/feedback/.test(action.path)),'Preference confirmation must not automatically save feedback');assert.deepEqual(report.page_errors,[]);
  await writeFile(resolve(root,'docs/preference-flow-browser-validation.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({checks:report.checks.length,viewports:report.viewports.length,page_errors:report.page_errors}));
 }finally{
  await browser?.close();if(server.exitCode===null){server.kill();await Promise.race([new Promise(done=>server.once('exit',done)),pause(3000)]);}log.end();

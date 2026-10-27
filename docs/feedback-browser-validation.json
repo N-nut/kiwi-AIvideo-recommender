@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-27",
+  "mode": "baseline",
+  "database": ".local\\feedback-mvqpz2un.db",
+  "public_works": 434,
+  "checks": [
+    "guest can generate and switch batches using identical confirmed preferences without reparsing",
+    "cancelled guest feedback leaves input, preferences and cards; registration continues just the selected feedback",
+    "same-batch undo restores the card at its position after server detail verification",
+    "private feedback excludes future batches and home but preserves favorites and the confirmed input",
+    "management, independent same-account restore, status changes and stale deletion are consistent",
+    "feedback and batch controls fit desktop, tablet and narrow mobile; keyboard opens and closes the menu",
+    "batch failure retains cards and shown IDs; leaving and returning does not reset the round",
+    "carousel feedback removes only the selected slide without filling the vacancy or generating recommendations",
+    "existing real preview still serves verified media ranges after using feedback",
+    "another account does not inherit feedback and logout keeps the edited demand"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "surface": "feedback-management",
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "surface": "feedback-management",
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "surface": "feedback-management",
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "surface": "feedback-management",
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "synthetic_faults": [
+    "delayed batch response",
+    "recommendation 503"
+  ],
+  "external_covers_blocked": true,
+  "tested_preview": "hongguo-7668904735717477400"
+}

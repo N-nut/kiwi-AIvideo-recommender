@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool, model_validator
 
@@ -90,6 +90,12 @@ class ParseRequest(StrictModel):
 class RecommendationRequest(StrictModel):
     preferences: Preferences
     limit: int = Field(default=3, ge=1, le=3, strict=True)
+    exclude_work_ids: list[Annotated[str, Field(min_length=1, max_length=80, strict=True)]] = Field(default_factory=list, max_length=200)
+
+    @model_validator(mode="after")
+    def unique_exclusions(self):
+        self.exclude_work_ids = list(dict.fromkeys(self.exclude_work_ids))
+        return self
 
 
 class Evidence(StrictModel):

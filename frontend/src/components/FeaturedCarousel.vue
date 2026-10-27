@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { HomeWorkItem, Work } from '../types';
+import type { FeedbackStatus, HomeWorkItem, Work } from '../types';
+import FeedbackMenu from './FeedbackMenu.vue';
 
-const props=defineProps<{ works:(Work | HomeWorkItem)[]; suspended?:boolean }>();
-const emit=defineEmits<{ detail:[work:Work] }>();
+const props=defineProps<{ works:(Work | HomeWorkItem)[]; suspended?:boolean;feedbackEnabled?:boolean;feedbackPending?:Set<string> }>();
+const emit=defineEmits<{ detail:[work:Work];feedback:[work:Work,status:FeedbackStatus] }>();
 // Keep the server's candidate order while retaining defensive display checks.
 const slides=computed(()=>Array.from(new Map(props.works.filter(w=>w.cover_url&&w.source_meta?.content_type&&w.source_meta.content_type!=='未标注'&&w.source_meta.content_type!=='漫画').map(w=>[w.id,w])).values()).slice(0,6));
 const current=ref(0), reducedMotion=ref(false), hovered=ref(false), focused=ref(false), hidden=ref(false);
@@ -36,6 +37,7 @@ onUnmounted(()=>{clearInterval(timer);motion?.removeEventListener?.('change',mot
       <p>{{active.summary}}</p>
       <p v-if="'basis' in active && active.basis==='favorites'" class="featured-reason">{{active.reason}}</p>
       <button class="featured-detail" @click="emit('detail',active)">查看详情 <span aria-hidden="true">›</span></button>
+      <FeedbackMenu v-if="feedbackEnabled" :title="active.title" :busy="feedbackPending?.has(active.id)" @select="emit('feedback',active,$event)"/>
     </div>
     <button class="featured-poster" :aria-label="`查看《${active.title}》详情`" @click="emit('detail',active)">
       <img v-if="!failed.has(active.id)" :key="active.id" :src="active.cover_url!" :alt="`${active.title}封面`" referrerpolicy="no-referrer" @error="imageError">

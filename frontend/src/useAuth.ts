@@ -16,10 +16,10 @@ export function useAuth() {
   function scope() {
     const version=generation.value, signal=controller.signal;
     const current=()=>version===generation.value&&!signal.aborted;
-    async function request<T>(path:string,body?:unknown,method?:string,localSignal?:AbortSignal):Promise<T> {
+    async function request<T>(path:string,body?:unknown,method?:string,localSignal?:AbortSignal,conditions?:{ifMatch:string}):Promise<T> {
       if(!current()) throw new StaleAccount();
       try {
-        const value=await api<T>(path,body,localSignal?AbortSignal.any([signal,localSignal]):signal,method);
+        const value=await api<T>(path,body,localSignal?AbortSignal.any([signal,localSignal]):signal,method,conditions);
         if(!current()) throw new StaleAccount();
         return value;
       } catch(exc) {

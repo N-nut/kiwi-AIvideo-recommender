@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { api, getPreview, latestRequest, APIError } from './api';
-import type { CatalogRefresh, Preferences, PreviewMedia, Recommendation, Work } from './types';
-import { emptyPreferences, genres, fieldNames, collectionCategories } from './types';
+import type { CatalogRefresh, FeedbackStatus, HomeWorkItem, Preferences, PreviewMedia, Work } from './types';
+import { emptyPreferences, feedbackLabels, genres, fieldNames, collectionCategories } from './types';
 import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
 import { useAuth } from './useAuth';
 import { useHomeRecommendations } from './useHomeRecommendations';
 import { usePersonalSpace } from './usePersonalSpace';
+import { useFeedback } from './useFeedback';
+import { useRecommendationBatches } from './useRecommendationBatches';
+import FeedbackManager from './components/FeedbackManager.vue';
+import './feedback.css';
 import PersonalSpace from './components/PersonalSpace.vue';
 import PresetAvatar from './components/PresetAvatar.vue';
 import './personalSpace.css';
@@ -23,16 +27,19 @@ import logo from '../../demo/assets/kiwi-logo.svg';
 
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
 const prefs = ref<Preferences>(emptyPreferences());
-const parsed = ref(false); const busy = ref(false); const phase = ref(''); const error = ref('');
+const parsed = ref(false); const parseBusy = ref(false); const phase = ref(''); const error = ref('');
 const requestKind=ref<'parse'|'recommend'|null>(null);
-const parsing=computed(()=>busy.value&&requestKind.value==='parse');
 const auth=useAuth();
+const feedback=useFeedback(auth);
+const batches=useRecommendationBatches(auth,feedback);
+const {result}=batches;
+const busy=computed(()=>parseBusy.value||batches.busy.value);
+const parsing=computed(()=>parseBusy.value&&requestKind.value==='parse');
 const library = useLibrary(auth);
 const shelf = useCatalog(library,auth);
 const {view,genre:category,contentType,page:catalogPage,visibleWorks,displayTotal,pages:catalogPages,loading:catalogLoading,error:catalogError,favoriteCount,favoriteLoading,favoriteError}=shelf;
-const home=useHomeRecommendations(auth,library,view);
+const home=useHomeRecommendations(auth,library,view,feedback);
 const space=usePersonalSpace(auth,library,view);
-const result = ref<Recommendation|null>(null);
 const updateDialog=ref<HTMLDialogElement>();
 const selectedCategories=ref(['comic-drama','ai-drama']); const includeHotRank=ref(false);
 const health = ref<{mode?:string;status?:string;storage?:string;works?:number;configured?:boolean}>({});
@@ -54,8 +61,13 @@ const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|nu
 const pendingView=ref('');
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
+const demandVersion=ref(0);
+type FeedbackContext={work:Work;status:FeedbackStatus;version:number;batch:number;home:boolean};
+const pendingFeedback=ref<FeedbackContext|null>(null);
+const undo=ref<{id:string;revision:string;work:Work;index:number;homeIndex:number;homeWork:HomeWorkItem|null;epoch:number;batch:number;version:number}|null>(null);
+function resetRound(){batches.reset();demandVersion.value++;pendingFeedback.value=null;undo.value=null;}
 function choosePrompt(text:string) {
-  closeRecognition();lane.cancel();busy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();result.value=null;error.value='';query.value=text;
+  closeRecognition();lane.cancel();parseBusy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();resetRound();error.value='';query.value=text;
 }
 const updating = computed(() => refreshStarting.value || refresh.value.status==='running');
 const updatedTime = computed(() => refresh.value.last_success_at ? new Date(refresh.value.last_success_at).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '尚未同步');
@@ -110,7 +122,7 @@ function revealDetailReference(reference:'intro'|'tags') {
   const target=detailScroll.value?.querySelector<HTMLElement>(reference==='intro'?'.detail-intro':'.detail-tags');
   target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
 }
-watch(query, () => { closeRecognition();lane.cancel(); busy.value=false;requestKind.value=null; parsed.value=false; prefs.value=emptyPreferences(); result.value=null; error.value=''; });
+watch(query, () => { closeRecognition();lane.cancel();parseBusy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();resetRound();error.value=''; });
 watch(view,()=>{if(view.value!=='discover')closeRecognition();});
 function closeRecognition(){if(recognition.value?.open)recognition.value.close();}
 function showRecognition(){if(view.value==='discover'&&parsed.value&&!busy.value&&!recognition.value?.open)recognition.value?.showModal();}
@@ -120,32 +132,27 @@ async function parse() {
   if(busy.value)return;
   if (!query.value.trim()) { error.value='先说说想看的故事吧。'; return; }
   closeRecognition();
-  const request=lane.begin(); busy.value=true;requestKind.value='parse'; error.value=''; phase.value='正在理解你的口味…';
+  resetRound();const request=lane.begin();parseBusy.value=true;requestKind.value='parse';error.value='';phase.value='正在理解你的口味…';
   try {
     const data=await api<{preferences:Preferences}>('/api/v1/preferences/parse',{text:query.value},request.signal);
     if (!request.current()) return;
     prefs.value=data.preferences; parsed.value=true; result.value=null;
     void nextTick(()=>{if(request.current()&&!disposed)showRecognition();});
   } catch(exc) { if(request.current()) fail(exc); }
-  finally { if(request.current()){busy.value=false;requestKind.value=null;} }
+  finally { if(request.current()){parseBusy.value=false;requestKind.value=null;} }
 }
 async function generate() {
   if(busy.value)return;
   if (!parsed.value) { await parse(); return; }
   if(preferenceIssues.value.length){showRecognition();return;}
   closeRecognition();
-  const request=lane.begin(); busy.value=true;requestKind.value='recommend'; error.value=''; phase.value='正在检索资料，整理片单…';
-  try {
-    const data=await api<Recommendation>('/api/v1/recommendations',{preferences:structuredClonePlain(prefs.value),limit:3},request.signal);
-    if (!request.current()) return;
-    result.value=data;
-    if(data.status==='needs_confirmation') error.value=data.warnings.join('；');
-  } catch(exc) { if(request.current()) fail(exc); }
-  finally { if(request.current()){busy.value=false;requestKind.value=null;} }
+  demandVersion.value++;pendingFeedback.value=null;undo.value=null;
+  requestKind.value='recommend';error.value='';phase.value='正在检索资料，整理片单…';
+  await batches.generate(structuredClonePlain(prefs.value));
 }
 function structuredClonePlain<T>(value:T):T { return JSON.parse(JSON.stringify(value)); }
 function edit() { closeRecognition();draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
-function saveEditor(value: Preferences) { lane.cancel(); busy.value=false;requestKind.value=null; value.conflicts=[]; prefs.value=structuredClonePlain(value); parsed.value=true; result.value=null; error.value=''; editor.value?.close(); }
+function saveEditor(value: Preferences) { lane.cancel();parseBusy.value=false;requestKind.value=null;value.conflicts=[];prefs.value=structuredClonePlain(value);parsed.value=true;resetRound();error.value='';editor.value?.close(); }
 const loadCatalog=()=>shelf.load();
 async function loadHealth() {
   try { const response=await fetch('/health/ready'); if(!disposed) health.value=await response.json(); }
@@ -161,6 +168,7 @@ async function acceptRefresh(state:CatalogRefresh, finished=false) {
   if(state.cooldown&&state.status!=='succeeded') message('刚刚尝试过更新，请稍后再试');
   if((state.status==='succeeded'&&finished)||mediaFinished) {
     home.invalidate();
+    if(state.status==='succeeded'&&finished)batches.catalogChanged();
     space.invalidate();
     await Promise.all([shelf.reload(),loadHealth()]);
     if(finished) message(state.cooldown?'刚刚已更新，请稍后再次同步':state.message);
@@ -187,7 +195,7 @@ async function updateCatalog() {
 }
 function setView(value:string) {
   preview.value?.close();
-  if(['favorites','personal-space'].includes(value)&&auth.state.value!=='authenticated') {
+  if(['favorites','personal-space','feedback'].includes(value)&&auth.state.value!=='authenticated') {
     if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=value;login.value?.open();}
     else message(auth.state.value==='checking'?'正在检查登录状态':'请先重试检查登录状态');
     return;
@@ -229,7 +237,7 @@ function finishDetailClick(event: MouseEvent) {
   backdropPressed=false;
 }
 function openAccount() {pendingFavorite.value='';pendingView.value='personal-space';if(auth.state.value==='error') void auth.restore();else setView('personal-space');}
-function dismissLogin() {pendingFavorite.value='';pendingView.value='';}
+function dismissLogin() {pendingFavorite.value='';pendingView.value='';pendingFeedback.value=null;}
 async function favorite(id:string) {
   if(auth.state.value==='guest') {preview.value?.close();pendingFavorite.value=id;pendingView.value='';login.value?.open();return;}
   if(auth.state.value!=='authenticated') {message('请先检查登录状态');return;}
@@ -240,19 +248,75 @@ async function favorite(id:string) {
   else if(library.error.value) message(library.error.value);
 }
 async function loginSuccess() {
-  const id=pendingFavorite.value, go=pendingView.value,account=auth.scope();dismissLogin();
+  const id=pendingFavorite.value,go=pendingView.value,continuation=pendingFeedback.value,account=auth.scope();dismissLogin();
   await library.load();if(!account.current()) return;
   if(go&&!id) shelf.setView(go);
   if(id) {
     if(!library.ready.value) {message('已登录，收藏状态加载失败，请重试后再次收藏');return;}
     if(await library.setSaved(id,true)) message('已登录并加入账号收藏');
     else if(library.error.value) message(library.error.value);
+  }else if(continuation&&continuation.version===demandVersion.value&&continuation.batch===batches.batch.value){
+    const visible=continuation.home?home.works.value:result.value?.items||[];
+    if(visible.some(work=>work.id===continuation.work.id))await submitFeedback(continuation.work,continuation.status);
+    else message('已登录，原推荐已变化，请重新选择反馈');
   }else message('已登录');
 }
+function feedbackBusy(id:string){return feedback.pending.value.has(id)||feedback.unknown.value.has(id);}
+watch(feedback.lastChange,change=>{
+  if(change?.feedback&&result.value){
+    const index=result.value.items.findIndex(work=>work.id===change.id),work=result.value.items[index];
+    if(work){
+      undo.value={id:change.id,revision:change.feedback.revision,work,index,homeIndex:-1,homeWork:null,epoch:batches.epoch.value,batch:batches.batch.value,version:demandVersion.value};
+      result.value={...result.value,items:result.value.items.filter(item=>item.id!==change.id)};
+    }
+  }
+});
+async function submitFeedback(work:Work,status:FeedbackStatus) {
+  preview.value?.close();
+  if(auth.state.value==='guest'){
+    pendingFavorite.value='';pendingView.value='';
+    pendingFeedback.value={work,status,version:demandVersion.value,batch:batches.batch.value,home:home.works.value.some(item=>item.id===work.id)};
+    login.value?.open();return;
+  }
+  if(auth.state.value!=='authenticated'){message('请先检查登录状态');return;}
+  const account=auth.scope(),epoch=batches.epoch.value,batch=batches.batch.value,version=demandVersion.value;
+  const index=result.value?.items.findIndex(item=>item.id===work.id)??-1,homeIndex=home.works.value.findIndex(item=>item.id===work.id);
+  const homeWork=home.works.value[homeIndex]||null;
+  if(await feedback.save(work.id,status)&&account.current()){
+    const saved=feedback.records.value.get(work.id);
+    if(!saved)return;
+    if(version===demandVersion.value&&batch===batches.batch.value){
+      if(result.value)result.value={...result.value,items:result.value.items.filter(item=>item.id!==work.id)};
+      undo.value={id:work.id,revision:saved.revision,work,index,homeIndex,homeWork,epoch,batch,version};
+    }
+    if(home.data.value)home.data.value={...home.data.value,items:home.data.value.items.filter(item=>item.id!==work.id)};
+    message(`已标记${feedbackLabels[status]}`);void feedback.load();
+  }
+}
+async function removeFeedback(item:{work_id:string;revision:string}) {
+  const account=auth.scope(),restore=undo.value?.id===item.work_id?undo.value:null;
+  if(!await feedback.remove(item.work_id,item.revision)||!account.current())return;
+  const feedbackVersion=feedback.revision.value;
+  message('已撤销反馈，恢复后续推荐资格');
+  if(restore&&restore.version===demandVersion.value&&restore.batch===batches.batch.value&&restore.epoch===batches.epoch.value){
+    try{
+      const fresh=await api<Work>(`/api/v1/works/${encodeURIComponent(item.work_id)}`);
+      if(!account.current()||feedbackVersion!==feedback.revision.value||restore.version!==demandVersion.value||restore.batch!==batches.batch.value||restore.epoch!==batches.epoch.value)return;
+      const fields=['id','title','summary','original_intro','genres','themes','pace','harem','romance','tragic','source_url','cover_url','source_meta','collected_at','evidence','review_note'] as const;
+      if(!fields.some(key=>JSON.stringify(fresh[key]??null)!==JSON.stringify(restore.work[key]??null))){
+        if(restore.index>=0&&result.value&&!result.value.items.some(work=>work.id===item.work_id))result.value.items.splice(restore.index,0,restore.work);
+        if(restore.homeWork&&restore.homeIndex>=0&&home.data.value&&!home.works.value.some(work=>work.id===item.work_id)&&!fields.some(key=>JSON.stringify(fresh[key]??null)!==JSON.stringify(restore.homeWork![key]??null)))home.data.value.items.splice(restore.homeIndex,0,restore.homeWork);
+      }
+    }catch{/* Unavailable or changed works only regain eligibility for future requests. */}
+  }
+  if(account.current()){undo.value=null;void feedback.load();}
+}
+async function nextBatch(){pendingFeedback.value=null;undo.value=null;preview.value?.close();await batches.next();}
+function restartBatch(){pendingFeedback.value=null;undo.value=null;demandVersion.value++;batches.restart();}
 async function logout() {if(await auth.logout()){preview.value?.close();detail.value?.close();shelf.setView('discover');message('已退出');}}
 const favoriteBusy=(id:string)=>auth.busy.value||auth.state.value==='checking'||auth.state.value==='authenticated'&&(library.loading.value||library.pending.value.has(id));
 const favoriteReady=computed(()=>auth.state.value==='guest'||auth.state.value==='authenticated'&&library.ready.value);
-watch(auth.generation,()=>{if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();}},{flush:'post'});
+watch(auth.generation,()=>{undo.value=null;if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(view.value==='feedback')shelf.setView('discover');}},{flush:'post'});
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
   void auth.restore();
@@ -309,9 +373,14 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
     <p v-if="auth.error.value" class="account-notice" role="alert">{{auth.error.value}} <button v-if="auth.state.value==='error'" class="text-button" @click="auth.restore">重试</button><button v-else-if="auth.state.value==='guest'" class="text-button" @click="openAccount">登录</button></p>
     <p v-if="library.error.value" class="account-notice" role="alert">{{library.error.value}} <button class="text-button" @click="library.load">重试收藏状态</button></p>
     <LegacyImport ref="legacy" :auth="auth" :library="library" />
+    <div v-if="feedback.error.value||feedback.notice.value||undo" class="feedback-notice" role="status">
+      <p v-if="feedback.error.value">{{feedback.error.value}}</p><p v-if="feedback.notice.value">{{feedback.notice.value}}</p>
+      <button v-for="id in feedback.unknown.value" :key="id" class="text-button" @click="feedback.reconcile(id)">重新读取核对</button>
+      <button v-if="undo" class="text-button" :disabled="feedbackBusy(undo.id)" @click="removeFeedback({work_id:undo.id,revision:undo.revision})">撤销刚才的反馈</button>
+    </div>
 
     <section v-if="view==='discover'">
-      <FeaturedCarousel :works="home.works.value" :suspended="busy" @detail="showDetail" />
+      <FeaturedCarousel :works="home.works.value" :suspended="busy" feedback-enabled :feedback-pending="feedback.pending.value" @detail="showDetail" @feedback="submitFeedback" />
       <div v-if="home.error.value" class="featured-status" role="alert"><span>{{home.error.value}}</span><button class="text-button" @click="home.load">重新加载首页推荐</button></div>
       <p v-else-if="home.loading.value" class="featured-status" role="status">正在加载首页推荐…</p>
       <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库还没有可展示的剧集，点击侧栏“更新漫剧库”即可加载。'}}</p>
@@ -340,12 +409,14 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
         </div>
       </section>
       <section class="results-section" :aria-busy="busy" aria-labelledby="results-title">
-        <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'请调整偏好'):'你的片单'}}</h2></div><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span></div>
+        <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy&&!result?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'你的片单'):'你的片单'}}</h2></div><div class="batch-actions"><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span><button v-if="result?.status==='success'" class="secondary-button next-batch" :disabled="!batches.canNext.value||busy" @click="nextBatch">{{batches.busy.value?'正在换一批…':'换一批'}}</button></div></div>
+        <div v-if="batches.error.value||batches.notice.value" class="batch-status" role="status"><span>{{batches.error.value||batches.notice.value}}</span><button v-if="batches.snapshot.value" class="text-button" :disabled="busy" @click="restartBatch">重新浏览本轮</button><button class="text-button" :disabled="busy" @click="edit">调整偏好</button></div>
+        <p v-if="batches.stale.value" class="source-note">上次结果 · 按当前身份重新生成后可继续换批</p>
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="parsing" class="parse-progress" role="status"><span class="parse-progress-icon" aria-hidden="true">◌</span><div><strong>正在理解你的观剧需求</strong><p>识别完成后会请你核对偏好，确认后再生成片单。</p></div></div>
-        <div v-else-if="busy" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
-        <div v-else-if="result&&!result.items.length" class="empty-state"><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':'这一种口味，还没有遇到'}}</h3><p>可以主动调整偏好后重试，明确排除的条件不会自动放宽。</p><button class="secondary-button" @click="edit">调整我的偏好</button></div>
-        <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
+        <div v-else-if="busy&&!result" class="drama-grid"><div v-for="i in 3" :key="i" class="skeleton" aria-hidden="true"><div class="skeleton-poster"></div><div class="skeleton-line long"></div></div></div>
+        <div v-else-if="result&&!result.items.length" class="empty-state"><h3>{{result.status==='needs_confirmation'?'有些条件需要你确认':result.status==='success'?'本批作品已标记反馈':'这一种口味，还没有遇到'}}</h3><p>{{result.status==='success'?'已标记的作品不再展示，可撤销反馈或换一批继续发现。':'可以主动调整偏好后重试，明确排除的条件不会自动放宽。'}}</p><button class="secondary-button" @click="edit">调整我的偏好</button></div>
+        <div v-else-if="result" class="drama-grid"><WorkCard v-for="(work,i) in result.items" :key="work.id" :work="work" :index="i" :saved="library.has(work.id)" :favorite-busy="favoriteBusy(work.id)" :favorite-ready="favoriteReady" feedback-enabled :feedback-busy="feedbackBusy(work.id)" :feedback-status="feedback.records.value.get(work.id)?.status" @feedback="submitFeedback" @favorite="favorite" @detail="showDetail" @preview="openPreview" @preview-leave="preview?.leave($event)" /></div>
         <div v-else :class="['empty-state','generation-guide',{'confirmation-guide':parsed}]">
           <h3>{{parsed?(preferenceIssues.length?'请先调整待确认条件':'偏好已识别，等待你确认'):'三步生成你的片单'}}</h3>
           <p v-if="parsed" class="confirmation-guide-copy">当前还没有生成片单。{{preferenceIssues.length?'请手动调整或移除暂不支持的条件。':'核对上方偏好区，点击“确认偏好，生成片单”即可继续。'}}</p>
@@ -360,6 +431,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       </section>
     </section>
     <PersonalSpace v-else-if="view==='personal-space'" :key="auth.generation.value" :space="space" :logout-busy="auth.busy.value" @navigate="setView" @logout="logout"/>
+    <FeedbackManager v-else-if="view==='feedback'" :key="auth.generation.value" :auth="auth" :feedback="feedback" @back="setView('personal-space')" @remove="removeFeedback"/>
     <section v-else class="catalog-section">
       <div class="catalog-heading">
         <div><h1>{{view==='favorites'?'我的收藏':'片库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别、题材或剧名找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>
