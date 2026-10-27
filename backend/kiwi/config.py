@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     auth_register_limit: int = Field(default=10, ge=1, le=10)
     auth_hash_concurrency: int = Field(default=2, ge=1, le=2)
     auth_limiter_capacity: int = Field(default=10000, ge=10, le=100000)
+    auth_password_user_limit: int = Field(default=5, ge=1, le=5)
+    auth_password_ip_limit: int = Field(default=20, ge=1, le=20)
     media_root: Path = ROOT / ".local/media/previews"
     media_delivery_mode: Literal["app", "nginx"] = "app"
     ffmpeg_path: str = "ffmpeg"

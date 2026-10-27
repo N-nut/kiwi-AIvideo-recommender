@@ -1,0 +1,8 @@
+[
+  {"id":"kiwi-default","label":"奇维","color":"#dce9c7","accent":"#5b783b","kind":"kiwi"},
+  {"id":"kiwi-leaf","label":"新叶","color":"#d2e7dc","accent":"#39785b","kind":"leaf"},
+  {"id":"kiwi-sun","label":"暖阳","color":"#f9e9bd","accent":"#bd852d","kind":"sun"},
+  {"id":"kiwi-moon","label":"月光","color":"#e0dff2","accent":"#7166a2","kind":"moon"},
+  {"id":"kiwi-flower","label":"小花","color":"#f4ddd9","accent":"#b77373","kind":"flower"},
+  {"id":"kiwi-star","label":"星辰","color":"#d9e6f1","accent":"#537a9a","kind":"star"}
+]

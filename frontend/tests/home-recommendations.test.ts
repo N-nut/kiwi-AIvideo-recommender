@@ -19,8 +19,8 @@ function setup(initialUser:string|null='Alpha') {
   let style='修仙逆袭';const saved=new Set<string>();
   const held:(()=>void)[]=[];let hold=false;
   const fetcher=vi.fn((url:string,options?:RequestInit):Promise<Response>=>{
-    if(url.endsWith('/auth/me'))return failMe?response({error:{message:'检查失败'}},503):response({user:user?{id:user,username:user}:null});
-    if(url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:user,username:user}});}
+    if(url.endsWith('/auth/me'))return failMe?response({error:{message:'检查失败'}},503):response({user:user?{id:user,username:user,nickname:null,avatar_id:'kiwi-default'}:null});
+    if(url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:user,username:user,nickname:null,avatar_id:'kiwi-default'}});}
     if(url.endsWith('/auth/logout')){user=null;return response(null,204);}
     if(url==='/api/v1/home/recommendations')return failPublic?response({error:{message:'公开内容加载失败'}},503):response(homeFixture());
     if(url.endsWith('/me/home-recommendations')) {

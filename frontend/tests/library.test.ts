@@ -13,7 +13,7 @@ function setup() {return scope.run(()=>{const auth=useAuth();return {auth,librar
 describe('account collection state',()=>{
   it('loads every ID page and uses server counts instead of the ID or current page length',async()=>{
     const ids=Array.from({length:205},(_,i)=>`id-${i}`);
-    vi.stubGlobal('fetch',vi.fn((url:string)=>response(url.endsWith('/me')?{user:{id:'a',username:'Alpha'}}:url.includes('/ids?')?{items:url.includes('page=1&')?ids.slice(0,200):ids.slice(200),relation_total:205}:{items:[],total:201,unavailable_count:4})));
+    vi.stubGlobal('fetch',vi.fn((url:string)=>response(url.endsWith('/me')?{user:{id:'a',username:'Alpha',nickname:null,avatar_id:'kiwi-default'}}:url.includes('/ids?')?{items:url.includes('page=1&')?ids.slice(0,200):ids.slice(200),relation_total:205}:{items:[],total:201,unavailable_count:4})));
     const {auth,library}=setup();await auth.restore();await flushPromises();
     expect(library.ready.value).toBe(true);expect(library.saved.value.size).toBe(205);expect(library.total.value).toBe(201);expect(library.unavailable.value).toBe(4);
   });
@@ -21,33 +21,33 @@ describe('account collection state',()=>{
     let saved=false,failed=true;
     const fetcher=vi.fn((url:string,opts?:RequestInit)=>{
       if(opts?.method==='PUT') {saved=true;if(failed)return Promise.reject(new Error('network uncertain'));return response({saved:true});}
-      return response(url.endsWith('/me')?{user:{id:'a',username:'Alpha'}}:url.includes('/ids?')?{items:saved?['x']:[],relation_total:saved?1:0}:{items:[],total:saved?1:0,unavailable_count:0});
+      return response(url.endsWith('/me')?{user:{id:'a',username:'Alpha',nickname:null,avatar_id:'kiwi-default'}}:url.includes('/ids?')?{items:saved?['x']:[],relation_total:saved?1:0}:{items:[],total:saved?1:0,unavailable_count:0});
     });vi.stubGlobal('fetch',fetcher);const {auth,library}=setup();await auth.restore();await flushPromises();
     expect(await library.setSaved('x',true)).toBe(false);expect(library.has('x')).toBe(false);
     failed=false;expect(await library.setSaved('x',true)).toBe(true);expect(library.has('x')).toBe(true);
     expect(fetcher.mock.calls.filter(([,opts])=>opts?.method==='PUT')).toHaveLength(2);
   });
   it('clears private state on expiry and ignores an old account response even if fetch ignores abort',async()=>{
-    let user={id:'a',username:'Alpha'},late!:(r:Response)=>void,delay=true;
+    let user={id:'a',username:'Alpha',nickname:null,avatar_id:'kiwi-default'},late!:(r:Response)=>void,delay=true;
     vi.stubGlobal('fetch',vi.fn((url:string)=>{
       if(url.endsWith('/me')) return response({user});
       if(url.includes('/ids?')&&delay) return new Promise<Response>(r=>late=r);
       return response(url.includes('/ids?')?{items:['b-only'],relation_total:1}:{items:[],total:1,unavailable_count:0});
     }));const {auth,library}=setup();await auth.restore();await flushPromises();
-    user={id:'b',username:'Beta'};delay=false;await auth.restore();await flushPromises();
+    user={id:'b',username:'Beta',nickname:null,avatar_id:'kiwi-default'};delay=false;await auth.restore();await flushPromises();
     late(new Response(JSON.stringify({items:['a-secret'],relation_total:1})));await flushPromises();
     expect(library.has('a-secret')).toBe(false);expect(library.has('b-only')).toBe(true);
     auth.expire();expect(library.saved.value.size).toBe(0);expect(library.total.value).toBe(0);
   });
   it('keeps checking errors separate from guest and does not claim logout after failure',async()=>{
     let failed=true;
-    vi.stubGlobal('fetch',vi.fn((url:string)=>failed?response({error:{message:'storage unavailable'}},503):response({user:{id:'a',username:'Alpha'}})));
+    vi.stubGlobal('fetch',vi.fn((url:string)=>failed?response({error:{message:'storage unavailable'}},503):response({user:{id:'a',username:'Alpha',nickname:null,avatar_id:'kiwi-default'}})));
     const {auth}=setup();await auth.restore();expect(auth.state.value).toBe('error');
     failed=false;await auth.restore();expect(auth.state.value).toBe('authenticated');failed=true;
     expect(await auth.logout()).toBe(false);expect(auth.user.value?.id).toBe('a');
   });
   it('expires only the current account on a protected 401 and never replays a write',async()=>{
-    const fetcher=vi.fn((url:string)=>url.endsWith('/me')?response({user:{id:'a',username:'Alpha'}}):response({error:{message:'expired'}},401));vi.stubGlobal('fetch',fetcher);
+    const fetcher=vi.fn((url:string)=>url.endsWith('/me')?response({user:{id:'a',username:'Alpha',nickname:null,avatar_id:'kiwi-default'}}):response({error:{message:'expired'}},401));vi.stubGlobal('fetch',fetcher);
     const auth=scope.run(()=>useAuth())!;await auth.restore();const current=auth.scope();
     await expect(current.request('/api/v1/me/favorites/x',undefined,'PUT')).rejects.toThrow('expired');
     expect(auth.state.value).toBe('guest');expect(fetcher.mock.calls.filter(([url])=>url.endsWith('/x'))).toHaveLength(1);

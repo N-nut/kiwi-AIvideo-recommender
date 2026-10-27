@@ -14,7 +14,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pwdlib import PasswordHash
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
@@ -166,13 +166,40 @@ class AuthManager:
         response.set_cookie(COOKIE, token, max_age=self.settings.auth_session_seconds,
                             httponly=True, secure=self.settings.auth_cookie_secure, samesite="lax", path="/")
 
+    @contextmanager
+    def write(self, request, user_id, *, expected_hash=None, require_session=True):
+        """All account writes coordinate on user -> session -> application data."""
+        with self.sessions() as session:
+            if session.bind.dialect.name == "sqlite":
+                session.connection().exec_driver_sql("BEGIN IMMEDIATE")
+            else:
+                session.execute(text("SET LOCAL lock_timeout = '3s'"))
+            try:
+                user = session.scalar(select(User).where(User.id == user_id).with_for_update())
+                if user is None:
+                    raise problem(401, "login_required", "登录状态已失效，请重新登录")
+                if require_session:
+                    stored = session.scalar(select(UserSession).where(UserSession.token_hash == token_digest(request.cookies.get(COOKIE, ""))).with_for_update())
+                    if stored is None or stored.user_id != user_id or as_utc(stored.expires_at) <= self.now():
+                        raise problem(401, "login_required", "登录状态已失效，请重新登录")
+                if expected_hash is not None and user.password_hash != expected_hash:
+                    raise problem(409, "password_changed", "密码已发生变化，请重新登录核实")
+                yield session, user
+                session.commit()
+            except BaseException:
+                session.rollback()
+                raise
+
+    def clear_cookie(self, response):
+        response.delete_cookie(COOKIE, path="/", httponly=True, secure=self.settings.auth_cookie_secure, samesite="lax")
+
 
 def token_digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
 def public_user(user):
-    return {"id": user.id, "username": user.username}
+    return {"id": user.id, "username": user.username, "nickname": user.nickname, "avatar_id": user.avatar_id or "kiwi-default"}
 
 
 def get_current_user(request: Request):
@@ -225,17 +252,19 @@ def login(body: LoginInput, request: Request, response: Response):
         raise problem(401, "invalid_credentials", "用户名或密码不正确")
     auth.limiter.refund(reservation)
     auth.cleanup()
-    with auth.sessions.begin() as session:
+    with auth.write(request, user.id, expected_hash=user.password_hash, require_session=False) as (session, current_user):
         token = auth.issue(session, user.id, request)
+        result = public_user(current_user)
     auth.cookie(response, token)
-    return {"user": public_user(user)}
+    return {"user": result}
 
 
 @router.post("/logout", status_code=204)
 def logout(request: Request, response: Response):
     auth = request.app.state.auth
     token = request.cookies.get(COOKIE)
-    if token:
-        with auth.sessions.begin() as session:
+    user = auth.current(request)
+    if token and user:
+        with auth.write(request, user["id"], require_session=False) as (session, _):
             session.execute(delete(UserSession).where(UserSession.token_hash == token_digest(token)))
-    response.delete_cookie(COOKIE, path="/", httponly=True, secure=auth.settings.auth_cookie_secure, samesite="lax")
+    auth.clear_cookie(response)

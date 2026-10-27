@@ -19,8 +19,10 @@ function server(initialUser:string|null=null) {
   const saved:Record<string,Set<string>>={Alpha:new Set(),Beta:new Set()};
   const fetcher=vi.fn((url:string,options?:RequestInit):Promise<Response>=>{
     if(url.includes('/home/recommendations')||url.endsWith('/home-recommendations'))return response(homeFixture());
-    if(url==='/api/v1/auth/me')return failMe?response({error:{message:'账号检查失败'}},503):response({user:user?{id:`uuid-${user}`,username:user}:null});
-    if(url.endsWith('/auth/register')||url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:`uuid-${user}`,username:user}},url.endsWith('/register')?201:200);}
+    if(url==='/api/v1/auth/me')return failMe?response({error:{message:'账号检查失败'}},503):response({user:user?{id:`uuid-${user}`,username:user,nickname:null,avatar_id:'kiwi-default'}:null});
+    if(url.endsWith('/auth/register')||url.endsWith('/auth/login')){user=JSON.parse(options!.body as string).username;return response({user:{id:`uuid-${user}`,username:user,nickname:null,avatar_id:'kiwi-default'}},url.endsWith('/register')?201:200);}
+    if(url.endsWith('/me/profile'))return response({profile:{id:`uuid-${user}`,username:user,nickname:null,avatar_id:'kiwi-default'}});
+    if(url.endsWith('/me/space-summary'))return response({favorites:{total:saved[user||'']?.size||0,available:saved[user||'']?.size||0,unavailable:0},interest:{status:'no_favorites',analyzed_count:0,content_types:[],genres:[],themes:[]}});
     if(url.endsWith('/auth/logout')){if(failLogout)return response({error:{message:'退出失败，请重试'}},503);user=null;return response(null,204);}
     if(url.includes('/me/favorites')){
       if(!user||expireWrite){user=null;return response({error:{message:'登录状态已失效，请重新登录'}},401);}

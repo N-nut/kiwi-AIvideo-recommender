@@ -91,6 +91,10 @@ class User(Base):
     username_key: Mapped[str] = mapped_column(String(20), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    nickname: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    nickname_key: Mapped[str | None] = mapped_column(Text().with_variant(Text(collation="C"), "postgresql"), nullable=True)
+    avatar_id: Mapped[str] = mapped_column(String(32), default="kiwi-default", server_default="kiwi-default")
+    __table_args__ = (Index("uq_users_nickname_key", "nickname_key", unique=True),)
 
 
 class UserSession(Base):
@@ -119,7 +123,7 @@ RETIRED_IDS = tuple(f"bili-{i}" for i in (
 def make_database(url):
     kwargs = {}
     if url.startswith("sqlite"):
-        kwargs["connect_args"] = {"check_same_thread": False}
+        kwargs["connect_args"] = {"check_same_thread": False, "timeout": 3}
         if ":memory:" in url:
             kwargs["poolclass"] = StaticPool
         elif url.startswith("sqlite:///"):
@@ -133,6 +137,9 @@ def make_database(url):
 
 
 def initialize(engine):
+    if engine.dialect.name == "sqlite" and (inspect(engine).has_table("users") or inspect(engine).has_table("alembic_version")):
+        from .profile_upgrade import upgrade_local_profiles
+        upgrade_local_profiles(engine)
     if engine.dialect.name == "postgresql":
         with engine.begin() as connection:
             connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))

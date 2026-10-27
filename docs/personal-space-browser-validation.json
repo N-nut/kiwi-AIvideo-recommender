@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-27",
+  "database": ".local\\personal-space-mvqfr9mp.db",
+  "public_works": 434,
+  "ready_previews": 359,
+  "synthetic_accounts_only": true,
+  "mode": "baseline",
+  "checks": [
+    "guest login cancel preserves viewing input; registration opens the personal space",
+    "keyboard avatar selection, atomic profile saving, cancel and cross-browser persistence",
+    "normal logout preserves another session; separate account sees no private profile and cannot take the nickname",
+    "real favorite mutation refreshes total and actual interest tags without altering the active list",
+    "module failures preserve confirmed counts, drafts and allow independent retry",
+    "personal space is readable on desktop, tablet and narrow phones, with keyboard forms",
+    "wrong current password preserves login; successful change revokes all old sessions and preserves data",
+    "guest catalogue and ready real previews continue to work"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "external_covers_blocked": true,
+  "tested_preview": "hongguo-7668904735717477400"
+}

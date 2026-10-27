@@ -1,7 +1,7 @@
 import { getCurrentScope, onScopeDispose, ref } from 'vue';
 import { api, APIError, latestRequest } from './api';
 
-export interface User { id:string; username:string }
+export interface User { id:string; username:string; nickname:string|null; avatar_id:string }
 export class StaleAccount extends Error {}
 
 export function useAuth() {
@@ -11,7 +11,8 @@ export function useAuth() {
   function reset(next:User|null, status:typeof state.value) {
     controller.abort();controller=new AbortController();user.value=next;state.value=status;generation.value++;
   }
-  function expire() {lane.cancel();busy.value=false;reset(null,'guest');error.value='登录状态已失效，请重新登录';}
+  function expire(notice='登录状态已失效，请重新登录') {lane.cancel();busy.value=false;reset(null,'guest');error.value=notice;}
+  function mergeProfile(profile:User) {if(user.value?.id===profile.id) user.value={...profile};}
   function scope() {
     const version=generation.value, signal=controller.signal;
     const current=()=>version===generation.value&&!signal.aborted;
@@ -22,7 +23,7 @@ export function useAuth() {
         if(!current()) throw new StaleAccount();
         return value;
       } catch(exc) {
-        if(!current()) throw new StaleAccount();
+        if(!current()||localSignal?.aborted) throw new StaleAccount();
         if(exc instanceof APIError&&exc.status===401) expire();
         throw exc;
       }
@@ -59,5 +60,5 @@ export function useAuth() {
   }
   function cancelLogin() {lane.cancel();busy.value=false;}
   if(getCurrentScope()) onScopeDispose(()=>{lane.cancel();controller.abort();});
-  return {state,user,error,busy,generation,scope,restore,submit,logout,expire,cancelLogin};
+  return {state,user,error,busy,generation,scope,restore,submit,logout,expire,cancelLogin,mergeProfile};
 }

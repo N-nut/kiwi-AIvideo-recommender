@@ -18,12 +18,12 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
   const pages=computed(()=>Math.max(1,Math.ceil(displayTotal.value/12)));
   const visibleWorks=computed(()=>view.value==='favorites'
     ? favoriteWorks.value
-    : view.value==='discover'?[]:works.value);
+    : view.value==='catalog'?works.value:[]);
 
   async function load() {
     const request=lane.begin();
     if(view.value==='favorites') {loading.value=false;await loadFavorites();return;}
-    if(view.value==='discover') {loading.value=false;error.value='';return;}
+    if(view.value!=='catalog') {loading.value=false;error.value='';return;}
     loading.value=true;error.value='';
     const currentView=view.value, currentPage=page.value;
     const params=new URLSearchParams({page_size:'12',page:String(currentPage)});
@@ -36,7 +36,7 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
       const data=await api<{items:Work[];total:number}>(`/api/v1/works?${params}`,undefined,request.signal);
       if(!request.current()) return;
       works.value=data.items;total.value=data.total;
-      if(currentView==='discover'||genre.value==='全部'&&contentType.value==='全部'&&!searchTerm.value) overall.value=data.total;
+      if(genre.value==='全部'&&contentType.value==='全部'&&!searchTerm.value) overall.value=data.total;
       if(currentView==='catalog'&&currentPage>pages.value) page.value=pages.value;
     } catch(exc) {if(request.current()) error.value=exc instanceof Error?exc.message:'片库加载失败';}
     finally {if(request.current()) loading.value=false;}
@@ -91,7 +91,7 @@ export function useCatalog(library: ReturnType<typeof useLibrary>, auth:ReturnTy
   });
   watch(auth.generation,()=>{
     favoriteLane.cancel();favoriteWorks.value=[];unavailableIds.value=[];favoriteLoading.value=false;favoriteError.value='';
-    if(view.value==='favorites'&&auth.state.value!=='authenticated') setView('discover');
+    if(['favorites','personal-space'].includes(view.value)&&auth.state.value!=='authenticated') setView('discover');
   },{flush:'sync'});
   watch(library.revision,()=>{if(view.value==='favorites') void loadFavorites();});
   onUnmounted(()=>{clearTimeout(searchTimer);lane.cancel();favoriteLane.cancel();});

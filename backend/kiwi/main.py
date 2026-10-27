@@ -26,6 +26,7 @@ from .favorites import router as favorites_router
 from .home_recommendations import home_recommendations
 from .previews import router as previews_router
 from .preview_jobs import PreviewManager
+from .personal_space import router as personal_space_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -61,6 +62,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     app.include_router(auth_router)
     app.include_router(favorites_router)
     app.include_router(previews_router)
+    app.include_router(personal_space_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -94,7 +96,8 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         try:
             response = await call_next(request)
         except SQLAlchemyError:
-            return finish(JSONResponse(status_code=503, content={"error": {"code": "database_unavailable", "message": "数据库暂时不可用，请稍后重试"}, "request_id": request.state.request_id}))
+            code = "service_unavailable" if request.url.path in {"/api/v1/me/profile", "/api/v1/me/space-summary", "/api/v1/me/password"} else "database_unavailable"
+            return finish(JSONResponse(status_code=503, content={"error": {"code": code, "message": "数据库暂时不可用，请稍后重试"}, "request_id": request.state.request_id}))
         log.info(json.dumps({"request_id": request.state.request_id, "path": request.url.path,
                              "status": response.status_code, "elapsed_ms": round((time.perf_counter()-start)*1000, 2)}, ensure_ascii=False))
         return finish(response)
@@ -108,8 +111,8 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     async def validation_error(request, exc):
         # Do not echo arbitrary user input, database URLs, or upstream credentials.
         if request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/")):
-            safe = {"username": "用户名须为 3～20 位英文字母、数字或下划线", "password": "密码须为 8～64 个字符", "confirm_password": "请确认两次密码一致且为 8～64 个字符", "work_ids": "每批提交 1～100 个有效作品标识", "page": "页码须大于零", "page_size": "每页数量超出允许范围"}
-            fields = list(dict.fromkeys(next((str(part) for part in error["loc"] if part in safe), "confirm_password" if error["type"] == "value_error" else "body") for error in exc.errors()))
+            safe = {"username": "用户名须为 3～20 位英文字母、数字或下划线", "password": "密码须为 8～64 个字符", "confirm_password": "请确认两次密码一致且为 8～64 个字符", "work_ids": "每批提交 1～100 个有效作品标识", "page": "页码须大于零", "page_size": "每页数量超出允许范围", "nickname": "昵称须为 1～20 个字符，不能含换行或控制字符", "avatar_id": "请选择预设头像", "current_password": "当前密码须为 8～64 个字符", "new_password": "新密码须为 8～64 个字符"}
+            fields = list(dict.fromkeys(next((str(part) for part in error["loc"] if part in safe), "confirm_password" if error["type"] == "value_error" and request.url.path.endswith("/register") else "body") for error in exc.errors()))
             messages = {field: safe.get(field, "请求字段不符合要求") for field in fields}
             return JSONResponse(status_code=422, content={"error": {"code": "validation_error", "message": "；".join(messages.values()), "fields": fields, "field_messages": messages}, "request_id": request.state.request_id})
         return JSONResponse(status_code=422, content={"error": {"code": "validation_error", "message": "参数不符合要求，请检查输入及偏好字段",

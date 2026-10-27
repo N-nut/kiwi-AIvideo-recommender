@@ -7,6 +7,10 @@ import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
 import { useAuth } from './useAuth';
 import { useHomeRecommendations } from './useHomeRecommendations';
+import { usePersonalSpace } from './usePersonalSpace';
+import PersonalSpace from './components/PersonalSpace.vue';
+import PresetAvatar from './components/PresetAvatar.vue';
+import './personalSpace.css';
 import AuthDialog from './components/AuthDialog.vue';
 import LegacyImport from './components/LegacyImport.vue';
 import WorkCard from './components/WorkCard.vue';
@@ -24,6 +28,7 @@ const library = useLibrary(auth);
 const shelf = useCatalog(library,auth);
 const {view,genre:category,contentType,page:catalogPage,visibleWorks,displayTotal,pages:catalogPages,loading:catalogLoading,error:catalogError,favoriteCount,favoriteLoading,favoriteError}=shelf;
 const home=useHomeRecommendations(auth,library,view);
+const space=usePersonalSpace(auth,library,view);
 const result = ref<Recommendation|null>(null);
 const updateDialog=ref<HTMLDialogElement>();
 const selectedCategories=ref(['comic-drama','ai-drama']); const includeHotRank=ref(false);
@@ -42,7 +47,7 @@ const detailLane = latestRequest();
 function closeDetailMetadata(){detailLane.cancel();detailMedia.value=null;}
 let backdropPressed = false;
 const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const pendingFavorite = ref('');
-const pendingView=ref(false);
+const pendingView=ref('');
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
 function choosePrompt(text:string) {
@@ -137,6 +142,7 @@ async function acceptRefresh(state:CatalogRefresh, finished=false) {
   if(state.cooldown&&state.status!=='succeeded') message('刚刚尝试过更新，请稍后再试');
   if((state.status==='succeeded'&&finished)||mediaFinished) {
     home.invalidate();
+    space.invalidate();
     await Promise.all([shelf.reload(),loadHealth()]);
     if(finished) message(state.cooldown?'刚刚已更新，请稍后再次同步':state.message);
   }
@@ -162,8 +168,8 @@ async function updateCatalog() {
 }
 function setView(value:string) {
   preview.value?.close();
-  if(value==='favorites'&&auth.state.value!=='authenticated') {
-    if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=true;login.value?.open();}
+  if(['favorites','personal-space'].includes(value)&&auth.state.value!=='authenticated') {
+    if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=value;login.value?.open();}
     else message(auth.state.value==='checking'?'正在检查登录状态':'请先重试检查登录状态');
     return;
   }
@@ -203,10 +209,10 @@ function finishDetailClick(event: MouseEvent) {
   if(backdropPressed&&outsideDetail(event)) (event.currentTarget as HTMLDialogElement).close();
   backdropPressed=false;
 }
-function openAccount() {pendingFavorite.value='';pendingView.value=false;if(auth.state.value==='error') void auth.restore();else if(auth.state.value==='guest') login.value?.open();}
-function dismissLogin() {pendingFavorite.value='';pendingView.value=false;}
+function openAccount() {pendingFavorite.value='';pendingView.value='personal-space';if(auth.state.value==='error') void auth.restore();else setView('personal-space');}
+function dismissLogin() {pendingFavorite.value='';pendingView.value='';}
 async function favorite(id:string) {
-  if(auth.state.value==='guest') {preview.value?.close();pendingFavorite.value=id;pendingView.value=false;login.value?.open();return;}
+  if(auth.state.value==='guest') {preview.value?.close();pendingFavorite.value=id;pendingView.value='';login.value?.open();return;}
   if(auth.state.value!=='authenticated') {message('请先检查登录状态');return;}
   if(!library.ready.value) {await library.load();return;}
   if(auth.busy.value) return;
@@ -217,7 +223,7 @@ async function favorite(id:string) {
 async function loginSuccess() {
   const id=pendingFavorite.value, go=pendingView.value,account=auth.scope();dismissLogin();
   await library.load();if(!account.current()) return;
-  if(go) shelf.setView('favorites');
+  if(go&&!id) shelf.setView(go);
   if(id) {
     if(!library.ready.value) {message('已登录，收藏状态加载失败，请重试后再次收藏');return;}
     if(await library.setSaved(id,true)) message('已登录并加入账号收藏');
@@ -267,11 +273,11 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       </div>
     </div>
       </section>
-      <section class="sidebar-account" aria-label="账号与个人空间">
+      <section :class="['sidebar-account',{active:view==='personal-space'}]" aria-label="账号与个人空间">
         <div class="account-identity">
-          <span class="account-avatar" aria-label="头像占位"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c0-6 4-9 10-9s10 3 10 9"/></svg></span>
+          <button class="account-avatar" aria-label="进入个人空间" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount"><PresetAvatar :id="auth.user.value?.avatar_id"/></button>
           <div class="account-copy">
-            <strong v-if="auth.user.value" class="account-button" :title="auth.user.value.username">{{auth.user.value.username}}</strong>
+            <button v-if="auth.user.value" class="account-button" :title="auth.user.value.username" :aria-current="view==='personal-space'?'page':undefined" @click="openAccount">{{auth.user.value.nickname||auth.user.value.username}}</button>
             <button v-else class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册'}}</button>
             <small>{{auth.user.value?'个人空间':'收藏喜欢的作品'}}</small>
           </div>
@@ -329,6 +335,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
         </div>
       </section>
     </section>
+    <PersonalSpace v-else-if="view==='personal-space'" :key="auth.generation.value" :space="space" :logout-busy="auth.busy.value" @navigate="setView" @logout="logout"/>
     <section v-else class="catalog-section">
       <div class="catalog-heading">
         <div><h1>{{view==='favorites'?'我的收藏':'片库'}}</h1><p>{{view==='favorites'?'收藏保存在当前账号，登录同一账号即可恢复。':'按类别、题材或剧名找作品'}}</p><button v-if="view==='favorites'" class="text-button" @click="legacy?.open()">导入本机旧收藏</button></div>

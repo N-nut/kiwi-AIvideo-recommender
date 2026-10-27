@@ -10,25 +10,25 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
-test('个人空间产品方案覆盖四项功能、账号边界和验收，明确待实现且不展示注册时间', async () => {
+test('个人空间产品说明覆盖四项功能、账号边界和验收，与已实现状态一致', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const space=source.match(/^### 3\.10 用户个人空间（产品方案，待实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
+  const space=source.match(/^### 3\.10 用户个人空间（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
   assert.ok(space,'个人空间须有独立产品方案');
-  assert.match(source,/\| 用户个人空间 \|[^\n]+\| 产品方案已明确，待实现/);
+  assert.match(source,/\| 用户个人空间 \|[^\n]+\| 已实现资料、概览、画像、改密/);
   for(const heading of ['入口与页面组织','个人资料','收藏概览','兴趣画像','账号安全','状态与账号隔离']) assert.ok(space.includes(`#### ${heading}`),heading);
   for(const requirement of ['独立个人空间','用户名只读','不允许重复','忽略英文字母大小写后判重','昵称已被使用，请换一个','保存本人当前昵称','多人并发修改','预设头像','不展示注册时间','不复制整套收藏列表',
     '画像只读','根据 X 部有效剧集收藏整理','不推断用户明确排除','不覆盖用户当次输入','当前密码','确认新密码','8～64',
     '当前及其他已登录会话失效','只退出当前会话','结果未知','客户端传入身份','迟到响应不能显示旧账号内容','用户确认后导入']) {
     assert.ok(space.includes(requirement),`个人空间缺少约定：${requirement}`);
   }
-  const acceptance=source.match(/^### 6\.1 个人空间验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[0];
+  const acceptance=source.match(/^### 6\.1 个人空间验收\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[0];
   assert.ok(acceptance,'个人空间须有独立待实现验收范围');
   for(const requirement of ['昵称占用','并发争用','独立浏览器','注册时间','仅漫画','会话','键盘']) assert.ok(acceptance.includes(requirement),requirement);
   assert.doesNotMatch(space,/昵称可修改，允许重复|同名昵称的两个账号/,'昵称须唯一');
   assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');
 });
 
-test('个人空间技术设计对应当前产品版本，区分学习基础、待实现接口和安全验收', async () => {
+test('个人空间实现说明对应当前产品版本、迁移和实际功能文件', async () => {
   const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const version=product.match(/^版本：(v[\d.]+)/m)?.[1];
@@ -40,8 +40,14 @@ test('个人空间技术设计对应当前产品版本，区分学习基础、�
   assert.ok(revision,'既有媒体任务迁移须声明版本');
   const section=technicalSection(source,13);
   assert.ok(section.includes(`down_revision="${revision}"`),'新增迁移须衔接实际 revision，而非文件名');
-  assert.match(section,/^## 13\. 用户个人空间技术方案（待实现）/);
-  assert.match(section,/接口、页面及功能测试尚未编写/,'不能将技术设计称为功能交付');
+  assert.match(section,/^## 13\. 用户个人空间技术方案（已实现）/);
+  assert.match(section,/新增字段、迁移、接口、页面及功能测试已完成/);
+  assert.match(section,/原生多连接并发、Docker 或 HTTPS 部署验收/);
+  for(const file of ['backend/kiwi/personal_space.py','backend/kiwi/profile_upgrade.py','backend/migrations/versions/0006_user_profiles.py',
+    'frontend/src/usePersonalSpace.ts','frontend/src/components/PersonalSpace.vue','backend/tests/test_personal_space.py',
+    'frontend/tests/personal-space.test.ts','scripts/verify-personal-space.mjs','data/avatar-presets.json']) {
+    assert.ok((await stat(new URL('../'+file,import.meta.url))).isFile(),file);
+  }
   for(const requirement of ['Python + FastAPI + 现有 Vue 3','不代表已经掌握该工具','0006_user_profiles.py',
     'create_all()','uq_users_nickname_key','NFKC','casefold()','多个 NULL','保存本人当前昵称',
     '并发正确性由唯一索引保证','不展示注册时间','服务端 Session','extra="forbid"',
@@ -54,7 +60,7 @@ test('个人空间技术设计对应当前产品版本，区分学习基础、�
   }
 });
 
-test('个人空间计划响应不泄露内部信息，收藏与兴趣统计示例口径一致', async () => {
+test('个人空间响应不泄露内部信息，收藏与兴趣统计示例口径一致', async () => {
   const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const section=technicalSection(source,13);
   const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));

@@ -23,7 +23,15 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
     try:
         monkeypatch.setenv('DATABASE_URL',url)
         migration=Config(str(ROOT/'backend/alembic.ini'))
+        command.upgrade(migration,'0005')
+        from sqlalchemy import text
+        with engine.begin() as connection:
+            connection.execute(text("INSERT INTO users(id,username,username_key,password_hash,created_at) VALUES ('pre-profile','legacy','legacy','unchanged',now())"))
         command.upgrade(migration,'head')
+        with engine.begin() as connection:
+            assert connection.execute(text("SELECT password_hash,nickname,nickname_key,avatar_id FROM users WHERE id='pre-profile'")).one()==('unchanged',None,None,'kiwi-default')
+            assert connection.execute(text("SELECT collation_name FROM information_schema.columns WHERE table_name='users' AND column_name='nickname_key'")).scalar()=='C'
+            connection.execute(text("DELETE FROM users WHERE id='pre-profile'"))
         initialize(engine)
         rows=[]
         for i,value in enumerate([False,True,None]):
@@ -65,6 +73,10 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                 result=client.get('/api/v1/works',params={'q':query}).json()
                 assert result['total']==1 and result['items'][0]['id']=='work-0'
             assert register(client).status_code==201
+            profile=client.patch('/api/v1/me/profile',json={'nickname':'  Ｋｉｗｉ  ','avatar_id':'kiwi-leaf'})
+            assert profile.status_code==200 and profile.json()['profile']['nickname']=='Ｋｉｗｉ'
+            assert profile.headers['cache-control']=='no-store'
+            assert client.patch('/api/v1/me/profile',json={'nickname':'kiwi'}).status_code==200
             assert register(client,'user_a').status_code==409
             assert client.get('/api/v1/auth/me').json()['user']['username']=='User_A'
             assert client.put('/api/v1/me/favorites/work-0').status_code==200
@@ -74,6 +86,9 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
             assert client.get('/api/v1/me/favorites?page_size=1').json()['total']==2
             assert len(client.get('/api/v1/me/favorites?page=2&page_size=1').json()['items'])==1
             assert client.get('/api/v1/me/favorites/ids').json()['relation_total']==2
+            summary=client.get('/api/v1/me/space-summary').json()
+            assert summary['favorites']=={'total':2,'available':2,'unavailable':0}
+            assert summary['interest']['analyzed_count']==1
             # The same works and favorites must give identical SQLite/PostgreSQL
             # home responses, including JSONB filtering, stable order and prompts.
             from kiwi.database import public_work
@@ -107,9 +122,34 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                 sqlite_engine.dispose()
             assert register(client,'User_B').status_code==201
             assert client.get('/api/v1/me/favorites').json()['total']==0
+            assert client.get('/api/v1/me/space-summary').json()['interest']['status']=='no_favorites'
+            # Validate the actual PostgreSQL unique index without exercising the
+            # PGlite single-backend shim's unsupported failed-wire rollback.
+            with client.app.state.engine.begin() as connection:
+                connection.execute(text("""DO $$ BEGIN
+                    BEGIN
+                        UPDATE users SET nickname='KIWI',nickname_key='kiwi' WHERE username_key='user_b';
+                        RAISE EXCEPTION 'Expected nickname unique rejection';
+                    EXCEPTION WHEN unique_violation THEN
+                        IF SQLERRM NOT LIKE '%uq_users_nickname_key%' THEN RAISE; END IF;
+                    END;
+                END $$"""))
             assert client.delete('/api/v1/me/favorites/work-0').status_code==204
             assert login(client).status_code==200
             assert client.get('/api/v1/me/favorites').json()['total']==3
+            from test_personal_space import password_body, NEW_PASSWORD
+            from test_accounts import PASSWORD
+            assert client.post('/api/v1/me/password',json=password_body('wrong password')).status_code==400
+            old_cookie=client.cookies['kiwi_session']
+            assert client.post('/api/v1/me/password',json=password_body()).status_code==204
+            assert client.get('/api/v1/me/profile').status_code==401
+            client.cookies.set('kiwi_session',old_cookie)
+            assert client.get('/api/v1/me/profile').status_code==401
+            client.cookies.clear()
+            assert login(client,password=PASSWORD).status_code==401
+            assert login(client,password=NEW_PASSWORD).status_code==200
+            assert client.get('/api/v1/me/profile').json()['profile']['nickname']=='kiwi'
+            assert client.get('/api/v1/me/space-summary').json()['favorites']['total']==3
             assert client.post('/api/v1/auth/logout').status_code==204
             assert client.get('/api/v1/me/favorites').status_code==401
         # Catch the actual FK violation inside PostgreSQL. PGlite's socket shim

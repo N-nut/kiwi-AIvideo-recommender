@@ -53,7 +53,7 @@ def favorite_ids(request: Request, user: CurrentUser, page: int = Query(1, ge=1)
 @router.post("/import")
 def import_favorites(body: ImportInput, request: Request, user: CurrentUser):
     ids = list(dict.fromkeys(body.work_ids))
-    with request.app.state.sessions.begin() as session:
+    with request.app.state.auth.write(request, user["id"]) as (session, _):
         available = session.scalars(select(Work.id).where(Work.id.in_(ids), Work.review_status == "approved")).all()
         added = save_ids(session, user["id"], available)
     return {"requested": len(body.work_ids), "unique": len(ids), "added": added,
@@ -62,7 +62,7 @@ def import_favorites(body: ImportInput, request: Request, user: CurrentUser):
 
 @router.put("/{work_id}")
 def save_favorite(work_id: WorkID, request: Request, user: CurrentUser):
-    with request.app.state.sessions.begin() as session:
+    with request.app.state.auth.write(request, user["id"]) as (session, _):
         work = session.get(Work, work_id)
         if work is None or work.review_status != "approved":
             raise problem(404, "work_unavailable", "作品不存在或暂不可收藏")
@@ -72,5 +72,5 @@ def save_favorite(work_id: WorkID, request: Request, user: CurrentUser):
 
 @router.delete("/{work_id}", status_code=204)
 def remove_favorite(work_id: WorkID, request: Request, user: CurrentUser):
-    with request.app.state.sessions.begin() as session:
+    with request.app.state.auth.write(request, user["id"]) as (session, _):
         session.execute(delete(Favorite).where(Favorite.user_id == user["id"], Favorite.work_id == work_id))
