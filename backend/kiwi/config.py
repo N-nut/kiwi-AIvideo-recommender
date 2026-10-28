@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     recommendation_scan_batch: int = Field(default=50, ge=1, le=100)
     feedback_state_limit: int = Field(default=1000, ge=1, le=10000)
     feedback_write_limit: int = Field(default=60, ge=1, le=60)
+    preference_refine_ip_limit: int = Field(default=20, ge=1, le=20)
     crawl_pages_per_source: int = Field(default=5, ge=1, le=20)
     crawl_max_pages: int = Field(default=25, ge=1, le=25)
     crawl_max_works: int = Field(default=500, ge=1, le=500)

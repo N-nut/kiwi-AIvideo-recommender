@@ -1,7 +1,7 @@
 {
   "date": "2026-10-28",
   "mode": "baseline",
-  "database": ".local\\preference-flow-mvriqzew.db",
+  "database": ".local\\preference-flow-mvruu387.db",
   "public_works": 434,
   "checks": [
     "balanced composer layout and readable preferences from 320 to 2184 pixels",

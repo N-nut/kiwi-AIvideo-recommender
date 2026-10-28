@@ -10,6 +10,9 @@ import { useHomeRecommendations } from './useHomeRecommendations';
 import { usePersonalSpace } from './usePersonalSpace';
 import { useFeedback } from './useFeedback';
 import { useRecommendationBatches } from './useRecommendationBatches';
+import { useRefinement } from './useRefinement';
+import RefinementComposer from './components/RefinementComposer.vue';
+import './refinement.css';
 import HistoryPanel from './components/HistoryPanel.vue';
 import './history.css';
 import FeedbackManager from './components/FeedbackManager.vue';
@@ -37,11 +40,16 @@ const batches=useRecommendationBatches(auth,feedback);
 const {result}=batches;
 const historyId=ref(''),historyWorkLane=latestRequest();
 const savedHistoryId=computed(()=>result.value?.history?.status==='saved'?result.value.history.id:'');
-const busy=computed(()=>parseBusy.value||batches.busy.value);
+const busy=computed(()=>parseBusy.value||batches.busy.value||refinement.busy.value);
 const parsing=computed(()=>parseBusy.value&&requestKind.value==='parse');
 const library = useLibrary(auth);
 const shelf = useCatalog(library,auth);
 const {view,genre:category,contentType,page:catalogPage,visibleWorks,displayTotal,pages:catalogPages,loading:catalogLoading,error:catalogError,favoriteCount,favoriteLoading,favoriteError}=shelf;
+const refinement=useRefinement(auth,feedback,batches,view);
+watch(batches.baseRevision,()=>{
+  const committed=batches.committedPreferences.value;
+  if(committed){prefs.value=structuredClonePlain(committed);parsed.value=true;pendingFeedback.value=null;undo.value=null;demandVersion.value++;}
+},{flush:'sync'});
 const home=useHomeRecommendations(auth,library,view,feedback);
 const space=usePersonalSpace(auth,library,view);
 const updateDialog=ref<HTMLDialogElement>();
@@ -170,7 +178,7 @@ async function historyWorkDetail(work:Work){
   catch(exc){if(request.current()&&account.current())message(exc instanceof Error?exc.message:'作品资料读取失败，请重试');}
 }
 function structuredClonePlain<T>(value:T):T { return JSON.parse(JSON.stringify(value)); }
-function edit() { closeRecognition();draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
+function edit() { if(busy.value)return;refinement.discard();closeRecognition();draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
 function saveEditor(value: Preferences) { lane.cancel();parseBusy.value=false;requestKind.value=null;value.conflicts=[];prefs.value=structuredClonePlain(value);parsed.value=true;resetRound();error.value='';editor.value?.close(); }
 const loadCatalog=()=>shelf.load();
 async function loadHealth() {
@@ -424,13 +432,14 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
             <div v-else class="preference-chips preference-placeholder"><span class="empty-preferences">先识别偏好，再由你确认。</span><p>题材、剧情特色和排除项会整理在这里，方便你检查与调整。</p></div>
             <p v-if="preferenceIssues.length" class="constraint-warning" role="alert">{{preferenceIssues.join('；')}}。请调整偏好。</p>
             <p v-else class="taste-next-note">{{parsing?'正在识别，完成后会提示你核对。':result?(result.status==='needs_confirmation'?'请调整待确认的条件后重新生成。':result.items.length?'片单已按以上偏好生成，可继续调整偏好。':'暂时没有符合条件的作品，可调整偏好后重试。'):parsed?'请核对以上偏好，确认后才会生成片单。':'点击下方按钮识别偏好，不会直接生成片单。'}}</p>
-            <button id="recommend-button" class="primary-button" :disabled="busy||parsed&&!!preferenceIssues.length" @click="generate"><span>{{busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span><span aria-hidden="true">{{busy?'◌':'›'}}</span></button>
+            <button id="recommend-button" class="primary-button" :disabled="busy||parsed&&!!preferenceIssues.length" @click="generate"><span>{{refinement.status.value==='understanding'?'正在理解调整…':refinement.status.value==='applying'?'正在应用新条件…':busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span><span aria-hidden="true">{{busy?'◌':'›'}}</span></button>
             <button v-if="parsed&&!busy" class="text-button reparse" @click="parse">重新理解原始描述</button>
           </div>
         </div>
       </section>
       <section class="results-section" :aria-busy="busy" aria-labelledby="results-title">
         <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy&&!result?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'你的片单'):'你的片单'}}</h2></div><div class="batch-actions"><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span><button v-if="result?.status==='success'" class="secondary-button next-batch" :disabled="!batches.canNext.value||busy" @click="nextBatch">{{batches.busy.value?'正在换一批…':'换一批'}}</button></div></div>
+        <RefinementComposer v-if="refinement.available.value" :refinement="refinement" :disabled="busy"/>
         <div v-if="batches.error.value||batches.notice.value" class="batch-status" role="status"><span>{{batches.error.value||batches.notice.value}}</span><button v-if="batches.snapshot.value" class="text-button" :disabled="busy" @click="restartBatch">重新浏览本轮</button><button class="text-button" :disabled="busy" @click="edit">调整偏好</button></div>
         <p v-if="auth.state.value==='authenticated'" class="source-note history-save-note"><template v-if="savedHistoryId"><span>已自动保存到历史片单</span> <button class="text-button" @click="openSavedHistory(savedHistoryId)">查看这份片单 →</button></template><template v-else-if="result?.history?.status==='failed'">本次历史片单保存失败，当前结果已保留。</template><template v-else>成功生成的非空片单会自动保存，最近 100 份可在历史片单中查看。</template></p>
         <p v-if="batches.stale.value" class="source-note">上次结果 · 按当前身份重新生成后可继续换批</p>

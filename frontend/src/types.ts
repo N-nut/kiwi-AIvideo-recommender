@@ -22,6 +22,13 @@ export interface Work {
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }
 export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string; batch?:{state:'ready'|'exhausted';has_more:boolean|null}|null;history?:{status:'saved';id:string}|{status:'failed'}|null }
+export type RefinementValue=string|boolean;
+export interface RefinementChange {kind:'added'|'removed'|'replaced';target:string;before:RefinementValue[];after:RefinementValue[]}
+export interface RefinementPreserved {target:string;values:RefinementValue[]}
+export interface RefinementResponse {
+  request_id:string;status:'ready'|'no_change'|'needs_confirmation';base_revision:number;preferences:Preferences|null;
+  changes:RefinementChange[];preserved:RefinementPreserved[];issues:string[];mode:'baseline'|'live';timings_ms:Record<string,number>;usage:{calls:number;tokens:number};
+}
 export interface HistorySummary {id:string;query:string;created_at:string;count:number;mode:string;preferences:Preferences;titles:string[]}
 export interface HistoryDetail extends HistorySummary {warnings:string[];items:{id:string;title:string;available:boolean;changed:boolean;work:Work|null}[]}
 export type FeedbackStatus='not_interested'|'watched';

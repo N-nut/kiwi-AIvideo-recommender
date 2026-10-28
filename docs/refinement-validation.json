@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-28",
+  "mode": "baseline",
+  "database": "refinement-mvrv5yx9.db",
+  "synthetic_works": 9,
+  "checks": [
+    "first parsing is not an executed baseline; explicit first recommendation activates refinement",
+    "understanding and Esc do not generate; append applies only after a separate confirmation",
+    "successive adjustments use the committed base and canceled exclusions never return",
+    "repeated conditions do not generate or reset next-batch exclusions",
+    "failed generation keeps the old cards and conditions, with a working explicit retry",
+    "unknown mixed clauses remain uncommitted; manual review and keyboard confirmation remain separate",
+    "review fits desktop, tablet and narrow phones, supports keyboard Esc, and has disabled pointer feedback",
+    "leaving discovery retains committed preferences and text; returning never restores a dismissed prompt",
+    "login clears prior context; confirmed private refinement saves its current text and full preferences",
+    "refresh clears unsaved adjustment context instead of silently restoring it"
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    }
+  ],
+  "page_errors": [],
+  "synthetic_accounts": true
+}

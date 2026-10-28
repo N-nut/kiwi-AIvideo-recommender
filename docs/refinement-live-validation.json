@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-28T16:30:00.236149+08:00",
+  "mode": "live",
+  "model": "deepseek-chat",
+  "prompt_version": "kiwi-refine-2026-10-28-v2",
+  "synthetic_preferences": true,
+  "embedding_calls": 0,
+  "cases": [
+    {
+      "text": "加点重生",
+      "expected": "ready",
+      "status": "ready",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1660,
+      "elapsed_ms": 1123.35
+    },
+    {
+      "text": "一定要节奏快",
+      "expected": "ready",
+      "status": "ready",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1662,
+      "elapsed_ms": 866.24
+    },
+    {
+      "text": "偏好题材改成都市，其他不变",
+      "expected": "ready",
+      "status": "ready",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1678,
+      "elapsed_ms": 541.29
+    },
+    {
+      "text": "取消不要后宫",
+      "expected": "ready",
+      "status": "ready",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1663,
+      "elapsed_ms": 767.28
+    },
+    {
+      "text": "加点修仙",
+      "expected": "no_change",
+      "status": "no_change",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1661,
+      "elapsed_ms": 633.73
+    },
+    {
+      "text": "加点重生，必须完结",
+      "expected": "needs_confirmation",
+      "status": "needs_confirmation",
+      "passed": true,
+      "calls": 1,
+      "tokens": 1668,
+      "elapsed_ms": 691.42
+    }
+  ],
+  "passed": true,
+  "usage": {
+    "calls": 6,
+    "tokens": 9992
+  }
+}

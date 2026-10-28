@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from pydantic import ValidationError
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -19,7 +20,8 @@ from .catalog import CatalogManager
 from .database import Work, initialize, make_database, public_work
 from .providers import BaselineAI, LiveAI, ProviderError
 from .repository import array_has
-from .schemas import ContentType, HomeRecommendationResponse, ParseRequest, RecommendationRequest, RefreshRequest
+from .schemas import ContentType, HomeRecommendationResponse, ParseRequest, RecommendationRequest, RefreshRequest, RefinementPlan, RefinementRequest, RefinementResponse
+from .refinement import InvalidRefinementOutput, merge_refinement, normalize
 from .service import recommend
 from .auth import AuthManager, get_current_user, problem, protect_write, router as auth_router
 from .favorites import router as favorites_router
@@ -75,7 +77,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
         def finish(response):
             response.headers["X-Request-ID"] = request.state.request_id
-            if private or request.url.path in {"/api/v1/home/recommendations", "/api/v1/recommendations"} or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
+            if private or request.url.path in {"/api/v1/home/recommendations", "/api/v1/recommendations", "/api/v1/preferences/refine"} or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
                 response.headers["Cache-Control"] = "no-store"
             return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.
@@ -88,7 +90,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
                     return finish(JSONResponse(status_code=413, content={"error": {"code": "payload_too_large", "message": "请求内容过长"}, "request_id": request.state.request_id}))
                 chunks.append(chunk)
             request._body = b"".join(chunks)
-        if private and request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        if (private or request.url.path == "/api/v1/preferences/refine") and request.method in ("POST", "PUT", "PATCH", "DELETE"):
             try:
                 protect_write(request)
                 if (request.method in ("PUT", "DELETE") or request.url.path.endswith("/logout")) and request._body:
@@ -164,6 +166,28 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id), settings.request_timeout)
         log.info(json.dumps({"request_id": result["request_id"], "stage_ms": result["timings_ms"], "candidates": len(result["candidate_ids"]), "mode": settings.ai_mode, "usage": result["usage"]}))
         return result
+
+    @app.post("/api/v1/preferences/refine", response_model=RefinementResponse)
+    async def refine(body: RefinementRequest, request: Request):
+        reject_query(request)
+        ip = request.client.host if request.client else "unknown"
+        app.state.auth.limiter.take(("preference_refine", ip), settings.preference_refine_ip_limit, 60)
+        provider = provider_factory()
+        base = normalize(body.base_preferences)
+        start = time.perf_counter()
+        try:
+            plan = await asyncio.wait_for(provider.refine(base, body.text), settings.request_timeout)
+            plan = RefinementPlan.model_validate(plan)
+            outcome = merge_refinement(base, body.text, plan)
+        except (InvalidRefinementOutput, ValidationError) as exc:
+            raise ProviderError("refinement_invalid_output", "调整理解结果无效，请重试或手动调整") from exc
+        elapsed = round((time.perf_counter() - start) * 1000, 2)
+        usage = {"calls": provider.calls, "tokens": provider.tokens}
+        log.info(json.dumps({"request_id": request.state.request_id, "mode": settings.ai_mode,
+                             "status": outcome["status"], "base_revision": body.base_revision,
+                             "operations": len(plan.operations), "elapsed_ms": elapsed, "usage": usage}))
+        return {"request_id": request.state.request_id, "base_revision": body.base_revision,
+                **outcome, "mode": settings.ai_mode, "timings_ms": {"refine": elapsed}, "usage": usage}
 
     @app.post("/api/v1/me/recommendations")
     async def private_recommendations(body: RecommendationRequest, request: Request, user=Depends(get_current_user)):

@@ -88,13 +88,15 @@ npm.cmd --prefix frontend run dev
 
 手工导入中重复且一致的 ID 跳过，同批冲突或疑似同名作品报错；网页来源同步按来源 ID 保留同名条目，不自动合并。整批校验或向量化失败时不提交部分更新。将 `approved` 改回 `pending` 也需显式 `--update`。
 
+已完成首次片单或合法空结果后，可在“继续调整”输入“加点重生”“偏好题材改成都市，其他不变”“取消不要后宫”，先理解、核对变化，再点击“确认调整并推荐”。修改主需求会重新开始；换一批只沿用已生效条件。游客可用，登录后的成功非空片单沿用账号历史保存。
+
 ## 测试与评测
 
 ```powershell
 npm.cmd run check
 npm.cmd test
 npm.cmd run build
-.\.venv\Scripts\python.exe -m pytest backend -q
+.\.venv\Scripts\python.exe -X utf8 -m pytest backend -q
 npm.cmd --prefix frontend test
 npm.cmd run build:app
 node scripts/test-postgres.mjs

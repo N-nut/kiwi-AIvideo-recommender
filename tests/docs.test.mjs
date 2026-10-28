@@ -10,12 +10,12 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
-test('连续调整产品进入技术确认阶段，规则与验收仍覆盖继承、差异、失败和账号边界',async()=>{
+test('连续调整已实现，产品规则与验收覆盖继承、差异、失败和账号边界',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const section=product.match(/^### 3\.13 连续调整推荐（技术方案待确认，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
-  assert.ok(section,'产品应明确技术待确认与功能未实现状态');
-  assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 技术方案已补充，待用户确认；功能尚未实现 \|/);
-  for(const text of ['尚未实现','当前有效偏好＋本次调整描述','合法空结果','每次最多 300 字符',
+  const section=product.match(/^### 3\.13 连续调整推荐（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
+  assert.ok(section,'产品应明确已实现和验证边界');
+  assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 已实现增量理解、差异核对、成功后生效与失败保留；完成本地和有限真实模型验证 \|/);
+  for(const text of ['本节已实现','当前有效偏好＋本次调整描述','合法空结果','每次最多 300 字符',
     '保持不变／新增／替换／取消','调整后的完整偏好','确认调整并推荐','放弃本次调整',
     '不改变当前有效条件','失败则保留旧基准','条件没有变化','去重记录',
     '未被明确提及的条件全部保留','必须条件和明确排除项不能','未知事实',
@@ -23,29 +23,29 @@ test('连续调整产品进入技术确认阶段，规则与验收仍覆盖继�
     '不持久化完整对话','游客','切换账号','迟到','弹出旧核对框']) {
     assert.ok(section.includes(text),`连续调整草案缺少：${text}`);
   }
-  const acceptance=product.match(/^### 6\.4 连续调整推荐验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];
-  assert.ok(acceptance,'草案必须带有后续功能验收标准');
+  const acceptance=product.match(/^### 6\.4 连续调整推荐验收（已实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];
+  assert.ok(acceptance,'实现应保留验收编号和验证边界');
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
-  assert.ok(acceptance.includes('尚无本功能'));
-  assert.match(product,/技术方案对应的产品基线：v2\.14/);
+  assert.ok(acceptance.includes('有限真实模型样例'));
+  assert.match(product,/技术方案对应的产品基线：v2\.15/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.4[^\n]+\[产品设计文档 v2\.14\]/m);
-  assert.match(technical,/^## 16\. 连续调整推荐技术方案（待确认，未实现）/m);
-  assert.ok(product.includes('经用户明确同意后，才开始具体实现'));
+  assert.match(technical,/^版本：v3\.5[^\n]+\[产品设计文档 v2\.15\]/m);
+  assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
+  assert.ok(product.includes('已按用户的实施要求完成'));
 });
 
-test('连续调整技术选择对齐简历、锁定依赖、原有接口和待实现验收',async()=>{
+test('连续调整技术选择对齐简历、锁定依赖、原有接口和实现验收',async()=>{
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const section=technicalSection(technical,16);
-  assert.match(section,/^## 16\. 连续调整推荐技术方案（待确认，未实现）/);
+  assert.match(section,/^## 16\. 连续调整推荐技术方案（已实现）/);
   for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','Python + FastAPI + LangChain 结构化输出 + 现有 Vue 3',
     '不把学习经历或仓库现成代码等同于已经熟练掌握全部工具','Checkpointer','Store','不新增数据库表',
     'ChatPromptTemplate','PydanticOutputParser','extra="forbid"','最多 20 个','old_values','evidence',
     '逐字引用只是必要条件','整个调整不生效','POST /api/v1/preferences/refine','24,000 字节','Cache-Control: no-store',
     'PREFERENCE_REFINE_IP_LIMIT','refinement_invalid_output','base_revision','no_change','needs_confirmation',
     'applyRefinement(candidate, text)','committedPreferences / baseRevision','finally','永久卡住按钮',
-    'auth.scope()','latestRequest()','空 `exclude_work_ids`','本次最多 300 字符','无变化','尚无本功能通过数量']) {
+    'auth.scope()','latestRequest()','空 `exclude_work_ids`','本次最多 300 字符','无变化','16.11']) {
     assert.ok(section.includes(text),`连续调整技术方案缺少：${text}`);
   }
   const lock=await readFile(new URL('../backend/requirements.lock',import.meta.url),'utf8');
@@ -57,9 +57,9 @@ test('连续调整技术选择对齐简历、锁定依赖、原有接口和待�
   const providers=await readFile(new URL('../backend/kiwi/providers.py',import.meta.url),'utf8');
   const batches=await readFile(new URL('../frontend/src/useRecommendationBatches.ts',import.meta.url),'utf8');
   assert.ok(main.includes('/api/v1/preferences/parse'));assert.ok(providers.includes('不继承历史'));
-  assert.ok(batches.includes('if(first){reset();snapshot.value='),'暂存方案应基于实际先 reset 的当前实现');
+  assert.ok(batches.includes('applyRefinement:')&&batches.includes('committedPreferences:'),'调整应使用已执行基准和独立暂存提交路径');
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const criteria=product.match(/^### 6\.4 连续调整推荐验收（待实现）([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(criteria);
+  const criteria=product.match(/^### 6\.4 连续调整推荐验收（已实现）([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(criteria);
   const ids=[...criteria.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   const mapping=section.slice(section.indexOf('### 16.9'));
   for(const id of ids)assert.match(mapping,new RegExp(`^\\| ${id} \\|`,'m'),`技术方案缺少 ${id} 验证设计`);
@@ -100,6 +100,19 @@ test('连续调整协议示例保留原约束、区分候选和提交，状态�
   const forbidden=new Set(['user_id','password','token','cookie','conversation_id','messages','history_id']);
   function inspect(value){if(Array.isArray(value))value.forEach(inspect);else if(value&&typeof value==='object')for(const [key,nested] of Object.entries(value)){assert.ok(!forbidden.has(key),`协议示例不应携带 ${key}`);inspect(nested);}}
   examples.forEach(inspect);
+});
+
+test('连续调整交付含纯函数、前端状态、共享样例与独立实际验证证据',async()=>{
+  for(const path of ['backend/kiwi/refinement.py','backend/tests/test_refinement.py','frontend/src/useRefinement.ts',
+    'frontend/src/components/RefinementComposer.vue','frontend/tests/refinement.test.ts','scripts/verify-refinement.mjs',
+    'scripts/verify-refinement-live.py','tests/fixtures/refinement-cases.json'])assert.ok((await stat(new URL('../'+path,import.meta.url))).isFile(),path);
+  const browser=JSON.parse(await readFile(new URL('../docs/refinement-validation.json',import.meta.url),'utf8'));
+  assert.equal(browser.mode,'baseline');assert.equal(browser.synthetic_accounts,true);assert.equal(browser.checks.length,10);
+  assert.deepEqual(browser.viewports.map(v=>v.width),[320,390,768,1440]);assert.deepEqual(browser.page_errors,[]);
+  const live=JSON.parse(await readFile(new URL('../docs/refinement-live-validation.json',import.meta.url),'utf8'));
+  assert.equal(live.mode,'live');assert.equal(live.synthetic_preferences,true);assert.equal(live.embedding_calls,0);assert.equal(live.passed,true);
+  assert.equal(live.cases.length,6);assert.ok(live.cases.every(row=>row.passed&&row.calls>=1&&row.calls<=2&&row.tokens>0));
+  assert.equal(live.usage.calls,live.cases.reduce((sum,row)=>sum+row.calls,0));
 });
 
 test('历史片单契约对应服务端快照、隐私、迁移与再次确认', async () => {

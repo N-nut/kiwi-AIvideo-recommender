@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool, StrictStr, field_validator, model_validator
 
 GENRES = ["修仙", "玄幻", "都市", "末世", "科幻", "悬疑", "恋爱", "古风", "搞笑", "武侠"]
 THEMES = ["逆袭", "复仇", "重生", "穿越", "系统", "成长", "冒险", "经营", "治愈", "战斗"]
@@ -97,6 +97,94 @@ class RecommendationRequest(StrictModel):
     def unique_exclusions(self):
         self.exclude_work_ids = list(dict.fromkeys(self.exclude_work_ids))
         return self
+
+
+RefinementTarget = Literal[
+    "soft.genres", "soft.themes", "soft.pace", "required.genres", "required.themes",
+    "required.pace", "required.harem", "required.romance", "required.tragic",
+    "excluded_features", "excluded_genres",
+]
+RefinementValue = StrictStr | StrictBool
+
+
+class RefinementRequest(StrictModel):
+    base_preferences: Preferences
+    text: str = Field(strict=True, min_length=1, max_length=300)
+    base_revision: int = Field(strict=True, ge=1, le=2_147_483_647)
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def strip_text(cls, value):
+        return value.strip() if type(value) is str else value
+
+    @model_validator(mode="after")
+    def valid_base(self):
+        base = self.base_preferences
+        if not base.meaningful or base.conflicts or base.unresolved_constraints:
+            raise ValueError("请先确认并执行有效偏好")
+        return self
+
+
+class RefinementOperation(StrictModel):
+    target: RefinementTarget
+    values: list[RefinementValue] = Field(min_length=1, max_length=20)
+    evidence: str = Field(strict=True, min_length=1, max_length=300)
+
+    @model_validator(mode="after")
+    def valid_values(self):
+        target = self.target
+        allowed = (GENRES if target.endswith("genres") else THEMES if target.endswith("themes")
+                   else ["快", "舒缓"] if target.endswith("pace") else
+                   ["harem", "romance", "tragic"] if target == "excluded_features" else [True, False])
+        for values in [self.values] + ([self.old_values] if hasattr(self, "old_values") else []):
+            if any(not any(type(v) is type(a) and v == a for a in allowed) for v in values):
+                raise ValueError("调整值超出目标白名单或类型不正确")
+        if not self.evidence.strip():
+            raise ValueError("调整证据不能为空")
+        return self
+
+
+class AddRefinement(RefinementOperation):
+    op: Literal["add"]
+
+
+class RemoveRefinement(RefinementOperation):
+    op: Literal["remove"]
+
+
+class ReplaceRefinement(RefinementOperation):
+    op: Literal["replace"]
+    old_values: list[RefinementValue] = Field(min_length=1, max_length=20)
+
+
+class RefinementPlan(StrictModel):
+    operations: list[Annotated[AddRefinement | RemoveRefinement | ReplaceRefinement, Field(discriminator="op")]] = Field(default_factory=list, max_length=20)
+    unresolved_constraints: list[Annotated[str, Field(strict=True, min_length=1, max_length=200)]] = Field(default_factory=list, max_length=10)
+
+
+class RefinementChange(StrictModel):
+    kind: Literal["added", "removed", "replaced"]
+    target: RefinementTarget
+    before: list[RefinementValue]
+    after: list[RefinementValue]
+
+
+class PreservedPreference(StrictModel):
+    target: RefinementTarget
+    values: list[RefinementValue]
+
+
+class RefinementResponse(StrictModel):
+    request_id: str
+    status: Literal["ready", "no_change", "needs_confirmation"]
+    base_revision: int
+    preferences: Preferences | None
+    changes: list[RefinementChange]
+    preserved: list[PreservedPreference]
+    issues: list[str]
+    mode: Literal["baseline", "live"]
+    timings_ms: dict[str, float]
+    usage: dict[str, int]
 
 
 class Evidence(StrictModel):

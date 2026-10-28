@@ -1,0 +1,13 @@
+{
+  "base": {"schema_version":1,"soft_preferences":{"genres":["修仙"],"themes":[],"pace":null},"required":[],"excluded_features":["harem"],"excluded_genres":[],"unresolved_constraints":[],"conflicts":[]},
+  "cases": [
+    {"text":"加点重生","status":"ready","target":"soft.themes","after":["重生"]},
+    {"text":"一定要节奏快","status":"ready","target":"required.pace","after":["快"]},
+    {"text":"偏好题材改成都市，其他不变","status":"ready","target":"soft.genres","after":["都市"]},
+    {"text":"取消不要后宫","status":"ready","target":"excluded_features","after":[]},
+    {"text":"加点修仙","status":"no_change"},
+    {"text":"再轻松一点","status":"needs_confirmation"},
+    {"text":"加点重生，必须完结","status":"needs_confirmation"},
+    {"text":"第二部不要了","status":"needs_confirmation"}
+  ]
+}
