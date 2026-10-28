@@ -3,7 +3,7 @@ import { reactive, ref, watch } from 'vue';
 import type { usePersonalSpace } from '../usePersonalSpace';
 import PresetAvatar from './PresetAvatar.vue';
 import presets from '../../../data/avatar-presets.json';
-const props=defineProps<{space:ReturnType<typeof usePersonalSpace>;logoutBusy:boolean}>();
+const props=defineProps<{space:ReturnType<typeof usePersonalSpace>;logoutBusy:boolean;canReview?:boolean}>();
 const emit=defineEmits<{navigate:[view:string];logout:[]}>();
 const {profile,summary,draft,dirty,profileLoading,summaryLoading,saving,profileError,summaryError,saveError,saveNotice,saveUnknown,fields,
   password,passwordOpen,passwordBusy,passwordError,passwordFields}=props.space;
@@ -34,6 +34,7 @@ const passwordLabels={current_password:'当前密码',new_password:'新密码',c
         </form>
       </section>
       <div class="space-side">
+      <section class="space-card"><div class="space-card-heading"><h2>资料纠错</h2><button class="text-button" @click="emit('navigate','corrections')">我的纠错 ↗</button></div><p class="source-note">查看本人提交的问题及处理结果。</p><button v-if="canReview" class="secondary-button" @click="emit('navigate','review')">资料审核工作台</button></section>
       <section class="space-card summary-card" aria-labelledby="summary-title" :aria-busy="summaryLoading">
         <div class="space-card-heading"><h2 id="summary-title">收藏概览</h2><button class="text-button" :disabled="summaryLoading" @click="space.loadSummary">刷新概览</button></div>
         <p v-if="summaryLoading&&!summary" class="space-loading" role="status">正在整理收藏…</p>

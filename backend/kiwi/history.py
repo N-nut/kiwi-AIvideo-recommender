@@ -29,6 +29,7 @@ def save_history(request, user, body, result):
             if work is None or work.review_status != "approved" or any(item[key] != value for key, value in public_work(work).items()):
                 raise problem(409, "catalog_changed", "作品资料已变化，请重新生成；上次片单已保留")
             item["catalog_hash"] = work.content_hash
+            item["catalog_revision"] = work.review_state.revision
         row = RecommendationHistory(id=uuid.uuid4().hex, user_id=user["id"], query=body.query.strip(),
                                     snapshot=snapshot, created_at=utc_now())
         session.add(row)
@@ -79,8 +80,8 @@ def history_detail(history_id: HistoryID, request: Request, user: CurrentUser):
             work = works.get(item["id"])
             available = work is not None and work.review_status == "approved"
             items.append({"id": item["id"], "title": item["title"], "available": available,
-                "changed": available and work.content_hash != item["catalog_hash"],
-                "work": {key: value for key, value in item.items() if key != "catalog_hash"} if available else None})
+                "changed": available and (work.content_hash != item["catalog_hash"] or item.get("catalog_revision", work.review_state.revision) != work.review_state.revision),
+                "work": {key: value for key, value in item.items() if key not in {"catalog_hash", "catalog_revision"}} if available else None})
         return {"request_id": request.state.request_id, "history": {**summary(row), "warnings": row.snapshot["warnings"], "items": items}}
 
 

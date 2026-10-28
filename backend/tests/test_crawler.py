@@ -152,6 +152,28 @@ async def test_source_import_discards_untyped_rows_before_embedding_and_preserve
     with database() as session: assert session.get(Work,known['id']).source_meta['content_type']=='漫剧'
 
 
+async def test_unknown_source_for_human_confirmed_work_reaches_protected_merge(database):
+    from kiwi.database import WorkReviewState
+    from kiwi.reviewing import source_fingerprint
+    settings=Settings(ai_mode='baseline');known=normalize(category_row(),'comic-drama','2026-10-22')
+    await import_works([known],database,None,settings,source_sync=True)
+    with database.begin() as session:
+        state=session.get(WorkReviewState,known['id'])
+        state.confirmed_fields={'content_type':{'value':'漫剧','source_value':'漫剧','source_fingerprint':source_fingerprint(known,'content_type'),
+            'basis':{'kind':'quoted','source_url':known['source_url'],'source_text':'该作品属于漫剧。','quote':'属于漫剧'},'evidence_id':'manual-type'}}
+    raw=rank_row();raw['tags']=['玄幻']
+    transport=httpx.MockTransport(lambda request:httpx.Response(200,text=page([raw],'rank')))
+    rows,metadata=await collect_hongguo(RefreshRequest(categories=[],include_hot_rank=True),transport=transport,
+        preserve_work_ids={known['id']},settings=settings)
+    assert len(rows)==1 and rows[0]['source_meta']['content_type']=='未标注' and metadata['filtered_unclassified']==0
+    await import_works(rows,database,None,settings,source_sync=True,update=True)
+    with database() as session:
+        work=session.get(Work,known['id'])
+        assert work.source_meta['content_type']=='漫剧'
+        assert 'content_type' in work.review_state.recheck_fields
+        assert work.review_state.source_snapshot['data']['source_meta']['content_type']=='未标注'
+
+
 @pytest.mark.parametrize('limit_kind',['source','pages','works'])
 async def test_normal_limits_are_reported_without_claiming_full_sync(limit_kind):
     settings=Settings(crawl_pages_per_source=1 if limit_kind=='source' else 5,

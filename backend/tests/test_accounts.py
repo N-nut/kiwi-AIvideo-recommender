@@ -291,7 +291,7 @@ def test_sqlite_upgrade_preserves_old_data_and_matches_alembic(tmp_path,record,m
     command.upgrade(migration,'0002')
     engine,sessions=make_database(url)
     with sessions.begin() as session:
-        session.add(Work(**record,content_hash='a'*64,embedding=[0.0]*1024))
+        session.execute(Work.__table__.insert().values(**record,content_hash='a'*64,embedding=[0.0]*1024))
         session.add(CatalogRefresh(id='latest',payload={'status':'succeeded'}))
     with engine.connect() as conn:before=conn.execute(text('select * from works')).all()
     initialize(engine)
@@ -318,8 +318,9 @@ def test_sqlite_upgrade_preserves_old_data_and_matches_alembic(tmp_path,record,m
 
 def test_cascade_and_secure_cookie(accounts,record):
     register(accounts);add_work(accounts,record);accounts.put('/api/v1/me/favorites/work-a')
-    with accounts.app.state.sessions.begin() as session:session.execute(delete(Work).where(Work.id=='work-a'))
-    assert accounts.get('/api/v1/me/favorites/ids').json()['relation_total']==0
+    with pytest.raises(IntegrityError):
+        with accounts.app.state.sessions.begin() as session:session.execute(delete(Work).where(Work.id=='work-a'))
+    assert accounts.get('/api/v1/me/favorites/ids').json()['relation_total']==1
     with accounts.app.state.sessions.begin() as session:session.execute(delete(User))
     with accounts.app.state.sessions() as session:assert session.scalar(select(func.count()).select_from(UserSession))==0
     settings=Settings(ai_mode='baseline',database_url='sqlite:///:memory:',auth_cookie_secure=True,auth_allowed_origins='https://kiwi.example')

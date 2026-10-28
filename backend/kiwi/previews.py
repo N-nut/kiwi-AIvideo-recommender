@@ -81,13 +81,16 @@ def preview_metadata(request: Request, work_id: str = PathParam(min_length=1, ma
             raise problem(404, "work_not_found", "作品不存在或不可用")
         kind = (work.source_meta or {}).get("content_type")
         row = session.get(WorkPreview, work_id)
+        hold = work.review_state is None or work.review_state.media_hold
         status = "not_applicable" if kind == "漫画" else "unavailable" if kind not in DRAMA_TYPES else row.status if row else "missing"
         if status == "ready" and not ready_file(row, settings):
+            status = "unavailable"
+        if hold and kind != "漫画":
             status = "unavailable"
         job = session.get(PreviewJob, work_id) if kind in DRAMA_TYPES else None
         service = session.get(CatalogRefresh, "preview-service") if job else None
         service_error = (service.payload or {}).get("error_code") if service else None
-        preparing = bool(settings.preview_auto_enabled and not service_error and job and job.status in ("pending", "running") and status != "ready")
+        preparing = bool(not hold and settings.preview_auto_enabled and not service_error and job and job.status in ("pending", "running") and status != "ready")
         if preparing:
             status = "pending"
         elif status != "ready" and job and (job.status == "unavailable" or service_error):
@@ -112,7 +115,7 @@ def preview_file(request: Request, asset_id: str = PathParam(pattern=ASSET_PATTE
         row = session.scalar(select(WorkPreview).join(Work, Work.id == WorkPreview.work_id).where(
             WorkPreview.asset_id == asset_id, WorkPreview.status == "ready", Work.review_status == "approved"))
         work = session.get(Work, row.work_id) if row else None
-        if not row or (work.source_meta or {}).get("content_type") not in DRAMA_TYPES or not ready_file(row, settings):
+        if not row or not work.review_state or work.review_state.media_hold or (work.source_meta or {}).get("content_type") not in DRAMA_TYPES or not ready_file(row, settings):
             raise problem(404, "media_not_found", "片段不存在或已不可用")
         path = media_file(settings.media_root, row.video_path if kind == "video" else row.poster_path, asset_id, kind)
         if not path:

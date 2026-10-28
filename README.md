@@ -51,7 +51,7 @@ npm.cmd --prefix frontend run dev
 
 后端固定来源为 [真人剧](https://hongguoduanju.com/category/real-drama)、[漫剧](https://hongguoduanju.com/category/comic-drama)、[AI剧](https://hongguoduanju.com/category/ai-drama)、[漫画](https://hongguoduanju.com/category/comic) 和 [热播榜](https://hongguoduanju.com/rank/hot-drama)。默认每来源最多 **5 页**，整个任务最多 **25 页、500 部**；达到上限明确显示限定范围。每次从第一页开始，按来源分页信息停止，不承诺全站全量。漫画独立保存标识、章节与阅读链接；分类信息优先于榜单缺失标签。
 
-本次限定范围的页面、字段校验和向量化全部成功后，一次事务新增或更新；**不会删除本次未出现的作品**。同名不同来源 ID 保留，人工拒绝状态不会被自动批准。页面、模型或超时失败保留原库。仅热度、封面或日期变化复用向量，检索文本变化才重新索引。状态存入数据库；本版按本地单进程服务设计，多实例调度与后台审核留待后续实现。
+本次限定范围的页面、字段校验和向量化全部成功后，一次事务新增或更新；**不会删除本次未出现的作品**。同名不同来源 ID 保留，人工拒绝状态不会被自动批准。页面、模型或超时失败保留原库。仅热度、封面或日期变化复用向量，检索文本变化才重新索引。状态存入数据库；本版按本地单进程服务设计，多实例调度仍待后续实现，资料审核已按第 17 节接入。
 
 `POST /api/v1/catalog/refresh` 提交范围，`GET /api/v1/catalog/refresh` 查看状态。请求示例：
 
@@ -170,7 +170,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 ## 文档与原型
 
 - [产品设计](产品设计文档.md)、[技术方案](docs/技术方案.md)
-- 资料纠错与审核：[技术方案第 17 节](docs/技术方案.md#17-资料纠错与审核技术方案待确认未实现)待用户确认，功能尚未实现；不将方案或文档检查称为已完成人工审核。
+- 资料纠错与审核：[技术方案第 17 节](docs/技术方案.md#17-资料纠错与审核技术方案已实现)已实现；普通注册默认无审核权，本地合成验证不等于完成独立人工审核。
 - [实现与验收记录](docs/实现与验收.md)、[数据审核说明](data/审核说明.md)
 - 历史评测（旧作品库）：[标签基线](docs/evaluation-baseline.json)、[真实向量](docs/evaluation-live.json)
 - 当前库自动检查：[标签基线](docs/evaluation-hongguo-baseline.json)、[真实向量](docs/evaluation-hongguo-live.json)；参考标注仍待人工复核。
@@ -181,7 +181,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 口味推荐区在桌面并列展示需求与分组偏好，超宽屏输入区限制为 680px，手机改为单列。点击“理解我的口味”先识别偏好，成功后弹出核对提示，可直接确认生成、手动调整或关闭；关闭不会生成片单，下方明确显示等待确认。只有确认生成时才显示作品骨架；解析失败、冲突及暂不支持的条件分别提示，不混作片单加载失败。
 
-“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0009，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
+“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0010，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
 
 ## 个人空间
 
@@ -189,7 +189,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 修改密码需当前密码及两次新密码，成功后当前和其他会话全部撤销，重新登录后资料和收藏保留；普通退出只结束当前会话。页面切换、保存资料和改密均保留已输入的观剧需求、偏好及片单。断网后的写入结果可能尚未确认，资料可重新读取核对，密码需重新登录验证。
 
-旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0009，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。本次不删除原有注册时间记录，个人接口不返回该字段。
+旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0010，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。本次不删除原有注册时间记录，个人接口不返回该字段。
 
 可先运行 `.\.venv\Scripts\python.exe scripts/verify-personal-space-upgrade.py`，将当前 SQLite 以只读方式复制到独立文件并验证升级、重复启动、原值指纹和外键完整性，结果见 [升级验证](docs/personal-space-upgrade-validation.json)。副本及自动备份含私有账号数据，保留在 `.local` 且不进入 Git；验证不会更改业务库。历史 `create_all()` 安装的迁移版本可能落后于实际表结构，只有完整结构校验通过后才校正基线。
 
@@ -197,10 +197,25 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 轮播已改为主海报配缩略海报导航和柔和封面背景；宽屏展开缩略图，手机保留精简布局。“不感兴趣／已看过”改为两个独立图标，悬停或键盘焦点显示说明；禁用及提交中的按钮统一显示禁止点击指针。个人空间使用独立左右列，右侧收藏、反馈、兴趣卡片紧凑排列，手机单列。
 
-照片处理新增锁定依赖 Pillow 13.0.0；更新已有环境可执行 `.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock`。SQLite 自动备份后升级至 0009，PostgreSQL 启动前执行 `alembic -c backend/alembic.ini upgrade head`。原照片在浏览器压缩为头像后才随原有 JSON 资料接口上传，继续使用 24,000 字节正文上限；服务端校验并重新编码，不保留照片元数据。复现布局、照片保存与账号隔离验证：`node scripts/verify-profile-polish.mjs`；查看[浏览器验证](docs/profile-polish-browser-validation.json)及[实现记录](docs/实现与验收.md)。
+照片处理新增锁定依赖 Pillow 13.0.0；更新已有环境可执行 `.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock`。SQLite 自动备份后升级至 0010，PostgreSQL 启动前执行 `alembic -c backend/alembic.ini upgrade head`。原照片在浏览器压缩为头像后才随原有 JSON 资料接口上传，继续使用 24,000 字节正文上限；服务端校验并重新编码，不保留照片元数据。复现布局、照片保存与账号隔离验证：`node scripts/verify-profile-polish.mjs`；查看[浏览器验证](docs/profile-polish-browser-validation.json)及[实现记录](docs/实现与验收.md)。
 
 ## 历史片单
 
 登录后成功生成的非空片单会自动保存，“换一批”分别记录；从主导航或个人空间查看最近 100 份，包含当时的需求、确认偏好与推荐理由。查看不重新调用模型；“沿用偏好”会带回发现页供再次确认。支持确认删除单份历史，收藏和反馈继续保留。游客仍可正常生成，功能启用前与游客阶段的片单不追记。作品资料改变或不可用时有明确说明，历史详情和最新作品资料分别展示。
 
 本次新增迁移 0009，无新增依赖。SQLite 停止旧服务后按既有备份流程自动升级，PostgreSQL 先执行 `alembic -c backend/alembic.ini upgrade head`。复现浏览器验收：`node scripts/verify-history.mjs`；升级只读副本检查：`.\.venv\Scripts\python.exe -X utf8 scripts/verify-personal-space-upgrade.py --history`。见[产品要求 3.12](产品设计文档.md#312-历史片单已实现)、[技术方案第 15 节](docs/技术方案.md#15-历史片单技术方案已实现)、[浏览器报告](docs/history-browser-validation.json)和[升级报告](docs/history-upgrade-validation.json)。
+
+## 资料纠错与审核
+
+详情“资料有误？”在登录后打开纠错表单，用户再次确认才提交；提交不改变公共资料。个人空间“我的纠错”查看本人结果，指定审核者另有审核工作台，可核对来源与相关变更、采纳、未采纳、更新过期基准、主动建立核对单，以及暂停／恢复作品。公共详情只显示核对字段范围；人工未知值也受后续采集保护，不将未说明当作不存在。
+
+普通注册账号默认没有审核权。运维在本机用现有账号的真实 ID 明确授权或撤权，事件会保存理由；网页不开放角色自授，账号 ID 可由该账号登录后的 `/api/v1/auth/me` 响应核对：
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m kiwi reviewer --user-id <真实账号ID> --grant --reason "指定资料审核职责"
+.\.venv\Scripts\python.exe -X utf8 -m kiwi reviewer --user-id <真实账号ID> --revoke --reason "结束资料审核职责"
+```
+
+本功能新增 `0010_work_corrections.py`，无新增依赖；停止旧服务后重启，SQLite 识别已知结构、备份后自动升级至 0010；PostgreSQL 先执行 Alembic `upgrade head`。未给现有业务账号自动授权，也不更改简历。需要降级时先导出新增纠错与审计记录，降级会删除新表，不能作为无损回滚。
+
+网络结果未知时先核对回执和记录，若选择重试须保持同一操作标识。live 仅对需要的有效作品文本准备 Embedding，索引失败不发布；baseline 检索文本变化会清除旧索引，明确只使用标签基线。本人说明不送入模型、索引或其他用户推荐。复现隔离浏览器检查：`node scripts/verify-corrections.mjs`，使用全新合成数据库、三个测试账号及 baseline 模式。报告见[纠错审核验证](docs/corrections-browser-validation.json)，实际边界见[实现记录](docs/实现与验收.md)。原生 PostgreSQL 多连接竞争和线上部署仍待实测。

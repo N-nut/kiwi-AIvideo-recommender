@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool, StrictStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StrictBool, StrictStr, ValidationInfo, field_validator, model_validator
 
 GENRES = ["修仙", "玄幻", "都市", "末世", "科幻", "悬疑", "恋爱", "古风", "搞笑", "武侠"]
 THEMES = ["逆袭", "复仇", "重生", "穿越", "系统", "成长", "冒险", "经营", "治愈", "战斗"]
@@ -238,14 +238,16 @@ class WorkInput(StrictModel):
     review_note: str = Field(default="", max_length=500)
 
     @model_validator(mode="after")
-    def grounded(self):
+    def grounded(self, info: ValidationInfo):
         self.title = self.title.strip()
         if not self.title:
             raise ValueError("名称不能为空")
         if len({e.id for e in self.evidence}) != len(self.evidence):
             raise ValueError("证据标识重复")
         for e in self.evidence:
-            if e.quote not in self.original_intro:
+            manual = (info.context or {}).get("review_evidence", {}).get(e.id)
+            trusted = manual and manual["field"] == e.field and manual["quote"] == e.quote and manual["value"] == getattr(self, e.field)
+            if e.quote not in self.original_intro and not trusted:
                 raise ValueError(f"证据不在原始资料中：{e.id}")
         for field in ["summary", "genres", "themes", "pace", "harem", "romance", "tragic"]:
             value = getattr(self, field)
@@ -274,6 +276,13 @@ class ReasonBatch(StrictModel):
     items: list[GeneratedReason] = Field(max_length=3)
 
 
+class PublicReview(StrictModel):
+    revision: int
+    state: Literal["automatic", "partial", "recheck", "unavailable"]
+    confirmed_fields: list[str]
+    recheck_fields: list[str]
+
+
 class PublicWork(StrictModel):
     id: str
     title: str
@@ -291,6 +300,7 @@ class PublicWork(StrictModel):
     collected_at: str
     evidence: list[Evidence]
     review_note: str
+    review: PublicReview
 
 
 class MatchedFeatures(StrictModel):

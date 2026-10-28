@@ -75,7 +75,7 @@ def test_snapshots_survive_changed_deleted_and_withdrawn_works(accounts,record):
     with accounts.app.state.sessions.begin() as session:
         changed=session.get(Work,'work-0');changed.summary='现有资料已经更新';changed.content_hash='b'*64
         session.get(Work,'work-1').review_status='pending'
-        session.delete(session.get(Work,'work-2'))
+        session.get(Work,'work-2').review_status='rejected'
     detail=accounts.get('/api/v1/me/history/'+id).json()['history']
     assert detail['count']==3
     assert detail['items'][0]['changed'] and detail['items'][0]['work']['summary']==record['summary']
@@ -184,7 +184,7 @@ def test_0008_upgrade_backup_repeat_and_failure_rollback(tmp_path,monkeypatch):
     assert list(tmp_path.glob('*.before-profiles-*.bak'))
     initialize(engine);initialize(engine)
     with engine.connect() as connection:
-        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar()=='0009'
+        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar()=='0010'
         assert connection.exec_driver_sql('SELECT password_hash,avatar_id FROM users').one()==('unchanged','kiwi-sun')
         assert connection.exec_driver_sql('PRAGMA foreign_key_check').all()==[]
     engine.dispose()

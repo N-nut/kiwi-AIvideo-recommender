@@ -214,7 +214,7 @@ async def read_page(client, url):
             raise CrawlError("来源页面编码异常") from exc
 
 
-async def collect_hongguo(scope=None, progress=None, *, settings=None, transport=None):
+async def collect_hongguo(scope=None, progress=None, *, settings=None, transport=None, preserve_work_ids=()):
     scope = RefreshRequest.model_validate(scope or {}) if not isinstance(scope, RefreshRequest) else scope
     settings = settings or Settings()
     keys = list(scope.categories) + (["rank"] if scope.include_hot_rank else [])
@@ -269,7 +269,7 @@ async def collect_hongguo(scope=None, progress=None, *, settings=None, transport
                 coverage = "limited"
     # Resolve types from all selected category pages before discarding unknowns.
     # A genre such as 修仙 is not evidence for a content type such as 漫剧.
-    cleaned=[row for row in rows.values() if row['source_meta']['content_type'] in CATEGORY_LABELS.values()]
+    cleaned=[row for row in rows.values() if row['source_meta']['content_type'] in CATEGORY_LABELS.values() or row['id'] in preserve_work_ids]
     filtered=len(rows)-len(cleaned)
     if progress:
         progress({'stage':'cleaning','message':f'资料清洗完成，跳过 {filtered} 部类型不明作品',

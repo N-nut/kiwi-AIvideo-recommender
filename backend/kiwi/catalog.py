@@ -64,7 +64,11 @@ class CatalogManager:
         started = time.perf_counter()
         try:
             async with asyncio.timeout(self.settings.refresh_timeout):
-                rows, metadata = await asyncio.wait_for(self.collector(scope, lambda data: self.save(**data), settings=self.settings),
+                collector_options = {"settings":self.settings}
+                if self.collector is collect_hongguo:
+                    with self.sessions() as session:
+                        collector_options['preserve_work_ids'] = {w.id for w in session.scalars(select(Work)) if w.review_state and w.review_state.confirmed_fields}
+                rows, metadata = await asyncio.wait_for(self.collector(scope, lambda data: self.save(**data), **collector_options),
                                                        timeout=min(self.settings.crawl_timeout, self.settings.refresh_timeout))
                 can_embed = self.settings.ai_mode == "live" and bool(self.settings.dashscope_api_key.get_secret_value())
                 settings = self.settings if can_embed else self.settings.model_copy(update={"ai_mode": "baseline"})

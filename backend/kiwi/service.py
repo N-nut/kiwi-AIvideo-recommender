@@ -10,6 +10,7 @@ from .providers import ProviderError
 from .repository import retrieve
 from .rules import FEATURE_NAMES, satisfies, soft_matches
 from .schemas import ReasonBatch
+from .reviewing import revision
 
 
 def template_reason(work, prefs):
@@ -111,7 +112,7 @@ async def recommend(request, sessions, provider, settings, request_id, user_id=N
         unique = {w.id: (w, score, similarity) for w, score, similarity in scored}
         selected = list(unique.values())[:request.limit]
         exhausted = exhausted and len(unique) <= request.limit
-        hashes = {w.id: w.content_hash for w, _, _ in selected}
+        hashes = {w.id: (w.content_hash, revision(w)) for w, _, _ in selected}
     result["batch"] = {"state": "exhausted" if exhausted else "ready", "has_more": False if exhausted else None}
     result["timings_ms"]["retrieval"] = round((time.perf_counter() - tick) * 1000, 2)
     if not selected:
@@ -137,7 +138,7 @@ async def recommend(request, sessions, provider, settings, request_id, user_id=N
     with sessions() as session:
         if user_id is not None and feedback_versions(session, user_id) != versions:
             raise problem(409, "feedback_changed", "反馈已变化，请重新生成；上次片单已保留")
-        current = dict(session.execute(select(Work.id, Work.content_hash).where(Work.id.in_(hashes), Work.review_status == "approved")).all()) if hashes else {}
+        current = {w.id:(w.content_hash, revision(w)) for w in session.scalars(select(Work).where(Work.id.in_(hashes), Work.review_status == "approved"))} if hashes else {}
         if current != hashes:
             raise problem(409, "catalog_changed", "作品资料已变化，请重新生成；上次片单已保留")
     result["timings_ms"]["total"] = round((time.perf_counter() - start) * 1000, 2)

@@ -18,12 +18,13 @@ def home_work(record, id="favorite", genres=None, themes=None, kind="漫剧", **
                cover_url="https://example.org/cover.jpg", source_meta={"provider": "hongguo", "content_type": kind,
                "tags": ["未知标签"], "pages": ["https://example.org/source"]})
     row.update(overrides)
+    row['review']={'revision':1,'state':'automatic','confirmed_fields':[],'recheck_fields':[]}
     return row
 
 
 def seed(client, rows):
     with client.app.state.sessions.begin() as session:
-        session.add_all(Work(**{**row, "content_hash": "a"*64}) for row in rows)
+        session.add_all(Work(**{**{k:v for k,v in row.items() if k!='review'}, "content_hash": "a"*64}) for row in rows)
 
 
 def test_normalized_counts_deduplicate_each_work_and_ignore_unknown_tags(record):

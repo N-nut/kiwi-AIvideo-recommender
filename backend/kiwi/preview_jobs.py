@@ -16,13 +16,14 @@ from .previews import DRAMA_TYPES, ready_file
 from .file_lock import FileLock as WorkerLock
 from .importer import import_works
 from .providers import LiveAI
+from .corrections import catalog_write, lock_work
 
 log = logging.getLogger("kiwi")
 USAGE = "用户指定从红果公开第一集截取用于本机开发验证；不代表来源方授予对外传播许可。"
 
 
 def eligible(work):
-    return work.review_status == "approved" and (work.source_meta or {}).get("content_type") in DRAMA_TYPES
+    return work.review_status == "approved" and work.review_state is not None and not work.review_state.media_hold and not work.review_state.manual_hold and (work.source_meta or {}).get("content_type") in DRAMA_TYPES
 
 
 def source_key(work):
@@ -59,7 +60,7 @@ class PreviewManager:
                 if not eligible(work):
                     continue
                 counts["total"] += 1
-                if preview and ready_file(preview, self.settings):
+                if preview and ready_file(preview, self.settings) and (not job or job.source_key == source_key(work)):
                     counts["ready"] += 1
                 elif job and job.status in ("pending", "running", "unavailable"):
                     counts[job.status] += 1
@@ -72,20 +73,23 @@ class PreviewManager:
         if not self.settings.preview_auto_enabled:
             return 0
         queued = 0
-        with self.sessions.begin() as session:
-            works = session.scalars(select(Work).order_by(Work.id)).all()
-            for work in works:
-                job = session.get(PreviewJob, work.id)
+        with catalog_write(self.sessions) as session:
+            work_ids = session.scalars(select(Work.id).order_by(Work.id)).all()
+            for work_id in work_ids:
+                work, _ = lock_work(session,work_id)
+                job = session.scalar(select(PreviewJob).where(PreviewJob.work_id == work.id).with_for_update())
                 if not eligible(work):
                     if job and job.status in ("running", "pending"):
                         job.status = "unavailable"; job.error_code = "work_unavailable"
                     continue
                 preview = session.get(WorkPreview, work.id)
                 key = source_key(work)
-                if preview and ready_file(preview, self.settings):
+                if preview and ready_file(preview, self.settings) and (not job or job.source_key == key):
                     if job:
                         job.status = "ready"; job.error_code = None; job.retry_at = None
                     continue
+                if preview and job and job.source_key != key:
+                    preview.status = "unavailable"
                 if job and job.status == "running":
                     continue
                 if not job or job.source_key != key or (retry_failed and job.status == "unavailable" and job.error_code != 'source_http_404') or job.status == "ready":
@@ -108,9 +112,13 @@ class PreviewManager:
             if not self.lock.acquire():
                 return
             try:
-                with self.sessions.begin() as session:
-                    for job in session.scalars(select(PreviewJob).where(PreviewJob.status == "running")):
-                        job.status = "pending"; job.retry_at = None; job.attempts = max(0, job.attempts - 1)
+                with catalog_write(self.sessions) as session:
+                    ids = session.scalars(select(PreviewJob.work_id).where(PreviewJob.status == "running").order_by(PreviewJob.work_id)).all()
+                    for work_id in ids:
+                        work,_ = lock_work(session,work_id)
+                        job = session.scalar(select(PreviewJob).where(PreviewJob.work_id == work_id).with_for_update())
+                        job.status = "pending" if eligible(work) else "unavailable"
+                        job.retry_at = None; job.attempts = max(0, job.attempts - 1)
                 self.enqueue()
                 if not self.state()["pending"]:
                     self.lock.close()
@@ -139,12 +147,16 @@ class PreviewManager:
 
     async def claim(self):
         async with self.claim_lock:
-            with self.sessions.begin() as session:
+            with catalog_write(self.sessions) as session:
                 timestamp = utc_now()
-                for job in session.scalars(select(PreviewJob).where(PreviewJob.status == "pending").order_by(PreviewJob.attempts, PreviewJob.created_at, PreviewJob.work_id)):
+                ids = session.scalars(select(PreviewJob.work_id).where(PreviewJob.status == "pending").order_by(PreviewJob.work_id)).all()
+                for work_id in ids:
+                    work, _ = lock_work(session,work_id)
+                    job = session.scalar(select(PreviewJob).where(PreviewJob.work_id == work_id).with_for_update())
+                    if not job or job.status != 'pending':
+                        continue
                     if job.retry_at and as_utc(job.retry_at) > timestamp:
                         continue
-                    work = session.get(Work, job.work_id)
                     if not work or not eligible(work):
                         job.status = "unavailable"; job.error_code = "work_unavailable"
                         continue
@@ -153,9 +165,13 @@ class PreviewManager:
         return None
 
     def finish(self, work_id, code=None, interrupted=False):
-        with self.sessions.begin() as session:
-            job = session.get(PreviewJob, work_id)
+        with catalog_write(self.sessions) as session:
+            work, _ = lock_work(session,work_id)
+            job = session.scalar(select(PreviewJob).where(PreviewJob.work_id == work_id).with_for_update())
             if not job:
+                return
+            if not work or not eligible(work):
+                job.status, job.error_code = "unavailable", "work_unavailable"
                 return
             job.updated_at = utc_now(); job.error_code = code
             if interrupted:
@@ -178,7 +194,7 @@ class PreviewManager:
             await self.source.download(info, folder / "source.mp4")
             with self.sessions() as session:
                 current=session.get(Work,work['id'])
-                if not current or not eligible(current) or source_key(current)!=source_key(work):
+                if not current or not eligible(current) or source_key(current)!=source_key(work) or current.review_state.revision != work['review']['revision']:
                     raise MediaError('work','source_changed')
             manifest = folder / "manifest.json"
             manifest.write_text(json.dumps([{"work_id":work["id"], "source_file":"source.mp4", "source_page_url":info["source_page_url"],
@@ -187,7 +203,8 @@ class PreviewManager:
             async with self.publish_lock:
                 # Existing offline importer provides bounded processing, measured
                 # validation, immutable publication and transactional replacement.
-                task = asyncio.create_task(asyncio.to_thread(import_previews, manifest, self.sessions, self.settings))
+                task = asyncio.create_task(asyncio.to_thread(import_previews, manifest, self.sessions, self.settings,
+                    expected_work_versions={work['id']:work['review']['revision']}))
                 try:
                     result = await asyncio.shield(task)
                 except asyncio.CancelledError:
@@ -202,18 +219,18 @@ class PreviewManager:
             raise MediaError('source', 'episode_identity_mismatch')
         with self.sessions() as session:
             current = session.get(Work, work['id'])
-            if not current or not eligible(current) or source_key(current) != source_key(work):
+            if not current or not eligible(current) or source_key(current) != source_key(work) or current.review_state.revision != work['review']['revision']:
                 raise MediaError('source', 'source_changed')
             expected_hash = current.content_hash
         can_embed = self.settings.ai_mode == 'live' and bool(self.settings.dashscope_api_key.get_secret_value())
         settings = self.settings if can_embed else self.settings.model_copy(update={'ai_mode':'baseline'})
         await import_works([row], self.sessions, self.provider_factory() if can_embed else None,
-            settings, update=True, source_sync=True, expected_hashes={work['id']:expected_hash})
-        with self.sessions.begin() as session:
-            current = session.get(Work, work['id'])
+            settings, update=True, source_sync=True, expected_hashes={work['id']:expected_hash}, expected_revisions={work['id']:work['review']['revision']})
+        with catalog_write(self.sessions) as session:
+            current,_ = lock_work(session,work['id'])
             if not current or not eligible(current) or current.title != row['title']:
                 raise MediaError('source', 'source_changed')
-            job = session.get(PreviewJob, work['id'])
+            job = session.scalar(select(PreviewJob).where(PreviewJob.work_id == work['id']).with_for_update())
             if job:
                 job.source_key = source_key(current)
             return public_work(current)

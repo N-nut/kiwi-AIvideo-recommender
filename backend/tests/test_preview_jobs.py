@@ -28,7 +28,7 @@ def jobs(tmp_path,record,monkeypatch):
     import kiwi.preview_jobs as module
     monkeypatch.setattr(module,'run_tool',lambda *_: b'tool version')
     calls=[]
-    def publish(manifest,sessions,settings):
+    def publish(manifest,sessions,settings,expected_work_versions=None):
         item=json.loads(Path(manifest).read_text())[0]
         calls.append(item['work_id'])
         ready(sessions,settings.media_root,work_id=item['work_id'],asset=uuid4().hex)

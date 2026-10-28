@@ -28,9 +28,9 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.18/);
+  assert.match(product,/技术方案对应的产品基线：v2\.19/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.7[^\n]+\[产品设计文档 v2\.18\]/m);
+  assert.match(technical,/^版本：v3\.8[^\n]+\[产品设计文档 v2\.19\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('已按用户的实施要求完成'));
 });
@@ -43,30 +43,30 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
   assert.ok(technical.includes('详情完全移除“判断与推荐依据”'));assert.ok(technical.includes('`detailReason`'));
 });
 
-test('资料纠错与审核进入技术确认阶段，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
+test('资料纠错与审核已实现，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.18[^\n]+状态：[^\n]*技术方案待确认/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.18/);
-  assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 技术方案已补充，待用户确认；功能尚未实现 \|/);
-  const section=product.match(/^### 3\.14 资料纠错与审核（技术方案待确认，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
+  assert.match(product,/^版本：v2\.19[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.19/);
+  assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 已实现纠错、本人记录、授权审核、人工保护与停用恢复；验证边界见实现记录 \|/);
+  const section=product.match(/^### 3\.14 资料纠错与审核（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
     '1～500 字符','一部作品的一类问题','当前资料暂不改变','我的纠错','只有事先指定的审核者',
     '普通注册用户默认没有审核权','两名审核者','过期表单','待审核／已采纳／未采纳／待重新核对',
     '未提及不等于不存在','只修正一个标签不能把整部作品标为已全面审核','人工确认字段','旧向量',
     '历史保留当时的偏好和推荐理由','连续调整基准','不自动合并或删除作品','本人及授权审核者',
     '网络结果未知','迟到响应','320／390','不恢复已移除的“判断与推荐依据”','首版不自动调用模型作事实裁决'])assert.ok(section.includes(text),text);
-  const acceptance=product.match(/^### 6\.5 资料纠错与审核验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(acceptance);
+  const acceptance=product.match(/^### 6\.5 资料纠错与审核验收（已实现，本地验证）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(acceptance);
   const ids=[...acceptance.matchAll(/^\| (Q\d{2}) \|/gm)].map(([,id])=>id);
-  assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('尚无本功能'));
-  assert.ok(product.includes('技术方案经用户明确同意后才实施'));
+  assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('原生 PostgreSQL 多连接竞争'));
+  assert.ok(product.includes('已按用户继续实现要求完成'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.7[^\n]+\[产品设计文档 v2\.18\]/m);
-  assert.match(technical,/^## 17\. 资料纠错与审核技术方案（待确认，未实现）/m);
+  assert.match(technical,/^版本：v3\.8[^\n]+\[产品设计文档 v2\.19\]/m);
+  assert.match(technical,/^## 17\. 资料纠错与审核技术方案（已实现）/m);
 });
 
-test('纠错审核技术路线对应已核对简历，明确计划结构、写路径和待实现边界',async()=>{
+test('纠错审核实现对应简历路线、受保护写路径和验证边界',async()=>{
   const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),17);
-  assert.match(section,/^## 17\. 资料纠错与审核技术方案（待确认，未实现）/);
+  assert.match(section,/^## 17\. 资料纠错与审核技术方案（已实现）/);
   for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','简历连续性对话.md',
     'Python + FastAPI + Pydantic + SQLAlchemy 事务 + 现有 Vue 3','MySQL','人工介入','随实施补学与边界',
     '不引入 LangGraph interrupt','不新增 Redis、Celery','不更新简历','work_corrections','work_review_state','work_review_events',
@@ -76,14 +76,14 @@ test('纠错审核技术路线对应已核对简历，明确计划结构、写�
     'context 不来自请求 JSON','客户端 submitted/verified/trusted 标记均无授权效力','人工确认的 null',
     'source_sync','--reembed','session.merge()','media_hold','GET／HEAD','content_hash, review_revision',
     'catalog_revision','旧快照缺此字段','auth.scope()','latestRequest()','不写 localStorage','不恢复“判断与推荐依据”',
-    '普通 SQLite 单连接或 PGlite','不执行上述新业务测试、迁移或付费模型调用'])assert.ok(section.includes(text),text);
+    '普通 SQLite 单连接或 PGlite','已执行新业务测试'])assert.ok(section.includes(text),text);
   const lock=await readFile(new URL('../backend/requirements.lock',import.meta.url),'utf8');
   for(const [packageName,label] of [['fastapi','FastAPI'],['pydantic','Pydantic'],['SQLAlchemy','SQLAlchemy'],['alembic','Alembic']]){
     const version=lock.match(new RegExp(`^${packageName}==([^\\r\\n]+)`,'m'))?.[1];assert.ok(version&&section.includes(`${label} ${version}`),packageName);
   }
   const migration=await readFile(new URL('../backend/migrations/versions/0009_recommendation_history.py',import.meta.url),'utf8');
   assert.match(migration,/revision = "0009"/);
-  assert.equal(await stat(new URL('../backend/migrations/versions/0010_work_corrections.py',import.meta.url)).then(()=>true,()=>false),false,'文档阶段不得建立新迁移');
+  assert.equal(await stat(new URL('../backend/migrations/versions/0010_work_corrections.py',import.meta.url)).then(()=>true,()=>false),true,'实现必须提供 0010 升级');
 });
 
 test('纠错审核六组协议例子保持待审不写作品、未知不当作false与核对范围最小公开',async()=>{

@@ -87,8 +87,9 @@ def test_private_boundaries_pagination_snapshot_unavailable_and_cascade(accounts
     register(accounts,'User_B');assert accounts.get('/api/v1/me/feedback').json()['total'] == 0
     login(accounts);assert accounts.get('/api/v1/me/feedback').json()['total'] == 3
     assert save(accounts,'work-1',status='watched',revision=None).status_code == 200
-    with accounts.app.state.sessions.begin() as session:session.execute(delete(Work).where(Work.id=='work-1'))
-    assert accounts.get('/api/v1/me/feedback').json()['total'] == 2
+    with accounts.app.state.sessions.begin() as session:session.get(Work,'work-1').review_status='pending'
+    assert accounts.get('/api/v1/me/feedback').json()['total'] == 3
+    assert next(r for r in accounts.get('/api/v1/me/feedback').json()['items'] if r['work_id']=='work-1')['available'] is False
 
 
 def test_feedback_write_protection_limits_and_database_rollback(accounts, record):
@@ -209,13 +210,13 @@ async def test_live_changed_state_and_provider_failure(record,database,change):
 def test_0006_upgrade_backup_repeat_constraints_and_original_values(tmp_path,monkeypatch,record,versioned):
     path=tmp_path/'feedback-upgrade.db';url=f'sqlite:///{path.as_posix()}';monkeypatch.setenv('DATABASE_URL',url)
     config=Config(str(ROOT/'backend/alembic.ini'));command.upgrade(config,'0006');engine,sessions=make_database(url)
-    with sessions.begin() as session:session.add(Work(**record,content_hash='a'*64,embedding=[0.0]*1024))
+    with sessions.begin() as session:session.execute(Work.__table__.insert().values(**record,content_hash='a'*64,embedding=[0.0]*1024))
     with engine.begin() as connection:
         before=connection.exec_driver_sql('SELECT * FROM works').all()
         if not versioned:connection.exec_driver_sql('DROP TABLE alembic_version')
     initialize(engine);initialize(engine)
     with engine.connect() as connection:
-        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0009'
+        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar() == '0010'
         assert connection.exec_driver_sql('SELECT * FROM works').all() == before
         assert connection.exec_driver_sql('PRAGMA foreign_key_check').all() == []
     schema=inspect(engine)

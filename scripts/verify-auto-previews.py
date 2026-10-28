@@ -26,7 +26,7 @@ def main():
         if not work:
             work=session.scalar(select(Work).where(Work.review_status=='approved',Work.source_meta['content_type'].as_string()=='漫剧').order_by(Work.id))
         assert work
-        row={**public_work(work),'review_status':'approved'}
+        row={**{k:v for k,v in public_work(work).items() if k!='review'},'review_status':'approved'}
     engine.dispose()
     folder=ROOT/'.local'/f'auto-preview-validation-{uuid4().hex[:10]}'
     folder.mkdir(parents=True)

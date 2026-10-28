@@ -18,6 +18,7 @@ export interface Work {
   pace: string | null; harem: boolean | null; romance: boolean | null; tragic: boolean | null;
   source_url: string; collected_at: string; evidence: Evidence[]; review_note: string;
   cover_url?: string | null;
+  review?: {revision:number;state:'automatic'|'partial'|'recheck'|'unavailable';confirmed_fields:string[];recheck_fields:string[]};
   source_meta?: { provider: 'hongguo'; content_type: '真人剧' | '漫剧' | 'AI剧' | '漫画' | '未标注'; tags: string[]; pages: string[]; categories?: string[]; rank: number | null; heat: string | null; episode_count: number | null; chapter_count?: number | null; classification_note?: string } | null;
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }

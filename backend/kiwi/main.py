@@ -31,6 +31,8 @@ from .preview_jobs import PreviewManager
 from .personal_space import router as personal_space_router
 from .feedback import reject_query, router as feedback_router
 from .history import save_history, router as history_router
+from .corrections import router as corrections_router
+from .reviews import Inflight, router as reviews_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -63,12 +65,16 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     app.state.catalog = catalog
     app.state.previews = previews
     app.state.auth = AuthManager(sessions, settings)
+    app.state.provider_factory = provider_factory
+    app.state.review_inflight = Inflight()
     app.include_router(auth_router)
     app.include_router(favorites_router)
     app.include_router(previews_router)
     app.include_router(personal_space_router)
     app.include_router(feedback_router)
     app.include_router(history_router)
+    app.include_router(corrections_router)
+    app.include_router(reviews_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -77,7 +83,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         private = request.url.path.startswith(("/api/v1/auth/", "/api/v1/me/"))
         def finish(response):
             response.headers["X-Request-ID"] = request.state.request_id
-            if private or request.url.path in {"/api/v1/home/recommendations", "/api/v1/recommendations", "/api/v1/preferences/refine"} or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
+            if private or request.url.path.startswith("/api/v1/works") or request.url.path in {"/api/v1/home/recommendations", "/api/v1/recommendations", "/api/v1/preferences/refine"} or request.url.path.startswith("/api/v1/media/previews/") or request.url.path.endswith("/preview"):
                 response.headers["Cache-Control"] = "no-store"
             return response
         # A real byte limit also covers chunked requests; do not trust Content-Length.

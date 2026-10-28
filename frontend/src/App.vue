@@ -28,6 +28,12 @@ import PreferenceEditor from './components/PreferenceEditor.vue';
 import PreferenceSummary from './components/PreferenceSummary.vue';
 import FeaturedCarousel from './components/FeaturedCarousel.vue';
 import CatalogPagination from './components/CatalogPagination.vue';
+import CorrectionDialog from './components/CorrectionDialog.vue';
+import MyCorrections from './components/MyCorrections.vue';
+import ReviewWorkspace from './components/ReviewWorkspace.vue';
+import { useReview } from './useReview';
+import { reviewLabel } from './corrections';
+import './corrections.css';
 import logo from '../../demo/assets/kiwi-logo.svg';
 
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
@@ -35,6 +41,7 @@ const prefs = ref<Preferences>(emptyPreferences());
 const parsed = ref(false); const parseBusy = ref(false); const phase = ref(''); const error = ref('');
 const requestKind=ref<'parse'|'recommend'|null>(null);
 const auth=useAuth();
+const review=useReview(auth);
 const feedback=useFeedback(auth);
 const batches=useRecommendationBatches(auth,feedback);
 const {result}=batches;
@@ -70,6 +77,9 @@ const detailLane = latestRequest();
 function closeDetailMetadata(){detailLane.cancel();detailMedia.value=null;}
 let backdropPressed = false;
 const draft = ref<Preferences>(emptyPreferences()); const selected = ref<Work|null>(null); const pendingFavorite = ref('');
+const correctionTarget=ref<Work|null>(null),pendingCorrection=ref<Work|null>(null),relatedCorrection=ref('');
+const newDetail=ref<Work|null>(null),detailUnavailable=ref(false),detailUpdateError=ref(''),detailStaleReason=ref(false);
+const detailLatestLane=latestRequest();let detailTimer:ReturnType<typeof setInterval>|undefined;
 const pendingView=ref('');
 const toast = ref(''); let toastTimer: ReturnType<typeof setTimeout>;
 const lane = latestRequest();
@@ -188,7 +198,7 @@ async function updateCatalog() {
 }
 function setView(value:string) {
   preview.value?.close();
-  if(['favorites','personal-space','feedback','history'].includes(value)&&auth.state.value!=='authenticated') {
+  if(['favorites','personal-space','feedback','history','corrections','review'].includes(value)&&auth.state.value!=='authenticated') {
     if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=value;login.value?.open();}
     else message(auth.state.value==='checking'?'正在检查登录状态':'请先重试检查登录状态');
     return;
@@ -206,6 +216,8 @@ function showDetail(work:Work) {
   selected.value=work;
   detail.value?.showModal();
   closeDetailMetadata();
+  newDetail.value=null;detailUnavailable.value=false;detailUpdateError.value='';detailStaleReason.value=false;relatedCorrection.value='';
+  void checkDetail();clearInterval(detailTimer);detailTimer=setInterval(()=>{if(document.visibilityState==='visible')void checkDetail();},15000);
   if(work.source_meta?.content_type!=='漫画') {
     const request=detailLane.begin();
     void getPreview(work.id,request.signal).then(result=>{
@@ -216,6 +228,15 @@ function showDetail(work:Work) {
     if(detailScroll.value) detailScroll.value.scrollTop=0;
   });
 }
+async function checkDetail(){const work=selected.value;if(!work||!detail.value?.open)return;const request=detailLatestLane.begin();try{const current=await api<Work>(`/api/v1/works/${encodeURIComponent(work.id)}`,undefined,request.signal);if(!request.current()||!detail.value?.open||selected.value?.id!==work.id||current.id!==work.id)return;detailUpdateError.value='';if(work.review?.revision&&current.review?.revision!==work.review.revision){newDetail.value=current;detailMedia.value=null;preview.value?.close();}else if(!work.review&&current.review)selected.value={...work,...current};}
+catch(exc){if(request.current()&&detail.value?.open){if(exc instanceof APIError&&exc.status===404){detailUnavailable.value=true;detailMedia.value=null;preview.value?.close();}else detailUpdateError.value='最新资料读取失败，请重试核对。';}}}
+function closeCurrentDetail(){backdropPressed=false;closeDetailMetadata();detailLatestLane.cancel();clearInterval(detailTimer);}
+function reloadDetail(){if(!newDetail.value)return;const old=selected.value;selected.value={...newDetail.value,reason:old?.reason,reason_mode:old?.reason_mode};detailStaleReason.value=!!old?.reason;newDetail.value=null;}
+function refreshVisibleDetail(){if(detail.value?.open&&document.visibilityState==='visible')void checkDetail();}
+function openCorrection(){if(!selected.value||detailUnavailable.value||newDetail.value)return;if(auth.state.value==='guest'){pendingCorrection.value=selected.value;login.value?.open();}else if(auth.state.value==='authenticated')correctionTarget.value=selected.value;else message('请先检查登录状态');}
+async function correctionRecordDetail(id:string,relatedId:string){const account=auth.scope();try{const work=await account.request<Work>(`/api/v1/works/${encodeURIComponent(id)}`);if(account.current()){showDetail(work);relatedCorrection.value=relatedId;}}catch(exc){if(account.current())message(exc instanceof Error?exc.message:'资料读取失败');}}
+function correctionRecords(){correctionTarget.value=null;detail.value?.close();setView('corrections');}
+async function reviewChanged(){home.invalidate();space.invalidate();preview.value?.close();void shelf.reload();await checkDetail();}
 function openPreview(work: Work, anchor: HTMLElement, immediate: boolean) { preview.value?.enter(work,anchor,immediate); }
 function outsideDetail(event: MouseEvent | PointerEvent) {
   const dialog=event.currentTarget as HTMLDialogElement;
@@ -229,7 +250,7 @@ function finishDetailClick(event: MouseEvent) {
   backdropPressed=false;
 }
 function openAccount() {pendingFavorite.value='';pendingView.value='personal-space';if(auth.state.value==='error') void auth.restore();else setView('personal-space');}
-function dismissLogin() {pendingFavorite.value='';pendingView.value='';pendingFeedback.value=null;}
+function dismissLogin() {pendingFavorite.value='';pendingView.value='';pendingFeedback.value=null;pendingCorrection.value=null;}
 async function favorite(id:string) {
   if(auth.state.value==='guest') {preview.value?.close();pendingFavorite.value=id;pendingView.value='';login.value?.open();return;}
   if(auth.state.value!=='authenticated') {message('请先检查登录状态');return;}
@@ -240,8 +261,9 @@ async function favorite(id:string) {
   else if(library.error.value) message(library.error.value);
 }
 async function loginSuccess() {
-  const id=pendingFavorite.value,go=pendingView.value,continuation=pendingFeedback.value,account=auth.scope();dismissLogin();
+  const id=pendingFavorite.value,go=pendingView.value,continuation=pendingFeedback.value,correction=pendingCorrection.value,account=auth.scope();dismissLogin();
   await library.load();if(!account.current()) return;
+  if(correction){try{const current=await account.request<Work>(`/api/v1/works/${encodeURIComponent(correction.id)}`);if(account.current()){showDetail(current);correctionTarget.value=current;}}catch(exc){if(account.current())message(exc instanceof Error?exc.message:'原作品已不可用，请重新选择');}return;}
   if(go&&!id) shelf.setView(go);
   if(id) {
     if(!library.ready.value) {message('已登录，收藏状态加载失败，请重试后再次收藏');return;}
@@ -308,14 +330,15 @@ function restartBatch(){pendingFeedback.value=null;undo.value=null;demandVersion
 async function logout() {if(await auth.logout()){preview.value?.close();detail.value?.close();shelf.setView('discover');message('已退出');}}
 const favoriteBusy=(id:string)=>auth.busy.value||auth.state.value==='checking'||auth.state.value==='authenticated'&&(library.loading.value||library.pending.value.has(id));
 const favoriteReady=computed(()=>auth.state.value==='guest'||auth.state.value==='authenticated'&&library.ready.value);
-watch(auth.generation,()=>{historyId.value='';historyWorkLane.cancel();undo.value=null;if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(['feedback','history'].includes(view.value))shelf.setView('discover');}},{flush:'post'});
+watch(auth.generation,()=>{historyId.value='';historyWorkLane.cancel();undo.value=null;correctionTarget.value=null;relatedCorrection.value='';if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(['feedback','history','corrections','review'].includes(view.value))shelf.setView('discover');}},{flush:'post'});
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
+  window.addEventListener('focus',refreshVisibleDetail);document.addEventListener('visibilitychange',refreshVisibleDetail);
   void auth.restore();
   void loadCatalog();
   void loadHealth(); void pollRefresh();
 });
-onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLane.cancel();closeDetailMetadata();clearTimeout(toastTimer);clearTimeout(refreshTimer);});
+onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLane.cancel();closeCurrentDetail();clearTimeout(toastTimer);clearTimeout(refreshTimer);window.removeEventListener('focus',refreshVisibleDetail);document.removeEventListener('visibilitychange',refreshVisibleDetail);});
 </script>
 
 <template>
@@ -425,7 +448,9 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
         </div>
       </section>
     </section>
-    <PersonalSpace v-else-if="view==='personal-space'" :key="auth.generation.value" :space="space" :logout-busy="auth.busy.value" @navigate="setView" @logout="logout"/>
+    <PersonalSpace v-else-if="view==='personal-space'" :key="auth.generation.value" :space="space" :logout-busy="auth.busy.value" :can-review="review.canReview.value" @navigate="setView" @logout="logout"/>
+    <MyCorrections v-else-if="view==='corrections'&&auth.state.value==='authenticated'" :key="auth.generation.value" :auth="auth" @back="setView('personal-space')" @detail="correctionRecordDetail"/>
+    <ReviewWorkspace v-else-if="view==='review'&&auth.state.value==='authenticated'" :key="auth.generation.value" :auth="auth" :review="review" @back="setView('personal-space')" @changed="reviewChanged"/>
     <HistoryPanel v-else-if="view==='history'&&auth.state.value==='authenticated'" :key="auth.generation.value" :auth="auth" :initial-id="historyId" @back="setView('personal-space')" @discover="setView('discover')" @reuse="reuseHistory" @detail="historyWorkDetail"/>
     <FeedbackManager v-else-if="view==='feedback'" :key="auth.generation.value" :auth="auth" :feedback="feedback" @back="setView('personal-space')" @remove="removeFeedback"/>
     <section v-else class="catalog-section">
@@ -475,22 +500,27 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
   <WorkPreview ref="preview" />
-  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="backdropPressed=false;closeDetailMetadata()">
+  <dialog ref="detail" class="work-dialog" aria-labelledby="detail-title" @pointerdown="startDetailClick" @click="finishDetailClick" @close="closeCurrentDetail">
     <template v-if="selected">
       <header class="dialog-heading work-dialog-header"><h2 id="detail-title">{{selected.title}}</h2><button class="icon-button" @click="detail?.close()" aria-label="关闭作品详情">×</button></header>
       <div ref="detailScroll" class="work-dialog-scroll" tabindex="0" role="region" aria-label="作品资料内容">
+        <p v-if="detailUnavailable" class="detail-update-notice" role="alert">该作品资料已暂停使用，保留原片单快照。请重新选择可用作品。</p>
+        <p v-else-if="newDetail" class="detail-update-notice" role="status">资料已更新，以下保留打开时的内容。<button @click="reloadDetail">重新加载最新资料</button></p>
+        <p v-if="detailUpdateError" role="alert">{{detailUpdateError}} <button @click="checkDetail">重试核对</button></p>
+        <p class="detail-review-state">{{reviewLabel(selected)}}</p>
         <div v-if="selected.source_meta" class="source-facts"><span>{{selected.source_meta.content_type}}</span><span v-if="selected.source_meta.episode_count">全 {{selected.source_meta.episode_count}} 集</span><span v-if="selected.source_meta.chapter_count">{{selected.source_meta.chapter_count}} 话</span><span v-if="selected.source_meta.rank">热播榜 #{{selected.source_meta.rank}}</span></div>
         <p v-if="selected.source_meta?.classification_note" class="source-note">{{selected.source_meta.classification_note}}</p>
         <p class="detail-intro">{{detailIntro}}</p>
         <div v-if="detailTags.length" class="detail-tags"><span v-for="tag in detailTags" :key="tag">{{tag}}</span></div>
         <div v-if="selected.harem!==null||selected.romance!==null||selected.tragic!==null" class="facts"><span v-if="selected.harem!==null">后宫：{{featureText(selected.harem)}}</span><span v-if="selected.romance!==null">感情线：{{featureText(selected.romance)}}</span><span v-if="selected.tragic!==null">虐心：{{featureText(selected.tragic)}}</span></div>
-        <section v-if="detailReason" class="detail-reason" aria-label="本次推荐理由"><h3>本次推荐理由</h3><p>{{detailReason}}</p></section>
-        <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}<br>{{selected.source_meta?.provider==='hongguo'?'自动整理，待人工核对。':selected.review_note}}</p>
+        <section v-if="detailReason" class="detail-reason" aria-label="本次推荐理由"><h3>{{detailStaleReason?'生成时理由（资料已更新）':'本次推荐理由'}}</h3><p>{{detailReason}}</p></section>
+        <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}</p>
         <p v-if="detailMedia" class="source-note preview-source"><a :href="detailMedia.source_page_url" target="_blank" rel="noopener noreferrer">{{detailMedia.clip_kind==='trailer'?'真实预告来源':'试看片段来源'}}</a> · {{Math.round(detailMedia.duration_ms/1000)}} 秒</p>
       </div>
-      <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="primary-button" :disabled="favoriteBusy(selected.id)" @click="favorite(selected.id)">{{favoriteBusy(selected.id)?'正在处理…':!favoriteReady?'重试收藏状态':library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>
+      <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="text-button" :disabled="detailUnavailable||!!newDetail" @click="openCorrection">资料有误？</button><button class="primary-button" :disabled="detailUnavailable||favoriteBusy(selected.id)" @click="favorite(selected.id)">{{favoriteBusy(selected.id)?'正在处理…':!favoriteReady?'重试收藏状态':library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>
     </template>
   </dialog>
+  <CorrectionDialog v-if="correctionTarget" :auth="auth" :work="correctionTarget" :related-id="relatedCorrection" @close="correctionTarget=null" @records="correctionRecords"/>
   <AuthDialog ref="login" :auth="auth" @success="loginSuccess" @dismiss="dismissLogin" />
   <div class="toast" role="status" aria-live="polite" v-if="toast">{{toast}}</div>
 </template>

@@ -10,7 +10,12 @@ from .providers import BaselineAI, LiveAI
 
 def main():
     parser = argparse.ArgumentParser(description="Kiwi database and data import")
-    parser.add_argument("command", choices=["init", "import", "import-previews", "sync-previews"])
+    parser.add_argument("command", choices=["init", "import", "import-previews", "sync-previews", "reviewer"])
+    parser.add_argument("--user-id")
+    role = parser.add_mutually_exclusive_group()
+    role.add_argument("--grant", action="store_true")
+    role.add_argument("--revoke", action="store_true")
+    parser.add_argument("--reason")
     parser.add_argument("--retry-failed", action="store_true")
     parser.add_argument("--manifest")
     parser.add_argument("--check-only", action="store_true")
@@ -40,6 +45,15 @@ def main():
         finally:
             engine.dispose()
     initialize(engine)
+    if args.command == "reviewer":
+        if not args.user_id or not args.reason or not (args.grant or args.revoke):
+            parser.error("reviewer requires --user-id, --grant/--revoke and --reason")
+        from .reviews import set_reviewer
+        try:
+            print(json.dumps(set_reviewer(sessions, settings, args.user_id, args.grant, args.reason), ensure_ascii=False))
+        finally:
+            engine.dispose()
+        return
     if args.command == "sync-previews":
         from .preview_jobs import PreviewManager
         async def sync():

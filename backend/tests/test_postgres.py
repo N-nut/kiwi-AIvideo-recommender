@@ -115,7 +115,7 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
             try:
                 parity_user_id=client.get('/api/v1/auth/me').json()['user']['id']
                 with client.app.state.sessions() as session:
-                    copies=[{**public_work(work),'review_status':work.review_status,'content_hash':work.content_hash} for work in session.scalars(select(Work))]
+                    copies=[{**{k:v for k,v in public_work(work).items() if k!='review'},'review_status':work.review_status,'content_hash':work.content_hash} for work in session.scalars(select(Work))]
                     favorite_ids=session.scalars(select(Favorite.work_id).where(Favorite.user_id==parity_user_id)).all()
                 with sqlite_sessions.begin() as session:
                     session.add(User(id='parity-user',username='parity',username_key='parity',password_hash='test-only',created_at=utc_now()))
@@ -183,6 +183,33 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
             assert client.delete('/api/v1/me/history/'+history_id).status_code==204
             assert client.get('/api/v1/me/history').json()['total']==0
             assert client.get('/api/v1/me/favorites').json()['total']==3
+            # The same review publication/receipt contract over PostgreSQL JSONB.
+            import uuid
+            from kiwi.reviews import set_reviewer
+            from test_accounts import add_work
+            review_record=copy.deepcopy(record);review_record['original_intro']='少年修仙，逆袭成长。'
+            for evidence in review_record['evidence']:evidence['quote']=review_record['original_intro']
+            add_work(client,review_record,'review-target')
+            submit={'operation_id':uuid.uuid4().hex,'work_id':'review-target','base_revision':1,'category':'plot_fact',
+                    'field':'harem','suggestion':{'kind':'unknown'},'description':'所列资料没有说明后宫'}
+            made=client.post('/api/v1/me/corrections',json=submit);assert made.status_code==201
+            report=made.json()['correction'];alias={**submit,'operation_id':uuid.uuid4().hex}
+            assert client.post('/api/v1/me/corrections',json=alias).json()['correction']['id']==report['id']
+            assert client.get('/api/v1/me/review/corrections').status_code==403
+            user_id=client.get('/api/v1/auth/me').json()['user']['id']
+            set_reviewer(client.app.state.sessions,client.app.state.settings,user_id,True,'isolated PostgreSQL review validation')
+            action={'operation_id':uuid.uuid4().hex,'action':'approve','expected_work_revision':1,
+                'expected_report_revision':report['revision'],'reason':'仅核对后宫字段并恢复未知',
+                'changes':[{'field':'harem','value':None,'basis':{'kind':'not_stated','source_url':review_record['source_url'],
+                    'source_text':review_record['original_intro'],'quote':None}}]}
+            endpoint='/api/v1/me/review/corrections/'+report['id']+'/actions'
+            approved=client.post(endpoint,json=action);assert approved.status_code==200,approved.text
+            assert approved.json()['work']['harem'] is None
+            assert approved.json()['work']['review']['confirmed_fields']==['harem']
+            assert client.post(endpoint,json=action).json()['replayed']
+            assert client.post('/api/v1/me/corrections',json=alias).json()['correction']['status']=='accepted'
+            set_reviewer(client.app.state.sessions,client.app.state.settings,user_id,False,'isolated revocation validation')
+            assert client.get('/api/v1/me/review/operations/'+action['operation_id']).status_code==403
             from test_personal_space import password_body, NEW_PASSWORD
             from test_accounts import PASSWORD
             assert client.post('/api/v1/me/password',json=password_body('wrong password')).status_code==400

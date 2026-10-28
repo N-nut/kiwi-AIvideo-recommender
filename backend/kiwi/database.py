@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, create_engine, event, inspect, select, text
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, create_engine, event, inspect, select, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 
@@ -36,6 +36,7 @@ class Work(Base):
     embedding_dimension: Mapped[int | None] = mapped_column(Integer, nullable=True)
     content_hash: Mapped[str] = mapped_column(String(64))
     embedded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_state: Mapped["WorkReviewState | None"] = relationship(lazy="selectin", uselist=False, passive_deletes="all")
 
 
 class WorkPreview(Base):
@@ -94,6 +95,7 @@ class User(Base):
     nickname: Mapped[str | None] = mapped_column(String(20), nullable=True)
     nickname_key: Mapped[str | None] = mapped_column(Text().with_variant(Text(collation="C"), "postgresql"), nullable=True)
     avatar_id: Mapped[str] = mapped_column(String(32), default="kiwi-default", server_default="kiwi-default")
+    is_reviewer: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     __table_args__ = (Index("uq_users_nickname_key", "nickname_key", unique=True),)
 
 
@@ -144,6 +146,82 @@ class RecommendationHistory(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class WorkReviewState(Base):
+    __tablename__ = "work_review_state"
+    __table_args__ = (CheckConstraint("revision >= 1 AND revision <= 2147483647", name="ck_review_revision"),)
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="RESTRICT"), primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    source_snapshot: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    confirmed_fields: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    recheck_fields: Mapped[list] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    manual_hold: Mapped[bool] = mapped_column(Boolean, default=False)
+    hold_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    media_hold: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class WorkCorrection(Base):
+    __tablename__ = "work_corrections"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending','accepted','rejected','needs_recheck')", name="ck_correction_status"),
+        CheckConstraint("origin IN ('user','reviewer')", name="ck_correction_origin"),
+        UniqueConstraint("submitter_id", "operation_id", name="uq_correction_operation"),
+        UniqueConstraint("submitter_id", "active_key", name="uq_correction_active"),
+        Index("ix_correction_owner_time", "submitter_id", "created_at", "id"),
+        Index("ix_correction_status_time", "status", "created_at", "id"),
+        Index("ix_correction_work_field", "work_id", "field"),
+    )
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    work_id: Mapped[str] = mapped_column(ForeignKey("works.id", ondelete="RESTRICT"))
+    submitter_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    operation_id: Mapped[str] = mapped_column(String(32))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    active_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    origin: Mapped[str] = mapped_column(String(16))
+    category: Mapped[str] = mapped_column(String(24))
+    field: Mapped[str] = mapped_column(String(24))
+    base_revision: Mapped[int] = mapped_column(Integer)
+    base_snapshot: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    suggestion: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    description: Mapped[str] = mapped_column(Text)
+    source_hint: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
+    related_correction_id: Mapped[str | None] = mapped_column(ForeignKey("work_corrections.id", ondelete="RESTRICT"), nullable=True)
+    status: Mapped[str] = mapped_column(String(16))
+    revision: Mapped[str] = mapped_column(String(32))
+    decision: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class WorkReviewEvent(Base):
+    __tablename__ = "work_review_events"
+    __table_args__ = (
+        UniqueConstraint("actor_key", "operation_id", name="uq_review_event_operation"),
+        CheckConstraint("(kind = 'permission' AND work_id IS NULL) OR (kind != 'permission' AND work_id IS NOT NULL)", name="ck_review_event_work"),
+        Index("ix_review_event_work_time", "work_id", "created_at", "id"),
+    )
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    actor_key: Mapped[str] = mapped_column(String(120))
+    actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    work_id: Mapped[str | None] = mapped_column(ForeignKey("works.id", ondelete="RESTRICT"), nullable=True)
+    operation_id: Mapped[str] = mapped_column(String(32))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    kind: Mapped[str] = mapped_column(String(24))
+    payload: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+@event.listens_for(Session, "before_flush")
+def new_work_review_state(session, _context, _instances):
+    # A newly inserted work and its source snapshot always commit together.
+    for work in list(session.new):
+        if isinstance(work, Work) and work.review_state is None:
+            from .reviewing import work_data
+            work.review_state = WorkReviewState(revision=1,
+                source_snapshot={"kind": "import", "data": work_data(work)}, confirmed_fields={},
+                recheck_fields=[], manual_hold=False, media_hold=False, updated_at=utc_now())
+
+
 # Only the explicitly retired seed IDs; other manually imported data is preserved.
 RETIRED_IDS = tuple(f"bili-{i}" for i in (
     45128,102888,42977,102887,28092,103017,102867,32556,32430,102998,100171,102872,
@@ -185,7 +263,11 @@ def initialize(engine):
     Base.metadata.create_all(engine)
     with engine.begin() as connection:
         if connection.execute(select(CatalogRefresh.id).where(CatalogRefresh.id == "seed-retired")).first() is None:
-            connection.execute(Work.__table__.delete().where(Work.id.in_(RETIRED_IDS)))
+            # Explicit seed retirement predates review records. Never erase audit.
+            safe = [key for key in RETIRED_IDS if not connection.execute(select(WorkReviewEvent.id).where(WorkReviewEvent.work_id == key)).first()
+                    and not connection.execute(select(WorkCorrection.id).where(WorkCorrection.work_id == key)).first()]
+            connection.execute(WorkReviewState.__table__.delete().where(WorkReviewState.work_id.in_(safe)))
+            connection.execute(Work.__table__.delete().where(Work.id.in_(safe)))
             connection.execute(CatalogRefresh.__table__.insert().values(id="seed-retired", payload={"count": 36}))
 
 
@@ -193,7 +275,8 @@ PUBLIC_WORK_FIELDS = ("id", "title", "original_intro", "summary", "genres", "the
 
 
 def public_work(work):
-    return {key: getattr(work, key) for key in PUBLIC_WORK_FIELDS}
+    from .reviewing import public_review
+    return {**{key: getattr(work, key) for key in PUBLIC_WORK_FIELDS}, "review": public_review(work)}
 
 
 def utc_now():

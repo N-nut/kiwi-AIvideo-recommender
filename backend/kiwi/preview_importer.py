@@ -137,7 +137,7 @@ def encode(item, source, stage, settings):
             "size_bytes": video.stat().st_size, "video_sha256": digest(video)}
 
 
-def import_previews(manifest, sessions, settings, check_only=False):
+def import_previews(manifest, sessions, settings, check_only=False, expected_work_versions=None):
     manifest = Path(manifest).resolve()
     try:
         raw = json.loads(manifest.read_text(encoding="utf-8-sig"))
@@ -166,6 +166,11 @@ def import_previews(manifest, sessions, settings, check_only=False):
                     work = session.get(Work, item.work_id)
                     if not work or work.review_status != "approved" or (work.source_meta or {}).get("content_type") not in DRAMA_TYPES:
                         raise MediaError("work", "invalid_work")
+                    if not work.review_state or work.review_state.media_hold:
+                        raise MediaError("work", "manual_media_hold")
+                    expected_revision = work.review_state.revision
+                    if expected_work_versions is not None and expected_work_versions.get(item.work_id) != expected_revision:
+                        raise MediaError("work", "source_changed")
                 source, info = validate_source(item, manifest.parent, settings)
                 source_hash = digest(source)
                 processing_hash = hashlib.sha256(json.dumps({"profile": PROFILE, "start": item.start_seconds, "duration": item.duration_seconds}, sort_keys=True).encode()).hexdigest()
@@ -175,7 +180,7 @@ def import_previews(manifest, sessions, settings, check_only=False):
                     report[state] += 1
                     report["items"].append({"work_id": item.work_id, "status": state, "source_duration_ms": round(info["duration"] * 1000)})
                     continue
-                with sessions() as session:
+                with publishing(sessions, item.work_id, expected_revision) as session:
                     old = session.get(WorkPreview, item.work_id)
                     if not confirmed:
                         # An unconfirmed replacement never disables an existing clip.
@@ -204,7 +209,7 @@ def import_previews(manifest, sessions, settings, check_only=False):
                 published = root / asset
                 stage_path.rename(published)
                 stage_path = None
-                with sessions.begin() as session:
+                with publishing(sessions, item.work_id, expected_revision) as session:
                     # Recheck work eligibility inside the short publishing transaction.
                     work = session.get(Work, item.work_id)
                     if not work or work.review_status != "approved" or (work.source_meta or {}).get("content_type") not in DRAMA_TYPES:
@@ -234,3 +239,16 @@ def import_previews(manifest, sessions, settings, check_only=False):
         if acquired:
             lock.close()
     return report
+
+
+from contextlib import contextmanager
+
+
+@contextmanager
+def publishing(sessions, work_id, expected_revision):
+    from .corrections import catalog_write, lock_work
+    with catalog_write(sessions) as session:
+        work, state = lock_work(session,work_id)
+        if state.revision != expected_revision or state.media_hold or state.manual_hold or work.review_status != "approved":
+            raise MediaError("publish","source_changed")
+        yield session

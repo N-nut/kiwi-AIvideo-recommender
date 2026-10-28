@@ -87,3 +87,8 @@ async def test_vector_update_and_full_rebuild(record, database):
     with database() as s: assert s.get(Work, record["id"]).content_hash != old_hash
     with pytest.raises(ValueError, match="整库"):
         await import_works([], database, FakeAI(), settings, reembed=True)
+
+
+async def test_source_sync_validates_identity_before_discarding_unknown_type(record,database,baseline_settings):
+    with pytest.raises(ValueError,match='仅允许红果'):
+        await import_works([record],database,None,baseline_settings,source_sync=True)

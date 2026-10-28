@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-28",
+  "mode": "baseline",
+  "synthetic_accounts": true,
+  "model_calls": 0,
+  "checks": [
+    "guest cancels login, retains demand; successful login requires another explicit correction submission",
+    "normal and other accounts cannot read review workspace or another person report",
+    "desktop and 320/390/768 screens show source, current values, unknown suggestion and a distinct publication confirmation",
+    "submitter sees accepted result and current detail reports only the confirmed field",
+    "reviewer proactively creates a report, rejects it with reason and retains append-only events"
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "height": 740,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "overflow": false
+    }
+  ],
+  "page_errors": [],
+  "database_engine": "native SQLite",
+  "postgres_concurrency": "not_run"
+}

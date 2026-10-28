@@ -127,6 +127,12 @@ def home_recommendations(sessions, request_id, user_id=None):
             query = query.where(~exists(select(1).where(UserWorkFeedback.user_id == user_id, UserWorkFeedback.work_id == Work.id)))
         rows = session.execute(query).mappings()
         candidates = [dict(row) for row in rows]
+        from .database import WorkReviewState
+        from .reviewing import review_projection
+        ids = {w["id"] for w in favorites+candidates}
+        states = {s.work_id:s for s in session.scalars(select(WorkReviewState).where(WorkReviewState.work_id.in_(ids)))}
+        for work in favorites+candidates:
+            work["review"] = review_projection(states[work["id"]], work["review_status"])
     favorite_ids = {work["id"] for work in favorites}
     result = build_recommendations(favorites, candidates, favorite_ids, request_id)
     log.info(json.dumps({"request_id": request_id, "strategy_version": STRATEGY_VERSION, "valid_favorites": build_profile(favorites).count,
