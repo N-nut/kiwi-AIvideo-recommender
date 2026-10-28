@@ -12,7 +12,7 @@ function technicalSection(source, number) {
 
 test('连续调整已实现，产品规则与验收覆盖继承、差异、失败和账号边界',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const section=product.match(/^### 3\.13 连续调整推荐（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
+  const section=product.match(/^### 3\.13 连续调整推荐（已实现）\r?\n([\s\S]*?)(?=^### 3\.14|^## 4\.)/m)?.[1];
   assert.ok(section,'产品应明确已实现和验证边界');
   assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 已实现增量理解、差异核对、成功后生效与失败保留；完成本地和有限真实模型验证 \|/);
   for(const text of ['本节已实现','当前有效偏好＋本次调整描述','合法空结果','每次最多 300 字符',
@@ -23,7 +23,7 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
     '不持久化完整对话','游客','切换账号','迟到','弹出旧核对框']) {
     assert.ok(section.includes(text),`连续调整草案缺少：${text}`);
   }
-  const acceptance=product.match(/^### 6\.4 连续调整推荐验收（已实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];
+  const acceptance=product.match(/^### 6\.4 连续调整推荐验收（已实现）\r?\n([\s\S]*?)(?=^### 6\.5|^## 7\.)/m)?.[1];
   assert.ok(acceptance,'实现应保留验收编号和验证边界');
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
@@ -41,6 +41,27 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
   for(const text of ['整块移除“判断与推荐依据”','本次推荐理由','后台原始证据','推荐引用校验','历史快照','键盘操作'])assert.ok(section.includes(text),text);
   const technical=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),6);
   assert.ok(technical.includes('详情完全移除“判断与推荐依据”'));assert.ok(technical.includes('`detailReason`'));
+});
+
+test('资料纠错与审核仅为产品草案，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  assert.match(product,/^版本：v2\.17[^\n]+状态：[^\n]*待产品确认草案/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.16/);
+  assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 待产品确认草案，尚未实现 \|/);
+  const section=product.match(/^### 3\.14 资料纠错与审核（待产品确认草案，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
+  for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
+    '1～500 字符','一部作品的一类问题','当前资料暂不改变','我的纠错','只有事先指定的审核者',
+    '普通注册用户默认没有审核权','两名审核者','过期表单','待审核／已采纳／未采纳／待重新核对',
+    '未提及不等于不存在','只修正一个标签不能把整部作品标为已全面审核','人工确认字段','旧向量',
+    '历史保留当时的偏好和推荐理由','连续调整基准','不自动合并或删除作品','本人及授权审核者',
+    '网络结果未知','迟到响应','320／390','不恢复已移除的“判断与推荐依据”','首版不自动调用模型作事实裁决'])assert.ok(section.includes(text),text);
+  const acceptance=product.match(/^### 6\.5 资料纠错与审核验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(acceptance);
+  const ids=[...acceptance.matchAll(/^\| (Q\d{2}) \|/gm)].map(([,id])=>id);
+  assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('尚无本功能'));
+  assert.ok(product.includes('用户明确同意产品方案后，才完善技术方案，技术方案另行确认后再实施'));
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  assert.match(technical,/^版本：v3\.6[^\n]+\[产品设计文档 v2\.16\]/m);
+  assert.doesNotMatch(technical,/^## 17\./m,'草案阶段不能提前建立新功能技术章节');
 });
 
 test('连续调整技术选择对齐简历、锁定依赖、原有接口和实现验收',async()=>{
