@@ -29,6 +29,65 @@ test('历史片单契约对应服务端快照、隐私、迁移与再次确认',
     'frontend/tests/history.test.ts','scripts/verify-history.mjs'])assert.ok((await stat(new URL('../'+file,import.meta.url))).isFile(),file);
 });
 
+test('历史片单协议示例在请求、保存状态、分页与不可用作品上自洽', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const section=technicalSection(source,15);
+  const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
+  assert.equal(examples.length,6,'提供推荐输入、保存成功片段、列表、详情、保存失败和空结果片段');
+  const [request,saved,list,detail,failed,empty]=examples;
+  assert.deepEqual(Object.keys(request).sort(),['exclude_work_ids','limit','preferences','query']);
+  const schemas=await readFile(new URL('../backend/kiwi/schemas.py',import.meta.url),'utf8');
+  const queryLimit=Number(schemas.match(/query: str = Field\(default="", max_length=(\d+)/)?.[1]);
+  assert.ok(queryLimit>0&&request.query.length<=queryLimit);
+  assert.ok(request.limit>=1&&request.limit<=3&&Array.isArray(request.exclude_work_ids));
+  assert.equal(request.preferences.schema_version,1);
+  assert.equal(request.preferences.conflicts.length,0);assert.equal(request.preferences.unresolved_constraints.length,0);
+  assert.match(saved.history.id,/^[a-f0-9]{32}$/);assert.equal(saved.history.status,'saved');
+  const historySource=await readFile(new URL('../backend/kiwi/history.py',import.meta.url),'utf8');
+  const retention=Number(historySource.match(/^HISTORY_LIMIT = (\d+)/m)?.[1]);
+  assert.equal(list.retention_limit,retention);assert.ok(retention>0);
+  assert.equal(list.page,1);assert.equal(list.page_size,12);assert.equal(list.total,list.items.length);
+  const summary=list.items[0],entry=detail.history;
+  assert.deepEqual(Object.keys(summary).sort(),['count','created_at','id','mode','preferences','query','titles']);
+  assert.equal(summary.id,saved.history.id);assert.equal(summary.query,request.query);
+  assert.deepEqual(summary.preferences,request.preferences);assert.ok(Number.isFinite(Date.parse(summary.created_at)));
+  for(const key of Object.keys(summary))assert.deepEqual(entry[key],summary[key],`详情摘要字段不符：${key}`);
+  assert.equal(entry.count,entry.items.length);assert.equal(entry.count,entry.titles.length);
+  assert.deepEqual(entry.items.map(item=>item.title),entry.titles);
+  assert.equal(summary.mode,'baseline');assert.ok(Array.isArray(entry.warnings));
+  for(const item of entry.items){
+    assert.deepEqual(Object.keys(item).sort(),['available','changed','id','title','work']);
+    assert.equal(item.available,false);assert.equal(item.changed,false);assert.equal(item.work,null);
+  }
+  assert.equal(failed.history.status,'failed');assert.equal(failed.history.id,undefined);assert.ok(failed.warnings.length>0);
+  const implementation=await readFile(new URL('../backend/kiwi/main.py',import.meta.url),'utf8');
+  assert.ok(implementation.includes(failed.warnings[0]),'保存失败文案与实际响应一致');
+  assert.equal(empty.status,'empty');assert.deepEqual(empty.items,[]);assert.equal(empty.history,null);
+  const forbidden=new Set(['user_id','password','password_hash','token','token_hash','cookie','catalog_hash','content_hash','snapshot']);
+  function publicFields(value){
+    if(Array.isArray(value))value.forEach(publicFields);
+    else if(value&&typeof value==='object')for(const [key,nested] of Object.entries(value)){
+      assert.ok(!forbidden.has(key),`协议示例包含私有字段：${key}`);publicFields(nested);
+    }
+  }
+  examples.forEach(publicFields);
+});
+
+test('历史片单验收编号覆盖技术证据，新增功能必须分别批准两份文档',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const technical=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),15);
+  const criteria=product.match(/^### 6\.3 历史片单验收([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(criteria);
+  const ids=[...criteria.matchAll(/^\| (H\d{2}) \|/gm)].map(([,id])=>id);
+  assert.deepEqual(ids,Array.from({length:8},(_,i)=>`H${String(i+1).padStart(2,'0')}`));
+  const mapping=technical.slice(technical.indexOf('### 15.7'));
+  for(const id of ids)assert.match(mapping,new RegExp(`\\b${id}\\b`),`缺少验收对应：${id}`);
+  const instructions=await readFile(new URL('../AGENTS.md',import.meta.url),'utf8');
+  assert.match(instructions,/1\. 先完善 `产品设计文档\.md`[^\n]*用户明确同意后[^\n]*技术设计/);
+  assert.match(instructions,/2\. 再完善 `docs\/技术方案\.md`[^\n]*用户明确同意后[^\n]*具体实现/);
+  assert.match(instructions,/3\. 两次确认完成后[^\n]*功能实现、测试、验证和 Git 提交/);
+  assert.ok(instructions.includes('用户未回复不视为同意'));
+});
+
 test('推荐反馈与换一批说明与已实现状态及产品边界一致', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=source.match(/^### 3\.11 推荐反馈＋换一批（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];
