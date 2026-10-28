@@ -43,17 +43,19 @@ def main():
         assert copy.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
         assert copy.execute('PRAGMA foreign_key_check').fetchall() == []
         assert fingerprint(copy, tables) == before, 'Pre-existing values changed during upgrade'
-        assert copy.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0008'
+        assert copy.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0009'
         assert any(row[1] == 'uq_users_nickname_key' and row[2] == 1 for row in copy.execute('PRAGMA index_list(users)'))
         assert [row[1] for row in copy.execute('PRAGMA table_info(user_work_feedback)') if row[5]] == ['user_id','work_id']
         assert len(copy.execute('PRAGMA foreign_key_list(user_work_feedback)').fetchall()) == 2
         assert 'ck_feedback_status' in copy.execute("SELECT sql FROM sqlite_master WHERE name='user_work_feedback'").fetchone()[0]
         assert [row[1] for row in copy.execute('PRAGMA table_info(user_avatars)') if row[5]] == ['user_id']
         assert copy.execute('PRAGMA foreign_key_list(user_avatars)').fetchone()[2] == 'users'
+        assert copy.execute('PRAGMA foreign_key_list(recommendation_history)').fetchone()[2] == 'users'
+        assert any(row[1] == 'ix_history_user_created' for row in copy.execute('PRAGMA index_list(recommendation_history)'))
     report = {'source_opened_read_only': True, 'database_copy': str(target.relative_to(ROOT)),
-              'original_values_preserved': True, 'integrity': 'ok', 'foreign_keys': 'ok', 'revision': '0008',
-              'repeated_initialization': 'passed', 'unique_nickname_index': 'present', 'feedback_primary_key_foreign_keys_check': 'present', 'avatar_primary_key_foreign_key': 'present', 'contains_private_data': True}
-    output='avatar-upgrade-validation.json' if '--avatar' in sys.argv else 'feedback-upgrade-validation.json' if '--feedback' in sys.argv else 'personal-space-upgrade-validation.json'
+              'original_values_preserved': True, 'integrity': 'ok', 'foreign_keys': 'ok', 'revision': '0009',
+              'repeated_initialization': 'passed', 'unique_nickname_index': 'present', 'feedback_primary_key_foreign_keys_check': 'present', 'avatar_primary_key_foreign_key': 'present', 'history_index_foreign_key': 'present', 'contains_private_data': True}
+    output='history-upgrade-validation.json' if '--history' in sys.argv else 'avatar-upgrade-validation.json' if '--avatar' in sys.argv else 'feedback-upgrade-validation.json' if '--feedback' in sys.argv else 'personal-space-upgrade-validation.json'
     (ROOT/'docs'/output).write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False))
 

@@ -152,7 +152,18 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                     END;
                 END $$"""))
             assert client.delete('/api/v1/me/feedback/home-similar',headers={'If-Match':'"'+changed['revision']+'"'}).status_code==204
+            # JSONB history snapshots persist exact server output, survive work
+            # changes and disappear only through account-scoped deletion.
+            saved=client.post('/api/v1/me/recommendations',json={'preferences':{'soft_preferences':{'genres':['修仙']}},'query':'PostgreSQL 历史片单'}).json()
+            history_id=saved['history']['id']
+            assert client.get('/api/v1/me/history').json()['total']==1
+            detail=client.get('/api/v1/me/history/'+history_id).json()['history']
+            assert detail['items'][0]['work']==saved['items'][0] and detail['query']=='PostgreSQL 历史片单'
+            assert client.get('/api/v1/me/history/'+history_id).headers['cache-control']=='no-store'
             assert register(client,'User_B').status_code==201
+            assert client.get('/api/v1/me/history').json()['total']==0
+            assert client.get('/api/v1/me/history/'+history_id).status_code==404
+            assert client.delete('/api/v1/me/history/'+history_id).status_code==404
             assert client.get('/api/v1/me/favorites').json()['total']==0
             assert client.get('/api/v1/me/space-summary').json()['interest']['status']=='no_favorites'
             # Validate the actual PostgreSQL unique index without exercising the
@@ -168,6 +179,9 @@ async def test_real_postgres_filter_and_vectors(record,monkeypatch,tmp_path):
                 END $$"""))
             assert client.delete('/api/v1/me/favorites/work-0').status_code==204
             assert login(client).status_code==200
+            assert client.get('/api/v1/me/history').json()['total']==1
+            assert client.delete('/api/v1/me/history/'+history_id).status_code==204
+            assert client.get('/api/v1/me/history').json()['total']==0
             assert client.get('/api/v1/me/favorites').json()['total']==3
             from test_personal_space import password_body, NEW_PASSWORD
             from test_accounts import PASSWORD

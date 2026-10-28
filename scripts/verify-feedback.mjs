@@ -17,7 +17,7 @@ const preparation=spawnSync(python,['-X','utf8','scripts/prepare-home-validation
 const copied=JSON.parse(preparation.stdout);
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],{cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll(String.fromCharCode(92),'/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/feedback-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
-const report={date:'2026-10-27',mode:'baseline',database:copied.database,public_works:copied.public_works,checks:[],viewports:[],page_errors:[],synthetic_faults:['delayed batch response','recommendation 503'],external_covers_blocked:true};
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),mode:'baseline',database:copied.database,public_works:copied.public_works,checks:[],viewports:[],page_errors:[],synthetic_faults:['delayed batch response','recommendation 503'],external_covers_blocked:true};
 const pause=ms=>new Promise(done=>setTimeout(done,ms)),shots=resolve(root,'docs/screenshots');let browser;
 async function check(name,run){await run();report.checks.push(name);console.log(`Passed: ${name}`);}
 const writeHeaders={'Origin':base,'X-Kiwi-Request':'1'};

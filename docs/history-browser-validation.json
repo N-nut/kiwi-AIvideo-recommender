@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-28",
+  "mode": "baseline",
+  "database": ".local\\history-mvrivuuw.db",
+  "public_works": 434,
+  "checks": [
+    "guest navigation requires login without losing the demand; public generation remains available",
+    "logged-in generation and next batch automatically save separate server snapshots",
+    "viewing history does not generate or replace discovery input; snapshot preferences require explicit confirmation to reuse",
+    "independent cookie login restores history while another account sees no private records",
+    "history pagination and list/detail layouts work on desktop, tablet and narrow phones",
+    "withdrawn and changed works keep their historical positions with clear availability labels",
+    "delete requires confirmation, preserves favorites and feedback, and a failed delete can retry",
+    "list and detail failures expose retry and a page refresh restores only saved snapshots"
+  ],
+  "viewports": [
+    {
+      "surface": "list",
+      "width": 1920,
+      "height": 1080,
+      "horizontal_overflow": false
+    },
+    {
+      "surface": "list",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false
+    },
+    {
+      "surface": "list",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false
+    },
+    {
+      "surface": "list",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false
+    },
+    {
+      "surface": "list",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false
+    },
+    {
+      "surface": "detail",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "preference_columns": 3
+    },
+    {
+      "surface": "detail",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false,
+      "preference_columns": 3
+    },
+    {
+      "surface": "detail",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "preference_columns": 1
+    },
+    {
+      "surface": "detail",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false,
+      "preference_columns": 1
+    }
+  ],
+  "page_errors": [],
+  "synthetic_accounts": true,
+  "faults": [
+    "history list 503",
+    "history detail 503",
+    "delete 503",
+    "catalog changes on disposable copy"
+  ]
+}

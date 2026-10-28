@@ -21,7 +21,9 @@ export interface Work {
   source_meta?: { provider: 'hongguo'; content_type: '真人剧' | '漫剧' | 'AI剧' | '漫画' | '未标注'; tags: string[]; pages: string[]; categories?: string[]; rank: number | null; heat: string | null; episode_count: number | null; chapter_count?: number | null; classification_note?: string } | null;
   reason?: string; reason_mode?: 'model' | 'template'; evidence_ids?: string[]; caveats?: string[];
 }
-export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string; batch?:{state:'ready'|'exhausted';has_more:boolean|null}|null }
+export interface Recommendation { request_id: string; status: 'success' | 'empty' | 'needs_confirmation'; items: Work[]; warnings: string[]; timings_ms: Record<string, number>; mode: string; batch?:{state:'ready'|'exhausted';has_more:boolean|null}|null;history?:{status:'saved';id:string}|{status:'failed'}|null }
+export interface HistorySummary {id:string;query:string;created_at:string;count:number;mode:string;preferences:Preferences;titles:string[]}
+export interface HistoryDetail extends HistorySummary {warnings:string[];items:{id:string;title:string;available:boolean;changed:boolean;work:Work|null}[]}
 export type FeedbackStatus='not_interested'|'watched';
 export interface Feedback {work_id:string;status:FeedbackStatus;revision:string;updated_at:string}
 export interface FeedbackItem extends Feedback {available:boolean;work:{id:string;title:string;cover_url:string|null}|null}

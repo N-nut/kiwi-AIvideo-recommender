@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { api, getPreview, latestRequest, APIError } from './api';
-import type { CatalogRefresh, FeedbackStatus, HomeWorkItem, Preferences, PreviewMedia, Work } from './types';
+import type { CatalogRefresh, HistoryDetail, FeedbackStatus, HomeWorkItem, Preferences, PreviewMedia, Work } from './types';
 import { emptyPreferences, feedbackLabels, genres, fieldNames, collectionCategories } from './types';
 import { useCatalog } from './useCatalog';
 import { useLibrary } from './library';
@@ -10,6 +10,8 @@ import { useHomeRecommendations } from './useHomeRecommendations';
 import { usePersonalSpace } from './usePersonalSpace';
 import { useFeedback } from './useFeedback';
 import { useRecommendationBatches } from './useRecommendationBatches';
+import HistoryPanel from './components/HistoryPanel.vue';
+import './history.css';
 import FeedbackManager from './components/FeedbackManager.vue';
 import './feedback.css';
 import PersonalSpace from './components/PersonalSpace.vue';
@@ -33,6 +35,8 @@ const auth=useAuth();
 const feedback=useFeedback(auth);
 const batches=useRecommendationBatches(auth,feedback);
 const {result}=batches;
+const historyId=ref(''),historyWorkLane=latestRequest();
+const savedHistoryId=computed(()=>result.value?.history?.status==='saved'?result.value.history.id:'');
 const busy=computed(()=>parseBusy.value||batches.busy.value);
 const parsing=computed(()=>parseBusy.value&&requestKind.value==='parse');
 const library = useLibrary(auth);
@@ -123,7 +127,7 @@ function revealDetailReference(reference:'intro'|'tags') {
   target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
 }
 watch(query, () => { closeRecognition();lane.cancel();parseBusy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();resetRound();error.value=''; });
-watch(view,()=>{if(view.value!=='discover')closeRecognition();});
+watch(view,()=>{preview.value?.close();historyWorkLane.cancel();if(view.value!=='discover')closeRecognition();});
 function closeRecognition(){if(recognition.value?.open)recognition.value.close();}
 function showRecognition(){if(view.value==='discover'&&parsed.value&&!busy.value&&!recognition.value?.open)recognition.value?.showModal();}
 function message(text:string) { clearTimeout(toastTimer); toast.value=text; toastTimer=setTimeout(()=>toast.value='',3000); }
@@ -148,7 +152,22 @@ async function generate() {
   closeRecognition();
   demandVersion.value++;pendingFeedback.value=null;undo.value=null;
   requestKind.value='recommend';error.value='';phase.value='正在检索资料，整理片单…';
-  await batches.generate(structuredClonePlain(prefs.value));
+  await batches.generate(structuredClonePlain(prefs.value),query.value);
+}
+async function reuseHistory(saved:HistoryDetail) {
+  const account=auth.scope();
+  lane.cancel();parseBusy.value=false;requestKind.value=null;closeRecognition();resetRound();
+  query.value=saved.query||'按历史片单的确认偏好再次推荐';
+  await nextTick();
+  if(!account.current()||auth.state.value!=='authenticated')return;
+  prefs.value=structuredClonePlain(saved.preferences);parsed.value=true;error.value='';
+  shelf.setView('discover');await nextTick();showRecognition();
+}
+function openSavedHistory(id:string){historyId.value=id;shelf.setView('history');}
+async function historyWorkDetail(work:Work){
+  const account=auth.scope(),request=historyWorkLane.begin();
+  try{const current=await account.request<Work>(`/api/v1/works/${encodeURIComponent(work.id)}`,undefined,undefined,request.signal);if(request.current()&&account.current()&&view.value==='history')showDetail(current);}
+  catch(exc){if(request.current()&&account.current())message(exc instanceof Error?exc.message:'作品资料读取失败，请重试');}
 }
 function structuredClonePlain<T>(value:T):T { return JSON.parse(JSON.stringify(value)); }
 function edit() { closeRecognition();draft.value=structuredClonePlain(prefs.value); editor.value?.showModal(); }
@@ -195,11 +214,12 @@ async function updateCatalog() {
 }
 function setView(value:string) {
   preview.value?.close();
-  if(['favorites','personal-space','feedback'].includes(value)&&auth.state.value!=='authenticated') {
+  if(['favorites','personal-space','feedback','history'].includes(value)&&auth.state.value!=='authenticated') {
     if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=value;login.value?.open();}
     else message(auth.state.value==='checking'?'正在检查登录状态':'请先重试检查登录状态');
     return;
   }
+  if(value==='history')historyId.value='';
   shelf.setView(value);
 }
 function goToPage(page:number) {
@@ -316,14 +336,14 @@ function restartBatch(){pendingFeedback.value=null;undo.value=null;demandVersion
 async function logout() {if(await auth.logout()){preview.value?.close();detail.value?.close();shelf.setView('discover');message('已退出');}}
 const favoriteBusy=(id:string)=>auth.busy.value||auth.state.value==='checking'||auth.state.value==='authenticated'&&(library.loading.value||library.pending.value.has(id));
 const favoriteReady=computed(()=>auth.state.value==='guest'||auth.state.value==='authenticated'&&library.ready.value);
-watch(auth.generation,()=>{undo.value=null;if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(view.value==='feedback')shelf.setView('discover');}},{flush:'post'});
+watch(auth.generation,()=>{historyId.value='';historyWorkLane.cancel();undo.value=null;if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(['feedback','history'].includes(view.value))shelf.setView('discover');}},{flush:'post'});
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
   void auth.restore();
   void loadCatalog();
   void loadHealth(); void pollRefresh();
 });
-onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMetadata();clearTimeout(toastTimer);clearTimeout(refreshTimer);});
+onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLane.cancel();closeDetailMetadata();clearTimeout(toastTimer);clearTimeout(refreshTimer);});
 </script>
 
 <template>
@@ -334,6 +354,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')"><span class="nav-icon">⌂</span>发现好剧</button>
       <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
       <button :class="['nav-item',{active:view==='favorites'}]" @click="setView('favorites')"><span class="nav-icon">♡</span>我的收藏<span class="nav-count">{{favoriteCount}}</span></button>
+      <button :class="['nav-item',{active:view==='history'}]" :aria-current="view==='history'?'page':undefined" @click="setView('history')"><span class="nav-icon" aria-hidden="true">◷</span>历史片单</button>
     </nav>
 
     <div class="sidebar-bottom">
@@ -411,6 +432,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       <section class="results-section" :aria-busy="busy" aria-labelledby="results-title">
         <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy&&!result?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'你的片单'):'你的片单'}}</h2></div><div class="batch-actions"><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span><button v-if="result?.status==='success'" class="secondary-button next-batch" :disabled="!batches.canNext.value||busy" @click="nextBatch">{{batches.busy.value?'正在换一批…':'换一批'}}</button></div></div>
         <div v-if="batches.error.value||batches.notice.value" class="batch-status" role="status"><span>{{batches.error.value||batches.notice.value}}</span><button v-if="batches.snapshot.value" class="text-button" :disabled="busy" @click="restartBatch">重新浏览本轮</button><button class="text-button" :disabled="busy" @click="edit">调整偏好</button></div>
+        <p v-if="auth.state.value==='authenticated'" class="source-note history-save-note"><template v-if="savedHistoryId"><span>已自动保存到历史片单</span> <button class="text-button" @click="openSavedHistory(savedHistoryId)">查看这份片单 →</button></template><template v-else-if="result?.history?.status==='failed'">本次历史片单保存失败，当前结果已保留。</template><template v-else>成功生成的非空片单会自动保存，最近 100 份可在历史片单中查看。</template></p>
         <p v-if="batches.stale.value" class="source-note">上次结果 · 按当前身份重新生成后可继续换批</p>
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="parsing" class="parse-progress" role="status"><span class="parse-progress-icon" aria-hidden="true">◌</span><div><strong>正在理解你的观剧需求</strong><p>识别完成后会请你核对偏好，确认后再生成片单。</p></div></div>
@@ -431,6 +453,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();refreshLane.cancel();closeDetailMet
       </section>
     </section>
     <PersonalSpace v-else-if="view==='personal-space'" :key="auth.generation.value" :space="space" :logout-busy="auth.busy.value" @navigate="setView" @logout="logout"/>
+    <HistoryPanel v-else-if="view==='history'&&auth.state.value==='authenticated'" :key="auth.generation.value" :auth="auth" :initial-id="historyId" @back="setView('personal-space')" @discover="setView('discover')" @reuse="reuseHistory" @detail="historyWorkDetail"/>
     <FeedbackManager v-else-if="view==='feedback'" :key="auth.generation.value" :auth="auth" :feedback="feedback" @back="setView('personal-space')" @remove="removeFeedback"/>
     <section v-else class="catalog-section">
       <div class="catalog-heading">

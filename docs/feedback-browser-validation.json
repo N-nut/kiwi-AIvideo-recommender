@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-27",
+  "date": "2026-10-28",
   "mode": "baseline",
-  "database": ".local\\feedback-mvqrces9.db",
+  "database": ".local\\feedback-mvrinswq.db",
   "public_works": 434,
   "checks": [
     "guest can generate and switch batches using identical confirmed preferences without reparsing",

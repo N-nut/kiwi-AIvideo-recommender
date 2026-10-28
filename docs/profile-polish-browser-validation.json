@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-27",
+  "date": "2026-10-28",
   "mode": "baseline",
-  "database": ".local\\profile-polish-mvqrv3q0.db",
+  "database": ".local\\profile-polish-mvrinufv.db",
   "public_works": 434,
   "checks": [
     "carousel fills the visual column with a larger poster and previews; feedback is two labelled icons",
@@ -87,6 +87,7 @@
       "profile_top": 132,
       "summary_top": 132,
       "summary_feedback_gap": 18,
+      "summary_history_gap": 18,
       "columns": 2
     },
     {
@@ -97,6 +98,7 @@
       "profile_top": 132,
       "summary_top": 132,
       "summary_feedback_gap": 18,
+      "summary_history_gap": 18,
       "columns": 2
     },
     {
@@ -107,6 +109,7 @@
       "profile_top": 370,
       "summary_top": 370,
       "summary_feedback_gap": 18,
+      "summary_history_gap": 18,
       "columns": 2
     },
     {
@@ -114,9 +117,10 @@
       "width": 390,
       "height": 844,
       "horizontal_overflow": false,
-      "profile_top": 320,
-      "summary_top": 975,
+      "profile_top": 370,
+      "summary_top": 1025,
       "summary_feedback_gap": 17,
+      "summary_history_gap": 17,
       "columns": 1
     },
     {
@@ -124,9 +128,10 @@
       "width": 320,
       "height": 740,
       "horizontal_overflow": false,
-      "profile_top": 329,
-      "summary_top": 1095,
+      "profile_top": 370,
+      "summary_top": 1137,
       "summary_feedback_gap": 17,
+      "summary_history_gap": 17,
       "columns": 1
     }
   ],

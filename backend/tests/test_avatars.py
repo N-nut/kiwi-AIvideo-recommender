@@ -121,7 +121,7 @@ def test_0007_to_0008_backup_repeat_and_failure_rollback(tmp_path,monkeypatch):
     with engine.connect() as connection:assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar()=='0007'
     assert not inspect(engine).has_table('user_avatars');initialize(engine);initialize(engine)
     with engine.connect() as connection:
-        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar()=='0008'
+        assert connection.exec_driver_sql('SELECT version_num FROM alembic_version').scalar()=='0009'
         assert connection.exec_driver_sql('PRAGMA foreign_key_check').all()==[]
     assert inspect(engine).get_pk_constraint('user_avatars')['constrained_columns']==['user_id']
     assert all(fk['options']['ondelete']=='CASCADE' for fk in inspect(engine).get_foreign_keys('user_avatars'))

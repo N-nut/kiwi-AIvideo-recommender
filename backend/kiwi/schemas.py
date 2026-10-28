@@ -89,6 +89,7 @@ class ParseRequest(StrictModel):
 
 class RecommendationRequest(StrictModel):
     preferences: Preferences
+    query: str = Field(default="", max_length=300, strict=True)
     limit: int = Field(default=3, ge=1, le=3, strict=True)
     exclude_work_ids: list[Annotated[str, Field(min_length=1, max_length=80, strict=True)]] = Field(default_factory=list, max_length=200)
 

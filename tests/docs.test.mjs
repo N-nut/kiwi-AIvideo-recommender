@@ -10,6 +10,25 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
+test('历史片单契约对应服务端快照、隐私、迁移与再次确认', async () => {
+  const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=technicalSection(source,15);
+  assert.match(product,/^### 3\.12 历史片单（已实现）/m);
+  assert.match(product,/^### 6\.3 历史片单验收/m);
+  for(const text of ['recommendation_history','0009_recommendation_history.py','down_revision="0008"','auth.write()',
+    '最近 100 份','24,000 字节','POST /api/v1/me/recommendations','GET /api/v1/me/history','DELETE /api/v1/me/history',
+    'no-store','available=false','changed=true','auth.scope()','latestRequest()','TextEncoder','不自动解析或推荐','只读','失败回滚']) {
+    assert.ok(section.includes(text),`历史片单缺少契约：${text}`);
+  }
+  assert.doesNotMatch(product,/不扩展为历史片单功能/);
+  assert.doesNotMatch(technicalSection(source,14),/不增加历史片单持久化/);
+  const migration=await readFile(new URL('../backend/migrations/versions/0009_recommendation_history.py',import.meta.url),'utf8');
+  assert.match(migration,/revision = "0009"/);assert.match(migration,/down_revision = "0008"/);
+  for(const file of ['backend/kiwi/history.py','backend/tests/test_history.py','frontend/src/useHistory.ts','frontend/src/components/HistoryPanel.vue',
+    'frontend/tests/history.test.ts','scripts/verify-history.mjs'])assert.ok((await stat(new URL('../'+file,import.meta.url))).isFile(),file);
+});
+
 test('推荐反馈与换一批说明与已实现状态及产品边界一致', async () => {
   const source=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=source.match(/^### 3\.11 推荐反馈＋换一批（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[0];

@@ -134,6 +134,16 @@ class UserAvatar(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class RecommendationHistory(Base):
+    __tablename__ = "recommendation_history"
+    __table_args__ = (Index("ix_history_user_created", "user_id", "created_at", "id"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    query: Mapped[str] = mapped_column(String(300))
+    snapshot: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 # Only the explicitly retired seed IDs; other manually imported data is preserved.
 RETIRED_IDS = tuple(f"bili-{i}" for i in (
     45128,102888,42977,102887,28092,103017,102867,32556,32430,102998,100171,102872,

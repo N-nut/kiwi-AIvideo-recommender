@@ -28,6 +28,7 @@ from .previews import router as previews_router
 from .preview_jobs import PreviewManager
 from .personal_space import router as personal_space_router
 from .feedback import reject_query, router as feedback_router
+from .history import save_history, router as history_router
 
 log = logging.getLogger("kiwi")
 log.setLevel(logging.INFO)
@@ -65,6 +66,7 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
     app.include_router(previews_router)
     app.include_router(personal_space_router)
     app.include_router(feedback_router)
+    app.include_router(history_router)
 
     @app.middleware("http")
     async def request_context(request, call_next):
@@ -168,6 +170,12 @@ def create_app(settings=None, provider_factory=None, collector=None, preview_sou
         reject_query(request)
         result = await asyncio.wait_for(recommend(body, sessions, provider_factory(), settings, request.state.request_id, user["id"]), settings.request_timeout)
         get_current_user(request)  # Revocation during generation also invalidates this result.
+        try:
+            result["history"] = save_history(request, user, body, result)
+        except SQLAlchemyError:
+            get_current_user(request)
+            result["history"] = {"status": "failed"}
+            result["warnings"].append("本次片单未保存到历史，请保留当前结果；稍后生成的片单会再次尝试保存。")
         return result
 
     def home_response(request, user_id=None):

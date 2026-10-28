@@ -1,0 +1,14 @@
+{
+  "source_opened_read_only": true,
+  "database_copy": ".local\\space-upgrade-e289964e919c.db",
+  "original_values_preserved": true,
+  "integrity": "ok",
+  "foreign_keys": "ok",
+  "revision": "0009",
+  "repeated_initialization": "passed",
+  "unique_nickname_index": "present",
+  "feedback_primary_key_foreign_keys_check": "present",
+  "avatar_primary_key_foreign_key": "present",
+  "history_index_foreign_key": "present",
+  "contains_private_data": true
+}

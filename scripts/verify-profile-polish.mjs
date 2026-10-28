@@ -14,7 +14,7 @@ const probe=createServer();await new Promise((done,fail)=>{probe.once('error',fa
 const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py',database,'--with-previews'],{cwd:root,encoding:'utf8',windowsHide:true});assert.equal(prepared.status,0,prepared.stderr);
 const copied=JSON.parse(prepared.stdout),server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],{cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll(String.fromCharCode(92),'/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:['ignore','pipe','pipe'],windowsHide:true});
 const log=createWriteStream(resolve(root,`.local/profile-polish-${suffix}.log`));server.stdout.pipe(log);server.stderr.pipe(log);
-const report={date:'2026-10-27',mode:'baseline',database:copied.database,public_works:copied.public_works,checks:[],viewports:[],page_errors:[],synthetic_photos:true,faults:['profile 503','delayed profile write','delayed feedback write']};
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),mode:'baseline',database:copied.database,public_works:copied.public_works,checks:[],viewports:[],page_errors:[],synthetic_photos:true,faults:['profile 503','delayed profile write','delayed feedback write']};
 const shots=resolve(root,'docs/screenshots'),pause=ms=>new Promise(done=>setTimeout(done,ms)),headers={Origin:base,'X-Kiwi-Request':'1'};
 const username=`Photo_${suffix}`,password='Synthetic photo password 123';let browser;
 async function check(name,run){await run();report.checks.push(name);console.log(`Passed: ${name}`);}
@@ -51,9 +51,9 @@ try{
   await page.locator('.toast').waitFor({state:'hidden'});
   for(const [width,height] of [[2384,1100],[1440,1000],[768,1024],[390,844],[320,740]]){
    await page.setViewportSize({width,height});const metrics=await page.locator('.space-grid').evaluate(el=>{
-    const profile=el.querySelector('.profile-card').getBoundingClientRect(),summary=el.querySelector('.summary-card').getBoundingClientRect(),feedback=el.querySelector('.feedback-entry-card').getBoundingClientRect();
-    return {horizontal_overflow:document.documentElement.scrollWidth>innerWidth,profile_top:Math.round(profile.top),summary_top:Math.round(summary.top),summary_feedback_gap:Math.round(feedback.top-summary.bottom),columns:getComputedStyle(el).gridTemplateColumns.split(' ').length};
-   });assert(!metrics.horizontal_overflow);assert(metrics.summary_feedback_gap>=12&&metrics.summary_feedback_gap<=24);if(width>=768)assert(Math.abs(metrics.profile_top-metrics.summary_top)<=3);else assert.equal(metrics.columns,1);report.viewports.push({surface:'personal-space',width,height,...metrics});
+    const profile=el.querySelector('.profile-card').getBoundingClientRect(),summary=el.querySelector('.summary-card').getBoundingClientRect(),feedback=el.querySelector('.feedback-entry-card').getBoundingClientRect(),history=el.querySelector('.history-entry-card').getBoundingClientRect();
+    return {horizontal_overflow:document.documentElement.scrollWidth>innerWidth,profile_top:Math.round(profile.top),summary_top:Math.round(summary.top),summary_feedback_gap:Math.round(feedback.top-history.bottom),summary_history_gap:Math.round(history.top-summary.bottom),columns:getComputedStyle(el).gridTemplateColumns.split(' ').length};
+   });assert(!metrics.horizontal_overflow);assert(metrics.summary_feedback_gap>=12&&metrics.summary_feedback_gap<=24);assert(metrics.summary_history_gap>=12&&metrics.summary_history_gap<=24);if(width>=768)assert(Math.abs(metrics.profile_top-metrics.summary_top)<=3);else assert.equal(metrics.columns,1);report.viewports.push({surface:'personal-space',width,height,...metrics});
    if(width===1440||width===390){await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});await page.screenshot({path:resolve(shots,`profile-polish-${width===1440?'desktop':'mobile'}.png`),fullPage:true});}
   }
  });

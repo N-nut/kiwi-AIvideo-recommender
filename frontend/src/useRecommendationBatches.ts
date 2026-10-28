@@ -5,9 +5,9 @@ import type { useAuth } from './useAuth';
 import type { useFeedback } from './useFeedback';
 
 export const capacityMessage='本轮记录达到容量上限，请重新浏览本轮或调整偏好';
-export function batchPayload(preferences:Preferences,shownIds:Set<string>,limit=3) {
+export function batchPayload(preferences:Preferences,shownIds:Set<string>,limit=3,query='') {
   if(shownIds.size+limit>200)throw Error(capacityMessage);
-  const body={preferences,limit,exclude_work_ids:[...shownIds]};
+  const body={preferences,limit,exclude_work_ids:[...shownIds],...(query?{query}:{})};
   if(new TextEncoder().encode(JSON.stringify(body)).byteLength>24000)throw Error(capacityMessage);
   return body;
 }
@@ -15,16 +15,17 @@ export function useRecommendationBatches(auth:ReturnType<typeof useAuth>,feedbac
   const result=ref<Recommendation|null>(null),shownIds=ref(new Set<string>()),snapshot=ref<Preferences|null>(null);
   const busy=ref(false),error=ref(''),notice=ref(''),stale=ref(false),exhausted=ref(false),epoch=ref(0),batch=ref(0);
   const lane=latestRequest();let accountVersion=auth.generation.value;
+  let querySnapshot='';
   const canNext=computed(()=>!!snapshot.value&&!busy.value&&!stale.value&&!exhausted.value&&!feedback.pending.value.size&&!feedback.unknown.value.size);
   function cancel(){lane.cancel();busy.value=false;}
-  function reset(clear=true){cancel();epoch.value++;snapshot.value=null;shownIds.value=new Set();exhausted.value=false;stale.value=false;error.value='';notice.value='';if(clear)result.value=null;}
+  function reset(clear=true){cancel();epoch.value++;snapshot.value=null;querySnapshot='';shownIds.value=new Set();exhausted.value=false;stale.value=false;error.value='';notice.value='';if(clear)result.value=null;else if(result.value)result.value={...result.value,history:null};}
   function catalogChanged(){cancel();if(snapshot.value&&exhausted.value)stale.value=false;exhausted.value=false;notice.value=result.value?'片库已更新，可继续换一批。':'';}
-  async function run(preferences?:Preferences) {
+  async function run(preferences?:Preferences,query='') {
     if(busy.value||auth.state.value==='checking'||auth.state.value==='error'||feedback.pending.value.size||feedback.unknown.value.size)return;
     const first=!!preferences;
-    if(first){reset();snapshot.value=JSON.parse(JSON.stringify(preferences));accountVersion=auth.generation.value;}
+    if(first){reset();snapshot.value=JSON.parse(JSON.stringify(preferences));querySnapshot=query;accountVersion=auth.generation.value;}
     if(!snapshot.value||!first&&!canNext.value)return;
-    let body;try{body=batchPayload(snapshot.value,shownIds.value);}catch(exc){notice.value=(exc as Error).message;return;}
+    let body;try{body=batchPayload(snapshot.value,shownIds.value,3,querySnapshot);}catch(exc){notice.value=(exc as Error).message;return;}
     const request=lane.begin(),account=auth.scope(),round=epoch.value,version=feedback.revision.value;
     const current=()=>request.current()&&account.current()&&round===epoch.value&&version===feedback.revision.value;
     busy.value=true;error.value='';notice.value='';
@@ -46,7 +47,7 @@ export function useRecommendationBatches(auth:ReturnType<typeof useAuth>,feedbac
     }catch(exc){if(current())error.value=exc instanceof Error?exc.message:'换批失败，请重试';}
     finally{if(current())busy.value=false;}
   }
-  function restart(){if(snapshot.value)void run(JSON.parse(JSON.stringify(snapshot.value)));}
+  function restart(){if(snapshot.value)void run(JSON.parse(JSON.stringify(snapshot.value)),querySnapshot);}
   watch(auth.generation,()=>{if(accountVersion!==auth.generation.value){reset(false);if(result.value){stale.value=true;notice.value='当前为上次结果，请按当前身份重新生成片单。';}accountVersion=auth.generation.value;}},{flush:'sync'});
   watch(feedback.revision,()=>{cancel();},{flush:'sync'});
   if(getCurrentScope())onScopeDispose(cancel);

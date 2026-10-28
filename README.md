@@ -178,7 +178,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 口味推荐区在桌面并列展示需求与分组偏好，超宽屏输入区限制为 680px，手机改为单列。点击“理解我的口味”先识别偏好，成功后弹出核对提示，可直接确认生成、手动调整或关闭；关闭不会生成片单，下方明确显示等待确认。只有确认生成时才显示作品骨架；解析失败、冲突及暂不支持的条件分别提示，不混作片单加载失败。
 
-“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0008，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
+“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0009，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
 
 ## 个人空间
 
@@ -186,7 +186,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 修改密码需当前密码及两次新密码，成功后当前和其他会话全部撤销，重新登录后资料和收藏保留；普通退出只结束当前会话。页面切换、保存资料和改密均保留已输入的观剧需求、偏好及片单。断网后的写入结果可能尚未确认，资料可重新读取核对，密码需重新登录验证。
 
-旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0008，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。本次不删除原有注册时间记录，个人接口不返回该字段。
+旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0009，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。本次不删除原有注册时间记录，个人接口不返回该字段。
 
 可先运行 `.\.venv\Scripts\python.exe scripts/verify-personal-space-upgrade.py`，将当前 SQLite 以只读方式复制到独立文件并验证升级、重复启动、原值指纹和外键完整性，结果见 [升级验证](docs/personal-space-upgrade-validation.json)。副本及自动备份含私有账号数据，保留在 `.local` 且不进入 Git；验证不会更改业务库。历史 `create_all()` 安装的迁移版本可能落后于实际表结构，只有完整结构校验通过后才校正基线。
 
@@ -194,4 +194,10 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 轮播已改为主海报配缩略海报导航和柔和封面背景；宽屏展开缩略图，手机保留精简布局。“不感兴趣／已看过”改为两个独立图标，悬停或键盘焦点显示说明；禁用及提交中的按钮统一显示禁止点击指针。个人空间使用独立左右列，右侧收藏、反馈、兴趣卡片紧凑排列，手机单列。
 
-照片处理新增锁定依赖 Pillow 13.0.0；更新已有环境可执行 `.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock`。SQLite 自动备份后升级至 0008，PostgreSQL 启动前执行 `alembic -c backend/alembic.ini upgrade head`。原照片在浏览器压缩为头像后才随原有 JSON 资料接口上传，继续使用 24,000 字节正文上限；服务端校验并重新编码，不保留照片元数据。复现布局、照片保存与账号隔离验证：`node scripts/verify-profile-polish.mjs`；查看[浏览器验证](docs/profile-polish-browser-validation.json)及[实现记录](docs/实现与验收.md)。
+照片处理新增锁定依赖 Pillow 13.0.0；更新已有环境可执行 `.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock`。SQLite 自动备份后升级至 0009，PostgreSQL 启动前执行 `alembic -c backend/alembic.ini upgrade head`。原照片在浏览器压缩为头像后才随原有 JSON 资料接口上传，继续使用 24,000 字节正文上限；服务端校验并重新编码，不保留照片元数据。复现布局、照片保存与账号隔离验证：`node scripts/verify-profile-polish.mjs`；查看[浏览器验证](docs/profile-polish-browser-validation.json)及[实现记录](docs/实现与验收.md)。
+
+## 历史片单
+
+登录后成功生成的非空片单会自动保存，“换一批”分别记录；从主导航或个人空间查看最近 100 份，包含当时的需求、确认偏好与推荐理由。查看不重新调用模型；“沿用偏好”会带回发现页供再次确认。支持确认删除单份历史，收藏和反馈继续保留。游客仍可正常生成，功能启用前与游客阶段的片单不追记。作品资料改变或不可用时有明确说明，历史详情和最新作品资料分别展示。
+
+本次新增迁移 0009，无新增依赖。SQLite 停止旧服务后按既有备份流程自动升级，PostgreSQL 先执行 `alembic -c backend/alembic.ini upgrade head`。复现浏览器验收：`node scripts/verify-history.mjs`；升级只读副本检查：`.\.venv\Scripts\python.exe -X utf8 scripts/verify-personal-space-upgrade.py --history`。见[产品要求 3.12](产品设计文档.md#312-历史片单已实现)、[技术方案第 15 节](docs/技术方案.md#15-历史片单技术方案已实现)、[浏览器报告](docs/history-browser-validation.json)和[升级报告](docs/history-upgrade-validation.json)。
