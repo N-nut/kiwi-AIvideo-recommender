@@ -10,6 +10,30 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
+test('连续调整推荐仅为待确认产品草案，规则与验收覆盖继承、差异、失败和账号边界',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=product.match(/^### 3\.13 连续调整推荐（产品草案，待确认）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
+  assert.ok(section,'新增功能须先交付独立产品草案');
+  assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 产品草案，待用户确认；技术方案与实现尚未开始 \|/);
+  for(const text of ['尚未实现','当前有效偏好＋本次调整描述','合法空结果','每次最多 300 字符',
+    '保持不变／新增／替换／取消','调整后的完整偏好','确认调整并推荐','放弃本次调整',
+    '不改变当前有效条件','失败则保留旧基准','条件没有变化','去重记录',
+    '未被明确提及的条件全部保留','必须条件和明确排除项不能','未知事实',
+    '题材改成都市','取消不要后宫','不增加必须有后宫','冲突','再轻松一点','不伪报理解成功',
+    '不持久化完整对话','游客','切换账号','迟到','弹出旧核对框']) {
+    assert.ok(section.includes(text),`连续调整草案缺少：${text}`);
+  }
+  const acceptance=product.match(/^### 6\.4 连续调整推荐验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];
+  assert.ok(acceptance,'草案必须带有后续功能验收标准');
+  const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
+  assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
+  assert.ok(acceptance.includes('尚无本功能'));
+  assert.match(product,/技术方案对应的产品基线：v2\.12/);
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  assert.match(technical,/^版本：v3\.3[^\n]+\[产品设计文档 v2\.12\]/m);
+  assert.doesNotMatch(technical,/^## \d+\. 连续调整推荐/m,'产品未确认前不提前补写技术方案');
+});
+
 test('历史片单契约对应服务端快照、隐私、迁移与再次确认', async () => {
   const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
@@ -186,13 +210,16 @@ test('个人空间产品说明覆盖四项功能、账号边界和验收，与�
   assert.doesNotMatch(source,/暂不增加个人资料编辑/,'原阶段说明不得与新增产品范围冲突');
 });
 
-test('个人空间实现说明对应当前产品版本、迁移和实际功能文件', async () => {
+test('个人空间实现说明对齐产品基线、迁移和实际功能文件', async () => {
   const source=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const version=product.match(/^版本：(v[\d.]+)/m)?.[1];
   assert.ok(version,'产品文档须声明版本');
-  assert.ok(source.includes(`[产品设计文档 ${version}]`),'技术方案应对齐当前产品文档版本');
-  assert.doesNotMatch(product,/待技术设计与实现|补充资料保存、画像口径、密码更新与会话失效的技术方案/,'技术设计完成后须同步产品文档进度');
+  const baseline=product.match(/^技术方案对应的产品基线：(v[\d.]+)/m)?.[1]||version;
+  assert.ok(source.includes(`[产品设计文档 ${baseline}]`),'技术方案须对应已声明的产品基线');
+  if(baseline!==version)assert.match(product,/^版本：[^\n]+状态：[^\n]*待产品确认草案/m,'版本分阶段推进须明确待确认范围');
+  const space=product.match(/^### 3\.10 [^\n]+\r?\n([\s\S]*?)(?=^### 3\.11)/m)?.[1];assert.ok(space);
+  assert.doesNotMatch(space,/待技术设计与实现|补充资料保存、画像口径、密码更新与会话失效的技术方案/,'已实现个人空间不得退回待设计状态');
   const migration=await readFile(new URL('../backend/migrations/versions/0005_preview_jobs.py',import.meta.url),'utf8');
   const revision=migration.match(/^revision = "([^"]+)"/m)?.[1];
   assert.ok(revision,'既有媒体任务迁移须声明版本');
