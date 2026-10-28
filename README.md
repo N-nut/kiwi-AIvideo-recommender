@@ -170,6 +170,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 ## 文档与原型
 
 - [产品设计](产品设计文档.md)、[技术方案](docs/技术方案.md)
+- 资料纠错与审核：[技术方案第 17 节](docs/技术方案.md#17-资料纠错与审核技术方案待确认未实现)待用户确认，功能尚未实现；不将方案或文档检查称为已完成人工审核。
 - [实现与验收记录](docs/实现与验收.md)、[数据审核说明](data/审核说明.md)
 - 历史评测（旧作品库）：[标签基线](docs/evaluation-baseline.json)、[真实向量](docs/evaluation-live.json)
 - 当前库自动检查：[标签基线](docs/evaluation-hongguo-baseline.json)、[真实向量](docs/evaluation-hongguo-live.json)；参考标注仍待人工复核。

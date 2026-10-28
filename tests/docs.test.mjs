@@ -28,9 +28,9 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.16/);
+  assert.match(product,/技术方案对应的产品基线：v2\.18/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.6[^\n]+\[产品设计文档 v2\.16\]/m);
+  assert.match(technical,/^版本：v3\.7[^\n]+\[产品设计文档 v2\.18\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('已按用户的实施要求完成'));
 });
@@ -43,12 +43,12 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
   assert.ok(technical.includes('详情完全移除“判断与推荐依据”'));assert.ok(technical.includes('`detailReason`'));
 });
 
-test('资料纠错与审核仅为产品草案，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
+test('资料纠错与审核进入技术确认阶段，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.17[^\n]+状态：[^\n]*待产品确认草案/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.16/);
-  assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 待产品确认草案，尚未实现 \|/);
-  const section=product.match(/^### 3\.14 资料纠错与审核（待产品确认草案，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
+  assert.match(product,/^版本：v2\.18[^\n]+状态：[^\n]*技术方案待确认/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.18/);
+  assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 技术方案已补充，待用户确认；功能尚未实现 \|/);
+  const section=product.match(/^### 3\.14 资料纠错与审核（技术方案待确认，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
     '1～500 字符','一部作品的一类问题','当前资料暂不改变','我的纠错','只有事先指定的审核者',
     '普通注册用户默认没有审核权','两名审核者','过期表单','待审核／已采纳／未采纳／待重新核对',
@@ -58,10 +58,68 @@ test('资料纠错与审核仅为产品草案，覆盖核对发布、人工修�
   const acceptance=product.match(/^### 6\.5 资料纠错与审核验收（待实现）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(acceptance);
   const ids=[...acceptance.matchAll(/^\| (Q\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('尚无本功能'));
-  assert.ok(product.includes('用户明确同意产品方案后，才完善技术方案，技术方案另行确认后再实施'));
+  assert.ok(product.includes('技术方案经用户明确同意后才实施'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.6[^\n]+\[产品设计文档 v2\.16\]/m);
-  assert.doesNotMatch(technical,/^## 17\./m,'草案阶段不能提前建立新功能技术章节');
+  assert.match(technical,/^版本：v3\.7[^\n]+\[产品设计文档 v2\.18\]/m);
+  assert.match(technical,/^## 17\. 资料纠错与审核技术方案（待确认，未实现）/m);
+});
+
+test('纠错审核技术路线对应已核对简历，明确计划结构、写路径和待实现边界',async()=>{
+  const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),17);
+  assert.match(section,/^## 17\. 资料纠错与审核技术方案（待确认，未实现）/);
+  for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','简历连续性对话.md',
+    'Python + FastAPI + Pydantic + SQLAlchemy 事务 + 现有 Vue 3','MySQL','人工介入','随实施补学与边界',
+    '不引入 LangGraph interrupt','不新增 Redis、Celery','不更新简历','work_corrections','work_review_state','work_review_events',
+    'users.is_reviewer','actor_key','active_key','幂等别名','补充新来源','提交回执只允许查 submit 类型','SET NULL','RESTRICT','0010_work_corrections.py','down_revision="0009"',
+    'legacy_snapshot','profile_upgrade.py','不重建用户表','protect_write()','24,000 字节','Cache-Control: no-store',
+    '当前 Session 和审核权仍有效','auth.write()','BEGIN IMMEDIATE','rowcount=1','锁外准备候选',
+    'context 不来自请求 JSON','客户端 submitted/verified/trusted 标记均无授权效力','人工确认的 null',
+    'source_sync','--reembed','session.merge()','media_hold','GET／HEAD','content_hash, review_revision',
+    'catalog_revision','旧快照缺此字段','auth.scope()','latestRequest()','不写 localStorage','不恢复“判断与推荐依据”',
+    '普通 SQLite 单连接或 PGlite','不执行上述新业务测试、迁移或付费模型调用'])assert.ok(section.includes(text),text);
+  const lock=await readFile(new URL('../backend/requirements.lock',import.meta.url),'utf8');
+  for(const [packageName,label] of [['fastapi','FastAPI'],['pydantic','Pydantic'],['SQLAlchemy','SQLAlchemy'],['alembic','Alembic']]){
+    const version=lock.match(new RegExp(`^${packageName}==([^\\r\\n]+)`,'m'))?.[1];assert.ok(version&&section.includes(`${label} ${version}`),packageName);
+  }
+  const migration=await readFile(new URL('../backend/migrations/versions/0009_recommendation_history.py',import.meta.url),'utf8');
+  assert.match(migration,/revision = "0009"/);
+  assert.equal(await stat(new URL('../backend/migrations/versions/0010_work_corrections.py',import.meta.url)).then(()=>true,()=>false),false,'文档阶段不得建立新迁移');
+});
+
+test('纠错审核六组协议例子保持待审不写作品、未知不当作false与核对范围最小公开',async()=>{
+  const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),17);
+  const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,text])=>JSON.parse(text));
+  assert.equal(examples.length,6);
+  const [submit,pending,approve,accepted,conflict,published]=examples;
+  assert.deepEqual(Object.keys(submit).sort(),['base_revision','category','description','field','operation_id','related_correction_id','source_hint','suggestion','work_id']);
+  assert.match(submit.operation_id,/^[a-f0-9]{32}$/);assert.equal(submit.category,'plot_fact');assert.equal(submit.field,'harem');
+  assert.ok(Array.from(submit.description.trim()).length>0&&Array.from(submit.description.trim()).length<=500);
+  assert.equal(pending.correction.work_id,submit.work_id);assert.equal(pending.correction.base_revision,submit.base_revision);assert.equal(pending.work_revision,submit.base_revision);
+  assert.equal(pending.correction.status,'pending');assert.equal(pending.correction.current_value,false);assert.equal(pending.correction.decision,null);
+  assert.deepEqual(submit.suggestion,{kind:'unknown'});assert.deepEqual(pending.correction.suggestion,submit.suggestion);
+  assert.equal(approve.action,'approve');assert.notEqual(approve.operation_id,submit.operation_id);assert.equal(approve.expected_work_revision,submit.base_revision);assert.equal(approve.expected_report_revision,pending.correction.revision);
+  assert.deepEqual(approve.changes.map(change=>({field:change.field,value:change.value})),[{field:'harem',value:null}]);
+  const basis=approve.changes[0].basis;assert.equal(basis.kind,'not_stated');assert.equal(basis.quote,null);assert.equal(new URL(basis.source_url).searchParams.get('series_id'),submit.work_id.replace('hongguo-',''));
+  assert.equal(accepted.operation_id,approve.operation_id);assert.equal(accepted.correction.id,pending.correction.id);assert.equal(accepted.correction.status,'accepted');assert.notEqual(accepted.correction.revision,pending.correction.revision);
+  assert.equal(accepted.work.harem,null);assert.deepEqual(accepted.changes,[{field:'harem',before:false,after:null}]);assert.equal(accepted.work.review.revision,submit.base_revision+1);assert.equal(accepted.work.review.state,'partial');
+  assert.deepEqual(accepted.work.review.confirmed_fields,['harem']);assert.deepEqual(accepted.work.review.recheck_fields,[]);assert.deepEqual(accepted.embedding,{action:'reused',calls:0});
+  assert.equal(conflict.error.code,'review_conflict');assert.ok(conflict.error.current_revision>approve.expected_work_revision);
+  assert.deepEqual(published,accepted.work);
+  const forbidden=new Set(['user_id','submitter_id','actor_id','is_reviewer','password','token','cookie','trusted','source_snapshot','confirmed_evidence']);
+  function inspect(value){if(Array.isArray(value))value.forEach(inspect);else if(value&&typeof value==='object')for(const [key,nested] of Object.entries(value)){assert.ok(!forbidden.has(key),key);inspect(nested);}}
+  examples.forEach(inspect);for(const body of [submit,approve])assert.ok(Buffer.byteLength(JSON.stringify(body),'utf8')<=24000);
+});
+
+test('纠错审核技术验证映射覆盖产品Q01至Q12且接口和引用依据完整',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const criteria=product.match(/^### 6\.5 [^\n]+\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(criteria);
+  const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),17),mapping=section.slice(section.indexOf('### 17.11'));
+  const ids=[...criteria.matchAll(/^\| (Q\d{2}) \|/gm)].map(([,id])=>id);assert.equal(ids.length,12);
+  for(const id of ids)assert.match(mapping,new RegExp(`^\\| ${id} \\|`,'m'));
+  for(const path of ['POST /api/v1/me/corrections','GET /api/v1/me/corrections','GET /api/v1/me/review-access','POST /api/v1/me/review/corrections/{id}/actions','POST /api/v1/me/review/works/{work_id}/availability'])assert.ok(section.includes(path),path);
+  for(const text of ['1～500 个 Unicode 码点','10／分钟','30／分钟','最多 20 条','409 operation_in_progress',
+    'SQLAlchemy 2.0 版本计数','https://www.sqlite.org/lang_transaction.html','validation-context','https://alembic.sqlalchemy.org/en/latest/batch.html'])assert.ok(section.includes(text),text);
+  assert.match(product,/技术方案第 17 节已补齐对应设计与验证映射/);
 });
 
 test('连续调整技术选择对齐简历、锁定依赖、原有接口和实现验收',async()=>{
