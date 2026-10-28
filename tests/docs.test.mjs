@@ -10,11 +10,11 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
-test('连续调整推荐仅为待确认产品草案，规则与验收覆盖继承、差异、失败和账号边界',async()=>{
+test('连续调整产品进入技术确认阶段，规则与验收仍覆盖继承、差异、失败和账号边界',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  const section=product.match(/^### 3\.13 连续调整推荐（产品草案，待确认）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
-  assert.ok(section,'新增功能须先交付独立产品草案');
-  assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 产品草案，待用户确认；技术方案与实现尚未开始 \|/);
+  const section=product.match(/^### 3\.13 连续调整推荐（技术方案待确认，未实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];
+  assert.ok(section,'产品应明确技术待确认与功能未实现状态');
+  assert.match(product,/\| 连续调整推荐 \|[^\n]+\| 技术方案已补充，待用户确认；功能尚未实现 \|/);
   for(const text of ['尚未实现','当前有效偏好＋本次调整描述','合法空结果','每次最多 300 字符',
     '保持不变／新增／替换／取消','调整后的完整偏好','确认调整并推荐','放弃本次调整',
     '不改变当前有效条件','失败则保留旧基准','条件没有变化','去重记录',
@@ -28,10 +28,78 @@ test('连续调整推荐仅为待确认产品草案，规则与验收覆盖继�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('尚无本功能'));
-  assert.match(product,/技术方案对应的产品基线：v2\.12/);
+  assert.match(product,/技术方案对应的产品基线：v2\.14/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.3[^\n]+\[产品设计文档 v2\.12\]/m);
-  assert.doesNotMatch(technical,/^## \d+\. 连续调整推荐/m,'产品未确认前不提前补写技术方案');
+  assert.match(technical,/^版本：v3\.4[^\n]+\[产品设计文档 v2\.14\]/m);
+  assert.match(technical,/^## 16\. 连续调整推荐技术方案（待确认，未实现）/m);
+  assert.ok(product.includes('经用户明确同意后，才开始具体实现'));
+});
+
+test('连续调整技术选择对齐简历、锁定依赖、原有接口和待实现验收',async()=>{
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const section=technicalSection(technical,16);
+  assert.match(section,/^## 16\. 连续调整推荐技术方案（待确认，未实现）/);
+  for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','Python + FastAPI + LangChain 结构化输出 + 现有 Vue 3',
+    '不把学习经历或仓库现成代码等同于已经熟练掌握全部工具','Checkpointer','Store','不新增数据库表',
+    'ChatPromptTemplate','PydanticOutputParser','extra="forbid"','最多 20 个','old_values','evidence',
+    '逐字引用只是必要条件','整个调整不生效','POST /api/v1/preferences/refine','24,000 字节','Cache-Control: no-store',
+    'PREFERENCE_REFINE_IP_LIMIT','refinement_invalid_output','base_revision','no_change','needs_confirmation',
+    'applyRefinement(candidate, text)','committedPreferences / baseRevision','finally','永久卡住按钮',
+    'auth.scope()','latestRequest()','空 `exclude_work_ids`','本次最多 300 字符','无变化','尚无本功能通过数量']) {
+    assert.ok(section.includes(text),`连续调整技术方案缺少：${text}`);
+  }
+  const lock=await readFile(new URL('../backend/requirements.lock',import.meta.url),'utf8');
+  for(const [packageName,label] of [['fastapi','FastAPI'],['pydantic','Pydantic'],['langchain-core','langchain-core'],['langchain-openai','langchain-openai']]){
+    const version=lock.match(new RegExp(`^${packageName}==([^\\r\\n]+)`,'m'))?.[1];
+    assert.ok(version&&section.includes(`${label} ${version}`),`${packageName} 版本应对应锁文件`);
+  }
+  const main=await readFile(new URL('../backend/kiwi/main.py',import.meta.url),'utf8');
+  const providers=await readFile(new URL('../backend/kiwi/providers.py',import.meta.url),'utf8');
+  const batches=await readFile(new URL('../frontend/src/useRecommendationBatches.ts',import.meta.url),'utf8');
+  assert.ok(main.includes('/api/v1/preferences/parse'));assert.ok(providers.includes('不继承历史'));
+  assert.ok(batches.includes('if(first){reset();snapshot.value='),'暂存方案应基于实际先 reset 的当前实现');
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const criteria=product.match(/^### 6\.4 连续调整推荐验收（待实现）([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(criteria);
+  const ids=[...criteria.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
+  const mapping=section.slice(section.indexOf('### 16.9'));
+  for(const id of ids)assert.match(mapping,new RegExp(`^\\| ${id} \\|`,'m'),`技术方案缺少 ${id} 验证设计`);
+  assert.equal(ids.length,12);
+});
+
+test('连续调整协议示例保留原约束、区分候选和提交，状态与字段完整',async()=>{
+  const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),16);
+  const examples=[...section.matchAll(/^```json\s*\r?\n([\s\S]*?)^```\s*$/gm)].map(([,body])=>JSON.parse(body));
+  assert.equal(examples.length,6,'提供理解输入、内部计划、ready、no_change、待确认和确认生成示例');
+  const [request,plan,ready,noChange,blocked,generate]=examples;
+  assert.deepEqual(Object.keys(request).sort(),['base_preferences','base_revision','text']);
+  assert.ok(Number.isInteger(request.base_revision)&&request.base_revision>=1&&request.base_revision<=2147483647);
+  assert.ok(request.text.length>0&&request.text.length<=300);assert.ok(Buffer.byteLength(JSON.stringify(request),'utf8')<=24000);
+  assert.deepEqual(Object.keys(plan).sort(),['operations','unresolved_constraints']);
+  assert.ok(plan.operations.length>0&&plan.operations.length<=20);assert.deepEqual(plan.unresolved_constraints,[]);
+  const operation=plan.operations[0];assert.equal(operation.op,'add');assert.equal(operation.target,'soft.themes');
+  assert.ok(request.text.includes(operation.evidence));assert.deepEqual(operation.values,['重生']);
+  const expected=structuredClone(request.base_preferences);expected.soft_preferences.themes=['重生'];
+  assert.deepEqual(ready.preferences,expected);assert.equal(ready.status,'ready');assert.equal(ready.base_revision,request.base_revision);
+  assert.deepEqual(ready.changes,[{kind:'added',target:'soft.themes',before:[],after:['重生']}]);
+  assert.deepEqual(ready.preferences.excluded_features,request.base_preferences.excluded_features);
+  assert.deepEqual(ready.preferences.soft_preferences.genres,request.base_preferences.soft_preferences.genres);
+  assert.equal(noChange.status,'no_change');assert.deepEqual(noChange.preferences,ready.preferences);
+  assert.equal(noChange.base_revision,ready.base_revision+1);assert.deepEqual(noChange.changes,[]);assert.deepEqual(noChange.issues,[]);
+  assert.equal(blocked.status,'needs_confirmation');assert.equal(blocked.base_revision,request.base_revision);
+  assert.equal(blocked.preferences,null);assert.deepEqual(blocked.changes,[]);assert.ok(blocked.issues.length>0);
+  assert.deepEqual(blocked.preserved,ready.preserved);
+  const fields=['base_revision','changes','issues','mode','preferences','preserved','request_id','status','timings_ms','usage'];
+  for(const response of [ready,noChange,blocked]){
+    assert.deepEqual(Object.keys(response).sort(),fields);assert.match(response.request_id,/^[a-f0-9]{32}$/);
+    assert.equal(response.mode,'baseline');assert.deepEqual(response.usage,{calls:0,tokens:0});
+    assert.ok(response.preserved.some(item=>item.target==='excluded_features'&&item.values.includes('harem')));
+  }
+  assert.deepEqual(Object.keys(generate).sort(),['exclude_work_ids','limit','preferences','query']);
+  assert.deepEqual(generate.preferences,ready.preferences);assert.equal(generate.query,request.text);assert.equal(generate.limit,3);
+  assert.deepEqual(generate.exclude_work_ids,[],'条件变化开始新轮，不能继承旧批次排除集');
+  const forbidden=new Set(['user_id','password','token','cookie','conversation_id','messages','history_id']);
+  function inspect(value){if(Array.isArray(value))value.forEach(inspect);else if(value&&typeof value==='object')for(const [key,nested] of Object.entries(value)){assert.ok(!forbidden.has(key),`协议示例不应携带 ${key}`);inspect(nested);}}
+  examples.forEach(inspect);
 });
 
 test('历史片单契约对应服务端快照、隐私、迁移与再次确认', async () => {
