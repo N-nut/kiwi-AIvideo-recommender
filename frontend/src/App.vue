@@ -100,40 +100,6 @@ const detailReason=computed(()=>{
   const text=comparableText(reason);
   return text&&!comparableText(detailIntro.value).includes(text)&&!comparableText(work.summary).includes(text)?reason:'';
 });
-const detailEvidence=computed(()=>{
-  const work=selected.value;
-  if(!work) return [];
-  const groups=new Map<string,{quote:string;labels:string[];reference:'intro'|'tags'|null}>();
-  const reasonIds=new Set(detailReason.value?work.evidence_ids||[]:[]);
-  const judgments:Record<string,string>={};
-  for(const field of ['harem','romance','tragic'] as const) {
-    if(typeof work[field]==='boolean') judgments[field]=`${fieldNames[field]}：${featureText(work[field])}`;
-  }
-  if(work.pace) judgments.pace=`节奏：${work.pace}`;
-  for(const evidence of work.evidence) {
-    const labels=[judgments[evidence.field],reasonIds.has(evidence.id)?'推荐理由':''].filter(Boolean);
-    const quote=evidence.quote.trim(),key=comparableText(quote);
-    if(!labels.length||!key||!work.original_intro.includes(quote)) continue;
-    const sourceTags=quote.match(/^来源标签[：:]\s*(.+)$/)?.[1].split(/[、,，;；\s]+/).filter(Boolean);
-    const repeatsIntro=key===comparableText(detailIntro.value)||(key===comparableText(work.summary)&&comparableText(detailIntro.value).startsWith(key));
-    const repeatsTags=sourceTags?.length&&sourceTags.every(tag=>detailTags.value.some(shown=>comparableText(shown)===comparableText(tag)));
-    const group:{quote:string;labels:string[];reference:'intro'|'tags'|null}=groups.get(key)||{quote,labels:[],reference:repeatsIntro?'intro':repeatsTags?'tags':null};
-    group.labels=[...new Set([...group.labels,...labels])];
-    groups.set(key,group);
-  }
-  const shown:{quote:string;label:string;references:('intro'|'tags')[]}[]=[];
-  for(const group of groups.values()) {
-    const label=group.labels.join(' · ');
-    const same=group.reference?shown.find(item=>item.references.length&&item.label===label):undefined;
-    if(same&&group.reference) same.references=[...new Set([...same.references,group.reference])];
-    else shown.push({quote:group.quote,label,references:group.reference?[group.reference]:[]});
-  }
-  return shown;
-});
-function revealDetailReference(reference:'intro'|'tags') {
-  const target=detailScroll.value?.querySelector<HTMLElement>(reference==='intro'?'.detail-intro':'.detail-tags');
-  target?.focus({preventScroll:true});target?.scrollIntoView({block:'start'});
-}
 watch(query, () => { closeRecognition();lane.cancel();parseBusy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();resetRound();error.value=''; });
 watch(view,()=>{preview.value?.close();historyWorkLane.cancel();if(view.value!=='discover')closeRecognition();});
 function closeRecognition(){if(recognition.value?.open)recognition.value.close();}
@@ -248,8 +214,6 @@ function showDetail(work:Work) {
   }
   void nextTick(() => {
     if(detailScroll.value) detailScroll.value.scrollTop=0;
-    const evidence=detail.value?.querySelector<HTMLDetailsElement>('.detail-evidence');
-    if(evidence) evidence.open=false;
   });
 }
 function openPreview(work: Work, anchor: HTMLElement, immediate: boolean) { preview.value?.enter(work,anchor,immediate); }
@@ -517,11 +481,10 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       <div ref="detailScroll" class="work-dialog-scroll" tabindex="0" role="region" aria-label="作品资料内容">
         <div v-if="selected.source_meta" class="source-facts"><span>{{selected.source_meta.content_type}}</span><span v-if="selected.source_meta.episode_count">全 {{selected.source_meta.episode_count}} 集</span><span v-if="selected.source_meta.chapter_count">{{selected.source_meta.chapter_count}} 话</span><span v-if="selected.source_meta.rank">热播榜 #{{selected.source_meta.rank}}</span></div>
         <p v-if="selected.source_meta?.classification_note" class="source-note">{{selected.source_meta.classification_note}}</p>
-        <p class="detail-intro" tabindex="-1">{{detailIntro}}</p>
-        <div v-if="detailTags.length" class="detail-tags" tabindex="-1"><span v-for="tag in detailTags" :key="tag">{{tag}}</span></div>
+        <p class="detail-intro">{{detailIntro}}</p>
+        <div v-if="detailTags.length" class="detail-tags"><span v-for="tag in detailTags" :key="tag">{{tag}}</span></div>
         <div v-if="selected.harem!==null||selected.romance!==null||selected.tragic!==null" class="facts"><span v-if="selected.harem!==null">后宫：{{featureText(selected.harem)}}</span><span v-if="selected.romance!==null">感情线：{{featureText(selected.romance)}}</span><span v-if="selected.tragic!==null">虐心：{{featureText(selected.tragic)}}</span></div>
         <section v-if="detailReason" class="detail-reason" aria-label="本次推荐理由"><h3>本次推荐理由</h3><p>{{detailReason}}</p></section>
-        <details v-if="detailEvidence.length" :key="selected.id" class="detail-evidence"><summary><span>判断与推荐依据</span><span class="detail-evidence-count">{{detailEvidence.length}} 条</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary><div class="evidence" v-for="e in detailEvidence" :key="e.quote"><small>{{e.label}}</small><div v-if="e.references.length" class="evidence-references"><button v-for="reference in e.references" :key="reference" type="button" class="evidence-reference" @click="revealDetailReference(reference)">查看上方{{reference==='intro'?'故事简介':'题材标签'}} <span aria-hidden="true">↑</span></button></div><blockquote v-else>{{e.quote}}</blockquote></div></details>
         <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}<br>{{selected.source_meta?.provider==='hongguo'?'自动整理，待人工核对。':selected.review_note}}</p>
         <p v-if="detailMedia" class="source-note preview-source"><a :href="detailMedia.source_page_url" target="_blank" rel="noopener noreferrer">{{detailMedia.clip_kind==='trailer'?'真实预告来源':'试看片段来源'}}</a> · {{Math.round(detailMedia.duration_ms/1000)}} 秒</p>
       </div>

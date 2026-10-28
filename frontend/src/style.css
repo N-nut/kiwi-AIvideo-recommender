@@ -154,22 +154,6 @@ main {width:calc(100% - 212px);margin-left:max(212px,calc((100% - 1650px + 212px
 .detail-reason {margin:20px 0 14px;padding:16px 18px;border:1px solid #e1e8d7;border-radius:12px;background:#f5f8ee}
 .work-dialog .detail-reason h3 {margin:0 0 7px;color:#566d3d;font-size:12px;font-weight:600}
 .detail-reason p {margin:0;color:#46543d;font-size:13px;line-height:1.85;overflow-wrap:anywhere}
-.detail-evidence {margin:14px 0 20px;border:1px solid #e3e8dc;border-radius:12px;background:#fbfcf8;overflow:hidden}
-.detail-evidence summary {display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;color:#5f7051;font-size:12px;font-weight:500;list-style:none}
-.detail-evidence summary::-webkit-details-marker {display:none}
-.detail-evidence summary:focus-visible,.evidence-reference:focus-visible {outline:2px solid #7a965b;outline-offset:-3px;border-radius:6px}
-.detail-evidence-count {margin-left:auto;font-size:10px;font-weight:400;color:#8b967e;white-space:nowrap}
-.detail-evidence summary svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.detail-evidence[open] summary {border-bottom:1px solid #e9ede3}
-.detail-evidence[open] summary svg {transform:rotate(180deg)}
-.detail-evidence .evidence {margin:0 16px;padding:13px 0;border:0;border-bottom:1px solid #e9ede3;background:transparent}
-.detail-evidence .evidence:last-child {border-bottom:0}
-.detail-evidence .evidence small {display:block;color:#687958;font-size:11px;font-weight:500;line-height:1.7}
-.detail-evidence .evidence blockquote {margin:7px 0 0;color:#626b5b;font-size:12px;line-height:1.9;overflow-wrap:anywhere}
-.evidence-references {display:flex;flex-wrap:wrap;column-gap:18px;row-gap:4px}
-.evidence-reference {display:inline-flex;align-items:center;gap:7px;margin-top:7px;padding:0;border:0;background:transparent;color:#71845a;font:inherit;font-size:11px;cursor:pointer}
-.evidence-reference:hover {color:#4d6b2c;text-decoration:underline;text-underline-offset:3px}
-.detail-intro,.detail-tags {scroll-margin-top:12px}
 .work-dialog-header {padding:23px 28px 18px;align-items:flex-start}
 .work-dialog-header h2 {font-size:23px;padding-right:12px}
 .work-dialog-scroll {padding-top:18px}

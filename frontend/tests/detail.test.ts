@@ -43,15 +43,15 @@ describe('long work details', () => {
     expect(dialog.findAll('.detail-tags span').map(tag=>tag.text())).toEqual(['玄幻','穿越']);
     expect(dialog.find('.work-dialog-actions a').attributes('href')).toBe('https://example.org/work-a');
   });
-  it('groups explanations of known judgments and excludes unrelated or unknown fields',async()=>{
+  it('keeps known facts without rendering judgment or evidence explanations',async()=>{
     const quote='故事明确无后宫，也没有感情线。';
     showWork(workFixture({harem:false,romance:false,original_intro:`少年在山门中修炼。${quote}随后开始冒险。`,evidence:[
       {id:'harem-1',field:'harem',quote},{id:'romance-1',field:'romance',quote},
       {id:'pace-1',field:'pace',quote},{id:'summary-1',field:'summary',quote}]}));
     const dialog=await openDetail();
-    expect(dialog.findAll('.evidence')).toHaveLength(1);expect(dialog.find('.evidence blockquote').text()).toBe(quote);
-    expect(dialog.find('.evidence small').text()).toBe('后宫：明确无 · 感情线：明确无');
-    expect(dialog.find('.detail-evidence').attributes('open')).toBeUndefined();
+    expect(dialog.findAll('.facts span').map(item=>item.text())).toEqual(['后宫：明确无','感情线：明确无']);
+    expect(dialog.findAll('.evidence,.detail-evidence,.evidence-reference')).toHaveLength(0);
+    expect(dialog.text()).not.toContain('判断与推荐依据');
     expect(dialog.text()).not.toMatch(/harem-1|romance-1|节奏：/);
   });
   it('does not show unsupported judgments or unreferenced snippets',async()=>{
@@ -59,26 +59,24 @@ describe('long work details', () => {
     showWork(workFixture({original_intro:quote,evidence:[{id:'harem-1',field:'harem',quote},{id:'other',field:'summary',quote}]}));
     const dialog=await openDetail();expect(dialog.find('.detail-evidence').exists()).toBe(false);
   });
-  it('links to already displayed introduction and tags for an actual recommendation instead of quoting them again',async()=>{
+  it('keeps the recommendation reason and removes the entire evidence area even when cited introduction and tags exist',async()=>{
     const intro='少年在修仙途中逆袭成长。',tags='来源标签：修仙、成长';
     showWork(workFixture({original_intro:`${intro}\n\n${tags}`,summary:intro,reason:'修仙与成长的主线符合本次观剧偏好。',reason_mode:'model',evidence_ids:['summary-1','tags-1','unknown'],evidence:[
       {id:'summary-1',field:'summary',quote:intro},{id:'tags-1',field:'themes',quote:tags}]}));
     const dialog=await openDetail();
     expect(dialog.find('.detail-reason p').text()).toBe('修仙与成长的主线符合本次观剧偏好。');
-    expect(dialog.findAll('.evidence-reference').map(link=>link.text())).toEqual(['查看上方故事简介 ↑','查看上方题材标签 ↑']);
-    expect(dialog.findAll('.evidence')).toHaveLength(1);
-    expect(dialog.findAll('.evidence blockquote')).toHaveLength(0);
-    await dialog.find('.evidence-reference').trigger('click');
-    expect(document.activeElement).toBe(dialog.find('.detail-intro').element);
-    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({block:'start'});
+    expect(dialog.findAll('.evidence,.detail-evidence,.evidence-reference')).toHaveLength(0);
+    expect(dialog.text()).not.toMatch(/判断与推荐依据|查看上方故事简介|查看上方题材标签/);
+    expect(dialog.findAll('.detail-intro')).toHaveLength(1);
+    expect(dialog.find('.work-dialog-actions a').attributes('href')).toBe('https://example.org/work-a');
   });
-  it('keeps only the linked excerpt needed to explain a recommendation',async()=>{
+  it('does not render evidence excerpts even when they are distinct from the introduction and support the reason',async()=>{
     const quote='主角在险境中不断成长。';
     showWork(workFixture({original_intro:`少年离开山门。${quote}最终击败对手。`,reason:'主角逐步成长，符合成长主题的偏好。',reason_mode:'model',evidence_ids:['reason-1'],evidence:[
       {id:'reason-1',field:'summary',quote},{id:'unused',field:'summary',quote:'少年离开山门。'}]}));
     const dialog=await openDetail();
-    expect(dialog.findAll('.evidence')).toHaveLength(1);expect(dialog.find('.evidence small').text()).toBe('推荐理由');
-    expect(dialog.find('.evidence blockquote').text()).toBe(quote);
+    expect(dialog.find('.detail-reason p').text()).toBe('主角逐步成长，符合成长主题的偏好。');
+    expect(dialog.findAll('.evidence,.detail-evidence,blockquote')).toHaveLength(0);
   });
   it('removes the copied introduction from template reasons',async()=>{
     const intro='少年在修仙途中逆袭成长。';
@@ -92,12 +90,13 @@ describe('long work details', () => {
     showWork(workFixture({original_intro:intro,reason:intro,reason_mode:'model',evidence_ids:['summary-1'],evidence:[{id:'summary-1',field:'summary',quote:intro}]}));
     const dialog=await openDetail();expect(dialog.find('.detail-reason').exists()).toBe(false);expect(dialog.find('.detail-evidence').exists()).toBe(false);
   });
-  it('collapses additional explanations again when reopening details',async()=>{
-    const intro='本作明确无后宫，侧重修行成长。';
-    showWork(workFixture({original_intro:intro,harem:false,evidence:[{id:'harem-1',field:'harem',quote:intro}]}));
-    const dialog=await openDetail();(dialog.find('.detail-evidence').element as HTMLDetailsElement).open=true;
+  it('keeps recommendation reasons and evidence removal when reopening details',async()=>{
+    const intro='本作明确无后宫，侧重修行成长。',reason='修行成长的主线符合本次偏好。';
+    showWork(workFixture({original_intro:intro,harem:false,reason,reason_mode:'model',evidence_ids:['harem-1'],evidence:[{id:'harem-1',field:'harem',quote:intro}]}));
+    const dialog=await openDetail();
     await dialog.find('[aria-label="关闭作品详情"]').trigger('click');await wrapper.find('.poster-button').trigger('click');await flushPromises();
-    expect((dialog.find('.detail-evidence').element as HTMLDetailsElement).open).toBe(false);
+    expect(dialog.find('.detail-reason p').text()).toBe(reason);
+    expect(dialog.findAll('.detail-evidence,.evidence,.evidence-reference')).toHaveLength(0);
   });
   it('closes when the blank backdrop is clicked after scrolling', async () => {
     const dialog = await openDetail(); expect(dialog.attributes()).toHaveProperty('open');

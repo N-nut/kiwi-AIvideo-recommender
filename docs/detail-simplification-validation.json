@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-28",
+  "database": ".local\\detail-evidence-mvs414ba.db",
+  "checks": [
+    "real source introduction and tags appear once with no empty evidence section",
+    "recommended cards retain their reason and remove the full evidence area even with valid evidence",
+    "desktop, tablet and narrow phone details retain reasons without evidence or horizontal overflow",
+    "keyboard Escape closes and reopening retains the reason, source and favorite actions",
+    "switching back to a real work removes synthetic explanations and preserves source actions"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "left": 360,
+      "right": 1080,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "left": 24,
+      "right": 744,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "left": 16,
+      "right": 374,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "left": 16,
+      "right": 304,
+      "bodyOverflow": false,
+      "pageOverflow": false
+    }
+  ],
+  "synthetic_reason_case": true,
+  "evidence_section_removed": true,
+  "mode": "baseline",
+  "page_errors": []
+}

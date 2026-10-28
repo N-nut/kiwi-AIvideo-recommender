@@ -1,4 +1,4 @@
-// Real catalogue copy plus an explicitly synthetic judgment/reason display case.
+// Public catalogue copy and a synthetic reason fixture; no business writes or live models.
 import {createRequire} from 'node:module';
 import {spawn,spawnSync} from 'node:child_process';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -10,10 +10,10 @@ const require=createRequire(import.meta.url),{chromium}=require(process.env.KIWI
 const root=fileURLToPath(new URL('..',import.meta.url)),suffix=Date.now().toString(36),port=Number(process.env.KIWI_DETAIL_TEST_PORT||8004),base=`http://127.0.0.1:${port}`;
 const probe=createServer();await new Promise((done,fail)=>{probe.once('error',fail);probe.listen(port,'127.0.0.1',done);});await new Promise(done=>probe.close(done));
 const python=resolve(root,process.platform==='win32'?'.venv/Scripts/python.exe':'.venv/bin/python'),database=resolve(root,`.local/detail-evidence-${suffix}.db`);
-const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py',database,'--with-previews'],{cwd:root,encoding:'utf8'});assert.equal(prepared.status,0,prepared.stderr);
+const prepared=spawnSync(python,['-X','utf8','scripts/prepare-home-validation.py',database,'--with-previews'],{cwd:root,encoding:'utf8',windowsHide:true});assert.equal(prepared.status,0,prepared.stderr);
 const server=spawn(python,['-X','utf8','-m','uvicorn','kiwi.main:app','--host','127.0.0.1','--port',String(port),'--no-proxy-headers','--no-access-log'],
  {cwd:root,env:{...process.env,PREVIEW_AUTO_ENABLED:'false',AI_MODE:'baseline',DATABASE_URL:`sqlite:///${database.replaceAll('\\','/')}`,AUTH_ALLOWED_ORIGINS:base},stdio:'ignore',windowsHide:true});
-const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),database:JSON.parse(prepared.stdout).database,checks:[],viewports:[],synthetic_judgment_case:true,page_errors:[]};
+const report={date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'}),database:JSON.parse(prepared.stdout).database,checks:[],viewports:[],synthetic_reason_case:true,evidence_section_removed:true,mode:'baseline',page_errors:[]};
 const pause=ms=>new Promise(done=>setTimeout(done,ms));let browser,page;
 async function check(name,run){await run();report.checks.push(name);console.log(`Passed: ${name}`);}
 async function open(title){
@@ -34,7 +34,7 @@ try{
   const dialog=await open(real.title);assert.equal(await dialog.locator('.detail-intro').innerText(),real.original_intro.split('\n\n来源标签：')[0]);
   assert.equal(await dialog.locator('.detail-evidence,.detail-reason,.evidence').count(),0);
   assert.equal(await dialog.locator('.work-dialog-actions a').getAttribute('href'),real.source_url);
-  await dialog.screenshot({path:resolve(root,'docs/screenshots/detail-clean-desktop.png')});
+  await dialog.screenshot({path:resolve(root,'docs/screenshots/detail-simplified-desktop.png')});
  });
  const intro='少年在门派中修行，逐步完成试炼。故事明确无后宫，以冒险成长为主。',tags='来源标签：修仙、成长',quote='故事明确无后宫，以冒险成长为主。';
  const fixture={...real,id:'detail-evidence-fixture',title:'界面验证样本 · 判断与推荐',source_meta:null,source_url:'https://example.org/detail-fixture',cover_url:null,
@@ -43,34 +43,42 @@ try{
   review_note:'合成界面验证资料，不代表真实作品。',evidence:[{id:'summary-1',field:'summary',quote:intro},{id:'tags-1',field:'genres',quote:tags},{id:'harem-1',field:'harem',quote}]};
  await context.route('**/api/v1/works?**',route=>route.fulfill({json:{items:[fixture],total:1}}));
  await context.route('**/api/v1/works/detail-evidence-fixture/preview',route=>route.fulfill({json:{request_id:'fixture',work_id:fixture.id,status:'missing',preview:null,preparing:false}}));
- await check('only meaningful judgments and reason references remain, with repeated source text linked above',async()=>{
-  const dialog=await open(fixture.title);assert.equal(await dialog.locator('.detail-reason p').innerText(),fixture.reason);
-  assert.equal(await dialog.locator('.detail-evidence').getAttribute('open'),null);await dialog.locator('.detail-evidence summary').click();
-  assert.equal(await dialog.locator('.evidence').count(),2);assert.equal(await dialog.locator('.evidence blockquote').count(),1);
-  assert.equal(await dialog.locator('.evidence blockquote').innerText(),quote);assert.equal(await dialog.locator('.evidence-reference').count(),2);
-  assert(!(await dialog.innerText()).includes('summary-1'));await dialog.screenshot({path:resolve(root,'docs/screenshots/detail-evidence-desktop.png')});
+ await check('recommended cards retain their reason and remove the full evidence area even with valid evidence',async()=>{
+  await page.locator('.work-dialog[open]').getByRole('button',{name:'关闭作品详情',exact:true}).click();
+  await page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:/发现好剧/}).click();
+  await context.route('**/api/v1/recommendations',route=>route.fulfill({json:{request_id:'fixture',status:'success',items:[fixture],warnings:[],timings_ms:{},mode:'baseline',batch:{state:'ready',has_more:null}}}));
+  await page.locator('#query').fill('只看修仙');await page.locator('#recommend-button').click();await page.locator('.recognition-dialog[open]').waitFor();await page.locator('.recognition-dialog .primary-button').click();
+  const card=page.locator('.results-section .drama-card').first();await card.waitFor();await card.getByRole('button',{name:'详情',exact:true}).click();
+  const dialog=page.locator('.work-dialog');assert.equal(await dialog.locator('.detail-reason p').innerText(),fixture.reason);
+  assert.equal(await dialog.locator('.detail-evidence,.evidence,.evidence-reference').count(),0);
+  assert(!(await dialog.innerText()).includes('判断与推荐依据'));assert(!(await dialog.innerText()).includes('summary-1'));
+  assert.equal(await dialog.locator('.detail-intro').innerText(),intro);assert((await dialog.locator('.facts').innerText()).includes('后宫：明确无'));
+  await dialog.screenshot({path:resolve(root,'docs/screenshots/detail-reason-desktop.png')});
+  await dialog.getByRole('button',{name:'关闭作品详情',exact:true}).click();await page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:/片库/}).click();
  });
- await check('desktop, tablet and narrow phone layouts wrap correctly with visible close and action buttons',async()=>{
+ await check('desktop, tablet and narrow phone details retain reasons without evidence or horizontal overflow',async()=>{
   for(const [width,height] of [[1440,1000],[768,1024],[390,844],[320,740]]){
-   await page.setViewportSize({width,height});const dialog=await open(fixture.title);await dialog.locator('.detail-evidence summary').click();
+   await page.setViewportSize({width,height});const dialog=await open(fixture.title);
    const bounds=await dialog.evaluate(el=>{const r=el.getBoundingClientRect(),body=el.querySelector('.work-dialog-scroll');return {left:r.left,right:r.right,bodyOverflow:body.scrollWidth>body.clientWidth+1,pageOverflow:document.documentElement.scrollWidth>innerWidth};});
    assert(bounds.left>=0&&bounds.right<=width+1&&!bounds.bodyOverflow&&!bounds.pageOverflow);assert(await dialog.getByRole('button',{name:'关闭作品详情',exact:true}).isVisible());
+   assert.equal(await dialog.locator('.detail-reason p').innerText(),fixture.reason);assert.equal(await dialog.locator('.detail-evidence,.evidence,.evidence-reference').count(),0);
    report.viewports.push({width,height,...bounds});
-   if(width===390){await dialog.locator('.evidence blockquote').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(root,'docs/screenshots/detail-evidence-mobile.png')});}
+   if(width===390)await page.screenshot({path:resolve(root,'docs/screenshots/detail-reason-mobile.png')});
   }
  });
- await check('reference links move focus to the original text and reopening resets the collapsed state',async()=>{
-  const dialog=page.locator('.work-dialog');await dialog.locator('.evidence-reference').first().click();
-  assert(await dialog.locator('.detail-intro').evaluate(el=>el===document.activeElement));
-  await open(fixture.title);assert.equal(await dialog.locator('.detail-evidence').getAttribute('open'),null);
-  await dialog.locator('.detail-evidence summary').focus();await page.keyboard.press('Enter');assert.notEqual(await dialog.locator('.detail-evidence').getAttribute('open'),null);
+ await check('keyboard Escape closes and reopening retains the reason, source and favorite actions',async()=>{
+  await page.keyboard.press('Escape');assert.equal(await page.locator('.work-dialog[open]').count(),0);
+  const dialog=await open(fixture.title);assert.equal(await dialog.locator('.detail-reason p').innerText(),fixture.reason);
+  assert.equal(await dialog.locator('.detail-evidence,.evidence-reference').count(),0);
+  await dialog.getByRole('button',{name:'关闭作品详情',exact:true}).focus();assert(await dialog.getByRole('button',{name:'关闭作品详情',exact:true}).evaluate(el=>el===document.activeElement));
+  assert.equal(await dialog.locator('.work-dialog-actions a').getAttribute('href'),fixture.source_url);assert(await dialog.getByRole('button',{name:'♡ 收藏',exact:true}).isVisible());
  });
  await check('switching back to a real work removes synthetic explanations and preserves source actions',async()=>{
   await context.unroute('**/api/v1/works?**');await page.setViewportSize({width:390,height:844});const dialog=await open(real.title);
   assert.equal(await dialog.locator('.detail-reason,.detail-evidence').count(),0);assert.equal(await dialog.locator('.work-dialog-actions a').getAttribute('href'),real.source_url);
-  await page.screenshot({path:resolve(root,'docs/screenshots/detail-clean-mobile.png')});assert.deepEqual(report.page_errors,[]);
+  await page.screenshot({path:resolve(root,'docs/screenshots/detail-simplified-mobile.png')});assert.deepEqual(report.page_errors,[]);
  });
- await writeFile(resolve(root,'docs/detail-evidence-validation.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({checks:report.checks.length,viewports:report.viewports.length,page_errors:report.page_errors}));
+ await writeFile(resolve(root,'docs/detail-simplification-validation.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({checks:report.checks.length,viewports:report.viewports.length,page_errors:report.page_errors}));
 }finally{
  if(page&&report.checks.length<5)await page.screenshot({path:resolve(root,'.local/detail-evidence-failure.png')}).catch(()=>{});
  await browser?.close();if(server.exitCode===null){server.kill();await Promise.race([new Promise(done=>server.once('exit',done)),pause(3000)]);}

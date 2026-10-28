@@ -28,11 +28,19 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.15/);
+  assert.match(product,/技术方案对应的产品基线：v2\.16/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.5[^\n]+\[产品设计文档 v2\.15\]/m);
+  assert.match(technical,/^版本：v3\.6[^\n]+\[产品设计文档 v2\.16\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('已按用户的实施要求完成'));
+});
+
+test('作品详情完整移除判断与推荐依据，保留推荐理由和后端证据校验',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const section=product.match(/^### 3\.9 作品详情与推荐理由\r?\n([\s\S]*?)(?=^### 3\.10)/m)?.[1];assert.ok(section);
+  for(const text of ['整块移除“判断与推荐依据”','本次推荐理由','后台原始证据','推荐引用校验','历史快照','键盘操作'])assert.ok(section.includes(text),text);
+  const technical=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),6);
+  assert.ok(technical.includes('详情完全移除“判断与推荐依据”'));assert.ok(technical.includes('`detailReason`'));
 });
 
 test('连续调整技术选择对齐简历、锁定依赖、原有接口和实现验收',async()=>{
