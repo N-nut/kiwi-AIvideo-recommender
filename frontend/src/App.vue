@@ -345,7 +345,10 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
 <template>
   <a class="skip-link" href="#query">跳到观剧需求</a>
   <aside class="sidebar">
-    <div class="sidebar-brand"><a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a><p class="brand-slogan">发现刚好对位的漫剧</p></div>
+    <div class="sidebar-brand">
+      <a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a>
+      <p class="brand-slogan"><span>发现刚好</span><strong>对味的短剧</strong></p>
+    </div>
     <nav aria-label="主导航">
       <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')"><span class="nav-icon">⌂</span>发现好剧</button>
       <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>

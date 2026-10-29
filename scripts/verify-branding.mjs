@@ -21,22 +21,28 @@ const pause=ms=>new Promise(done=>setTimeout(done,ms));let browser;
 async function check(name,run){await run();report.checks.push(name);console.log('Passed: '+name);}
 try{
  let ready=false;for(let i=0;i<80;i++){try{ready=(await(await fetch(`${base}/health/ready`)).json()).mode==='baseline';}catch{}if(ready)break;await pause(200);}assert(ready);
- browser=await chromium.launch({channel:process.env.KIWI_BROWSER_CHANNEL||'msedge',headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});page.setDefaultTimeout(12000);page.on('pageerror',error=>report.page_errors.push(error.message));
+ browser=await chromium.launch({channel:process.env.KIWI_BROWSER_CHANNEL||'msedge',headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:2,reducedMotion:'reduce'});page.setDefaultTimeout(12000);page.on('pageerror',error=>report.page_errors.push(error.message));
  const writes=[];page.on('request',request=>{if(request.method()!=='GET'&&new URL(request.url()).pathname.startsWith('/api/'))writes.push(request.url());});
  await page.goto(base);await page.getByRole('button',{name:'登录 / 注册',exact:true}).waitFor();
  await check('production tab uses the Kiwi SVG icon and requested title',async()=>{
-  assert.equal(await page.title(),'奇维 Kiwi · 发现刚好对位的漫剧');
+  assert.equal(await page.title(),'奇维 Kiwi · 发现刚好对味的短剧');
   const icon=await page.evaluate(()=>new Promise((done,fail)=>{const link=document.querySelector('link[rel="icon"]');if(!link)return fail(Error('missing icon'));const img=new Image();img.onload=()=>done({width:img.naturalWidth,height:img.naturalHeight,type:link.type});img.onerror=fail;img.src=link.href;}));assert.equal(icon.type,'image/svg+xml');assert(icon.width>0&&icon.height>0);
  });
  const nav=name=>page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:new RegExp(name)}).click();
  await check('logo slogan, short-drama update label and source notice remain visible across public views',async()=>{
-  assert.equal(await page.locator('.brand-slogan').innerText(),'发现刚好对位的漫剧');assert((await page.locator('.catalog-update-button').innerText()).includes('更新短剧库'));
+  assert.equal(await page.locator('.brand-slogan').textContent(),'发现刚好对味的短剧');assert((await page.locator('.catalog-update-button').innerText()).includes('更新短剧库'));
   for(const view of ['发现好剧','片库']){await nav(view);assert.equal(await page.locator('.page-footer .source-attribution').innerText(),notice);}
   await page.locator('.poster-button').first().click();await page.locator('.work-dialog[open]').waitFor();assert.equal(await page.locator('.work-dialog .source-attribution').innerText(),notice);assert(await page.locator('.work-dialog-actions a').getAttribute('href'));assert.equal(await page.locator('.detail-review-state').count(),1);await page.keyboard.press('Escape');
  });
  await mkdir(resolve(root,'docs/screenshots'),{recursive:true});
- await check('320/390/768/1440 layouts keep branding, navigation, notices and detail within viewport',async()=>{
-  for(const [width,height] of [[320,740],[390,844],[768,1024],[1440,1000]]){await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.locator('.brand-slogan').waitFor({state:'visible'});if([390,1440].includes(width))await page.screenshot({path:resolve(root,`docs/screenshots/branding-${width}.png`),fullPage:true});await page.locator('.poster-button').first().click();await page.locator('.work-dialog[open]').waitFor();assert.equal(await page.locator('.work-dialog').evaluate(el=>el.scrollWidth>el.clientWidth),false);await page.keyboard.press('Escape');report.viewports.push({width,height,overflow:false});}
+ await check('brand subtitle stays readable, aligned and on one line across six desktop/mobile widths',async()=>{
+  for(const [width,height] of [[320,740],[390,844],[768,1024],[901,1000],[1024,1000],[1440,1000]]){
+   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.locator('.brand-slogan').waitFor({state:'visible'});
+   const brand=await page.locator('.sidebar-brand').evaluate(el=>{const logo=el.querySelector('.brand').getBoundingClientRect(),text=el.querySelector('.brand-slogan'),rect=text.getBoundingClientRect(),style=getComputedStyle(text);return {font_size:parseFloat(style.fontSize),height:rect.height,line_height:parseFloat(style.lineHeight),left_delta:Math.abs(rect.left-logo.left),logo_gap:rect.top-logo.bottom,overflow:text.scrollWidth>text.clientWidth,emphasis:el.querySelector('.brand-slogan strong').textContent};});
+   assert(brand.font_size>=11.5);assert(brand.height<=brand.line_height+1);assert(brand.left_delta<=1);assert(brand.logo_gap>=8&&brand.logo_gap<=14);assert.equal(brand.overflow,false);assert.equal(brand.emphasis,'对味的短剧');
+   if([390,1440].includes(width))await page.locator('.sidebar-brand').screenshot({path:resolve(root,`docs/screenshots/branding-${width}.png`)});
+   await page.locator('.poster-button').first().click();await page.locator('.work-dialog[open]').waitFor();assert.equal(await page.locator('.work-dialog').evaluate(el=>el.scrollWidth>el.clientWidth),false);await page.keyboard.press('Escape');report.viewports.push({width,height,overflow:false,brand});
+  }
  });
  assert.deepEqual(writes,[]);assert.deepEqual(report.page_errors,[]);await writeFile(resolve(root,'docs/branding-validation.json'),JSON.stringify(report,null,2)+'\n');
 }finally{await browser?.close();server.kill();await Promise.race([new Promise(done=>{if(server.exitCode!==null)done();else server.once('exit',done);}),pause(3000)]);log.end();}

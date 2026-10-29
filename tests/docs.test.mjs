@@ -12,14 +12,14 @@ function technicalSection(source, number) {
 
 test('正式网页图标复用奇维Logo，品牌和来源说明与当前文档一致',async()=>{
   const index=new URL('../frontend/index.html',import.meta.url),html=await readFile(index,'utf8');
-  assert.match(html,/<title>奇维 Kiwi · 发现刚好对位的漫剧<\/title>/);
+  assert.match(html,/<title>奇维 Kiwi · 发现刚好对味的短剧<\/title>/);
   const favicon=html.match(/<link rel="icon" type="image\/svg\+xml" href="([^"]+)"/);
   assert.ok(favicon);const asset=new URL(favicon[1],index);
   assert.equal(asset.href,new URL('../demo/assets/kiwi-logo.svg',import.meta.url).href);
   assert.match(await readFile(asset,'utf8'),/<svg[^>]+viewBox="0 0 64 64"/);
   for(const doc of ['../产品设计文档.md','../docs/技术方案.md']){
     const text=await readFile(new URL(doc,import.meta.url),'utf8');
-    for(const phrase of ['发现刚好对位的漫剧','所有短剧来源红果短剧，推荐大家前往红果短剧观看。','更新短剧库'])assert.ok(text.includes(phrase),phrase);
+    for(const phrase of ['发现刚好对味的短剧','所有短剧来源红果短剧，推荐大家前往红果短剧观看。','更新短剧库'])assert.ok(text.includes(phrase),phrase);
   }
 });
 

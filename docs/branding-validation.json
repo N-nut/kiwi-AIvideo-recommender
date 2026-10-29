@@ -6,28 +6,92 @@
   "checks": [
     "production tab uses the Kiwi SVG icon and requested title",
     "logo slogan, short-drama update label and source notice remain visible across public views",
-    "320/390/768/1440 layouts keep branding, navigation, notices and detail within viewport"
+    "brand subtitle stays readable, aligned and on one line across six desktop/mobile widths"
   ],
   "viewports": [
     {
       "width": 320,
       "height": 740,
-      "overflow": false
+      "overflow": false,
+      "brand": {
+        "font_size": 11.5,
+        "height": 19,
+        "line_height": 19,
+        "left_delta": 0,
+        "logo_gap": 8,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
     },
     {
       "width": 390,
       "height": 844,
-      "overflow": false
+      "overflow": false,
+      "brand": {
+        "font_size": 11.5,
+        "height": 19,
+        "line_height": 19,
+        "left_delta": 0,
+        "logo_gap": 8,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
     },
     {
       "width": 768,
       "height": 1024,
-      "overflow": false
+      "overflow": false,
+      "brand": {
+        "font_size": 12,
+        "height": 20,
+        "line_height": 20,
+        "left_delta": 0,
+        "logo_gap": 9,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
+    },
+    {
+      "width": 901,
+      "height": 1000,
+      "overflow": false,
+      "brand": {
+        "font_size": 12,
+        "height": 20,
+        "line_height": 20,
+        "left_delta": 0,
+        "logo_gap": 13,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
+    },
+    {
+      "width": 1024,
+      "height": 1000,
+      "overflow": false,
+      "brand": {
+        "font_size": 12,
+        "height": 20,
+        "line_height": 20,
+        "left_delta": 0,
+        "logo_gap": 13,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
     },
     {
       "width": 1440,
       "height": 1000,
-      "overflow": false
+      "overflow": false,
+      "brand": {
+        "font_size": 12,
+        "height": 20,
+        "line_height": 20,
+        "left_delta": 0,
+        "logo_gap": 13,
+        "overflow": false,
+        "emphasis": "对味的短剧"
+      }
     }
   ],
   "page_errors": []
