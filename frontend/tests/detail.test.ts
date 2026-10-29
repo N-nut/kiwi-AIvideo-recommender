@@ -32,6 +32,14 @@ beforeEach(() => {
 afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('long work details', () => {
+  it('keeps the viewing-source notice in the shared detail and footer without replacing the specific source',async()=>{
+    showWork(workFixture());const dialog=await openDetail();
+    const notice='所有短剧来源红果短剧，推荐大家前往红果短剧观看。';
+    expect(dialog.find('.source-attribution').text()).toBe(notice);
+    expect(wrapper.find('.page-footer .source-attribution').text()).toBe(notice);
+    expect(dialog.find('.work-dialog-actions a').attributes('href')).toBe('https://example.org/work-a');
+    expect(dialog.find('.detail-review-state').exists()).toBe(true);
+  });
   it('hides the entire evidence section when only the introduction and displayed tags are repeated',async()=>{
     const tagQuote='来源标签：玄幻、穿越';
     showWork(workFixture({genres:['玄幻'],themes:['穿越'],original_intro:`完整故事简介。\n\n${tagQuote}`,evidence:[{id:'summary-1',field:'summary',quote:'完整故事简介。'},{id:'genres-1',field:'genres',quote:tagQuote},{id:'themes-1',field:'themes',quote:tagQuote}]}));

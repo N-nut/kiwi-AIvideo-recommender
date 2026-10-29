@@ -37,6 +37,7 @@ import './corrections.css';
 import logo from '../../demo/assets/kiwi-logo.svg';
 
 const query = ref('想看穿越逆袭的故事，偏好修仙题材。');
+const sourceNotice='所有短剧来源红果短剧，推荐大家前往红果短剧观看。';
 const prefs = ref<Preferences>(emptyPreferences());
 const parsed = ref(false); const parseBusy = ref(false); const phase = ref(''); const error = ref('');
 const requestKind=ref<'parse'|'recommend'|null>(null);
@@ -344,7 +345,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
 <template>
   <a class="skip-link" href="#query">跳到观剧需求</a>
   <aside class="sidebar">
-    <a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a>
+    <div class="sidebar-brand"><a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a><p class="brand-slogan">发现刚好对位的漫剧</p></div>
     <nav aria-label="主导航">
       <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')"><span class="nav-icon">⌂</span>发现好剧</button>
       <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
@@ -355,7 +356,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
     <div class="sidebar-bottom">
       <section class="sidebar-library" aria-label="片库更新">
         <div class="sidebar-section-title"><span>片库管理</span><span class="library-status" :class="{running:updating,failed:refresh.status==='failed'}">{{updating?'更新中':refresh.last_success_at?'已同步':'尚未同步'}}</span></div>
-        <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}" aria-hidden="true">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新漫剧库'}}</button>
+        <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}" aria-hidden="true">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新短剧库'}}</button>
         <div class="catalog-sync" :class="{failed:refresh.status==='failed'||refreshError}" role="status" aria-live="polite">
       <span>{{refreshError || (refresh.status==='running'||refresh.status==='failed'?refresh.message:'最近更新 '+updatedTime)}}</span>
       <span v-if="health.mode==='baseline'" class="baseline-notice">标签基线模式</span>
@@ -399,7 +400,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       <FeaturedCarousel :works="home.works.value" :suspended="busy" feedback-enabled :feedback-pending="feedback.pending.value" @detail="showDetail" @feedback="submitFeedback" />
       <div v-if="home.error.value" class="featured-status" role="alert"><span>{{home.error.value}}</span><button class="text-button" @click="home.load">重新加载首页推荐</button></div>
       <p v-else-if="home.loading.value" class="featured-status" role="status">正在加载首页推荐…</p>
-      <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库还没有可展示的剧集，点击侧栏“更新漫剧库”即可加载。'}}</p>
+      <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库还没有可展示的剧集，点击侧栏“更新短剧库”即可加载。'}}</p>
       <div v-if="home.notice.value" class="featured-status" role="status">{{home.notice.value}} <button class="text-button" @click="home.load">重试个性化推荐</button></div>
       <p v-if="home.data.value?.warnings.length" class="featured-status" role="status">{{home.data.value.warnings.join('；')}}</p>
       <section class="composer" aria-labelledby="composer-title">
@@ -476,7 +477,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       <CatalogPagination :page="catalogPage" :pages="catalogPages" :busy="catalogLoading||favoriteLoading" @change="goToPage" />
       <div v-if="!visibleWorks.length&&!catalogLoading&&!favoriteLoading&&!catalogError&&!favoriteError" class="empty-state"><h3>{{view==='favorites'?'还没有收藏作品':shelf.searchTerm.value?'没有找到相关剧名':'暂时没有符合条件的作品'}}</h3><template v-if="view==='catalog'&&shelf.searchTerm.value"><p>试试其他关键词，或清空搜索后继续浏览。</p><button class="secondary-button" @click="shelf.clearSearch">清空搜索</button></template><button v-else class="secondary-button" @click="setView('discover')">回到首页</button></div>
     </section>
-    <footer class="page-footer">作品资料来自红果 · 自动整理，待人工核对</footer>
+    <footer class="page-footer"><p class="source-attribution">{{sourceNotice}}</p><p class="footer-review-note">资料自动整理 · 人工核对范围见作品详情</p></footer>
   </main>
 
   <dialog ref="updateDialog" class="collection-dialog" aria-labelledby="collection-title">
@@ -515,6 +516,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
         <div v-if="selected.harem!==null||selected.romance!==null||selected.tragic!==null" class="facts"><span v-if="selected.harem!==null">后宫：{{featureText(selected.harem)}}</span><span v-if="selected.romance!==null">感情线：{{featureText(selected.romance)}}</span><span v-if="selected.tragic!==null">虐心：{{featureText(selected.tragic)}}</span></div>
         <section v-if="detailReason" class="detail-reason" aria-label="本次推荐理由"><h3>{{detailStaleReason?'生成时理由（资料已更新）':'本次推荐理由'}}</h3><p>{{detailReason}}</p></section>
         <p class="source-note">{{selected.source_meta?.provider==='hongguo'?'红果资料':'来源资料'}} · 采集于 {{selected.collected_at}}</p>
+        <p class="source-note source-attribution">{{sourceNotice}}</p>
         <p v-if="detailMedia" class="source-note preview-source"><a :href="detailMedia.source_page_url" target="_blank" rel="noopener noreferrer">{{detailMedia.clip_kind==='trailer'?'真实预告来源':'试看片段来源'}}</a> · {{Math.round(detailMedia.duration_ms/1000)}} 秒</p>
       </div>
       <footer class="dialog-actions work-dialog-actions"><a class="secondary-button" :href="selected.source_url" target="_blank" rel="noopener noreferrer">{{selected.source_meta?.content_type==='漫画'?'查看漫画阅读资料':'查看来源资料'}}</a><button class="text-button" :disabled="detailUnavailable||!!newDetail" @click="openCorrection">资料有误？</button><button class="primary-button" :disabled="detailUnavailable||favoriteBusy(selected.id)" @click="favorite(selected.id)">{{favoriteBusy(selected.id)?'正在处理…':!favoriteReady?'重试收藏状态':library.has(selected.id)?'♥ 已收藏':'♡ 收藏'}}</button></footer>

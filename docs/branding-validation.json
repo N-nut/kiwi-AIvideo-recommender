@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-29",
+  "synthetic_database": true,
+  "business_database_modified": false,
+  "model_calls": 0,
+  "checks": [
+    "production tab uses the Kiwi SVG icon and requested title",
+    "logo slogan, short-drama update label and source notice remain visible across public views",
+    "320/390/768/1440 layouts keep branding, navigation, notices and detail within viewport"
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "height": 740,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "overflow": false
+    }
+  ],
+  "page_errors": []
+}

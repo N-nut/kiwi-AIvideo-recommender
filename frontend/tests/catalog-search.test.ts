@@ -25,6 +25,9 @@ describe('sidebar and catalogue search',()=>{
   it('moves update and account controls into the lower sidebar with an avatar placeholder',async()=>{
     server();await catalog();
     expect(wrapper.find('.sidebar-bottom .catalog-update-button').exists()).toBe(true);
+    expect(wrapper.find('.catalog-update-button').text()).toBe('↻更新短剧库');
+    expect(wrapper.find('.sidebar-brand .brand-slogan').text()).toBe('发现刚好对位的漫剧');
+    expect(wrapper.find('.page-footer .source-attribution').text()).toBe('所有短剧来源红果短剧，推荐大家前往红果短剧观看。');
     expect(wrapper.find('.sidebar-bottom .account-button').text()).toBe('登录 / 注册');expect(wrapper.find('.account-avatar svg').exists()).toBe(true);
     expect(wrapper.find('.topbar').exists()).toBe(false);expect(wrapper.find('.catalog-heading h1').text()).toBe('片库');
     expect(wrapper.find('[aria-label="主导航"]').text()).not.toContain('真实片库');expect(wrapper.find('input[type=file]').exists()).toBe(false);

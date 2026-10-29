@@ -10,6 +10,19 @@ function technicalSection(source, number) {
   return source.slice(start).split(/\r?\n## \d+\./)[0];
 }
 
+test('正式网页图标复用奇维Logo，品牌和来源说明与当前文档一致',async()=>{
+  const index=new URL('../frontend/index.html',import.meta.url),html=await readFile(index,'utf8');
+  assert.match(html,/<title>奇维 Kiwi · 发现刚好对位的漫剧<\/title>/);
+  const favicon=html.match(/<link rel="icon" type="image\/svg\+xml" href="([^"]+)"/);
+  assert.ok(favicon);const asset=new URL(favicon[1],index);
+  assert.equal(asset.href,new URL('../demo/assets/kiwi-logo.svg',import.meta.url).href);
+  assert.match(await readFile(asset,'utf8'),/<svg[^>]+viewBox="0 0 64 64"/);
+  for(const doc of ['../产品设计文档.md','../docs/技术方案.md']){
+    const text=await readFile(new URL(doc,import.meta.url),'utf8');
+    for(const phrase of ['发现刚好对位的漫剧','所有短剧来源红果短剧，推荐大家前往红果短剧观看。','更新短剧库'])assert.ok(text.includes(phrase),phrase);
+  }
+});
+
 test('连续调整已实现，产品规则与验收覆盖继承、差异、失败和账号边界',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
   const section=product.match(/^### 3\.13 连续调整推荐（已实现）\r?\n([\s\S]*?)(?=^### 3\.14|^## 4\.)/m)?.[1];
@@ -28,9 +41,9 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.19/);
+  assert.match(product,/技术方案对应的产品基线：v2\.20/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.8[^\n]+\[产品设计文档 v2\.19\]/m);
+  assert.match(technical,/^版本：v3\.9[^\n]+\[产品设计文档 v2\.20\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('已按用户的实施要求完成'));
 });
@@ -45,8 +58,8 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
 
 test('资料纠错与审核已实现，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.19[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.19/);
+  assert.match(product,/^版本：v2\.20[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.20/);
   assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 已实现纠错、本人记录、授权审核、人工保护与停用恢复；验证边界见实现记录 \|/);
   const section=product.match(/^### 3\.14 资料纠错与审核（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
@@ -60,7 +73,7 @@ test('资料纠错与审核已实现，覆盖核对发布、人工修正、账�
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('原生 PostgreSQL 多连接竞争'));
   assert.ok(product.includes('已按用户继续实现要求完成'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.8[^\n]+\[产品设计文档 v2\.19\]/m);
+  assert.match(technical,/^版本：v3\.9[^\n]+\[产品设计文档 v2\.20\]/m);
   assert.match(technical,/^## 17\. 资料纠错与审核技术方案（已实现）/m);
 });
 
@@ -585,7 +598,7 @@ test('真实片段预览文档区分已验证样本、来源边界与待完成�
   assert.match(section, /不遮挡原卡片的封面、文字和操作/);
   assert.match(section, /卡片资料区下方/);
   assert.match(source, /首版不提供完整剧集站内播放/);
-  for (const requirement of ['更新漫剧库成功保存后','预览准备中','重启恢复','默认有声','漫画暂不支持预览','不显示封面或章节画面']) assert.ok(section.includes(requirement), requirement);
+  for (const requirement of ['更新短剧库成功保存后','预览准备中','重启恢复','默认有声','漫画暂不支持预览','不显示封面或章节画面']) assert.ok(section.includes(requirement), requirement);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   for (const requirement of ['0005_preview_jobs.py','sync-previews --retry-failed','preparing','preview_jobs','有限','首集 ID','同一作品更名','预期内容指纹','404']) assert.ok(technical.includes(requirement),requirement);
 });
