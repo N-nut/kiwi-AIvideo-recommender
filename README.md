@@ -1,8 +1,8 @@
-# 奇维 Kiwi · AI 漫剧智能推荐系统
+# 奇维 Kiwi 短剧推荐系统
 
-已实现可本地运行的 RAG MVP：**输入需求 → AI 解析 → 编辑确认 → 硬条件筛选与语义检索 → 带资料依据的推荐**。前端采用 Vue 3 / TypeScript，后端采用 FastAPI / SQLAlchemy / LangChain 模型适配，真实调用 DeepSeek 与百炼 text-embedding-v4（1024 维）。最多返回 3 部，不足时按实际数量返回。
+个人项目，已实现可本地运行的短剧推荐与资料审核系统：**输入需求 → 偏好解析 → 编辑确认 → 硬条件筛选与语义检索 → 带资料依据的推荐**。前端采用 Vue 3 / TypeScript，后端采用 FastAPI / SQLAlchemy / LangChain 模型适配，真实调用 DeepSeek 与百炼 text-embedding-v4（1024 维）。最多返回 3 部，不足时按实际数量返回。
 
-桌面左侧栏底部提供 **更新短剧库**、更新状态和账号区，手机适配为导航下方工具区：选择真人剧、漫剧、AI剧、漫画及可选热播榜，后台自动翻页，采集真实标题、封面、简介、标签、集数或章节与榜单信息，按来源标识增量入库。原 36 部 Bilibili 资料已停用。自动采集资料按用户授权用于开发验证，待人工复核。详见 [数据审核说明](data/审核说明.md)。
+桌面左侧栏底部提供 **更新短剧库**、更新状态和账号区，手机适配为导航下方工具区：选择真人剧、漫剧、AI剧、漫画及可选热播榜，后台自动翻页，采集真实标题、封面、简介、标签、集数或章节与榜单信息，按来源标识增量入库。原 36 部 Bilibili 资料已停用。自动采集资料用于开发验证，独立人工复核待完成。详见 [数据审核说明](data/审核说明.md)。
 
 ## 在这台电脑上启动
 
@@ -189,7 +189,7 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 
 修改密码需当前密码及两次新密码，成功后当前和其他会话全部撤销，重新登录后资料和收藏保留；普通退出只结束当前会话。页面切换、保存资料和改密均保留已输入的观剧需求、偏好及片单。断网后的写入结果可能尚未确认，资料可重新读取核对，密码需重新登录验证。
 
-旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0010，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。本次不删除原有注册时间记录，个人接口不返回该字段。
+旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0010，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。保留原有注册时间记录，个人接口不返回该字段。
 
 可先运行 `.\.venv\Scripts\python.exe scripts/verify-personal-space-upgrade.py`，将当前 SQLite 以只读方式复制到独立文件并验证升级、重复启动、原值指纹和外键完整性，结果见 [升级验证](docs/personal-space-upgrade-validation.json)。副本及自动备份含私有账号数据，保留在 `.local` 且不进入 Git；验证不会更改业务库。历史 `create_all()` 安装的迁移版本可能落后于实际表结构，只有完整结构校验通过后才校正基线。
 
@@ -216,6 +216,6 @@ docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/resto
 .\.venv\Scripts\python.exe -X utf8 -m kiwi reviewer --user-id <真实账号ID> --revoke --reason "结束资料审核职责"
 ```
 
-本功能新增 `0010_work_corrections.py`，无新增依赖；停止旧服务后重启，SQLite 识别已知结构、备份后自动升级至 0010；PostgreSQL 先执行 Alembic `upgrade head`。未给现有业务账号自动授权，也不更改简历。需要降级时先导出新增纠错与审计记录，降级会删除新表，不能作为无损回滚。
+本功能新增 `0010_work_corrections.py`，无新增依赖；停止旧服务后重启，SQLite 识别已知结构、备份后自动升级至 0010；PostgreSQL 先执行 Alembic `upgrade head`。未给现有业务账号自动授权。需要降级时先导出新增纠错与审计记录，降级会删除新表，不能作为无损回滚。
 
 网络结果未知时先核对回执和记录，若选择重试须保持同一操作标识。live 仅对需要的有效作品文本准备 Embedding，索引失败不发布；baseline 检索文本变化会清除旧索引，明确只使用标签基线。本人说明不送入模型、索引或其他用户推荐。复现隔离浏览器检查：`node scripts/verify-corrections.mjs`，使用全新合成数据库、三个测试账号及 baseline 模式。报告见[纠错审核验证](docs/corrections-browser-validation.json)，实际边界见[实现记录](docs/实现与验收.md)。原生 PostgreSQL 多连接竞争和线上部署仍待实测。

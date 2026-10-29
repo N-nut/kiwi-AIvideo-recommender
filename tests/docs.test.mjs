@@ -41,11 +41,11 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.20/);
+  assert.match(product,/技术方案对应的产品基线：v2\.21/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.9[^\n]+\[产品设计文档 v2\.20\]/m);
+  assert.match(technical,/^版本：v3\.10[^\n]+\[产品设计文档 v2\.21\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
-  assert.ok(product.includes('已按用户的实施要求完成'));
+  assert.ok(product.includes('连续调整推荐与详情精简已实现'));
 });
 
 test('作品详情完整移除判断与推荐依据，保留推荐理由和后端证据校验',async()=>{
@@ -58,8 +58,8 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
 
 test('资料纠错与审核已实现，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.20[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.20/);
+  assert.match(product,/^版本：v2\.21[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.21/);
   assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 已实现纠错、本人记录、授权审核、人工保护与停用恢复；验证边界见实现记录 \|/);
   const section=product.match(/^### 3\.14 资料纠错与审核（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
@@ -71,18 +71,18 @@ test('资料纠错与审核已实现，覆盖核对发布、人工修正、账�
   const acceptance=product.match(/^### 6\.5 资料纠错与审核验收（已实现，本地验证）\r?\n([\s\S]*?)(?=^## 7\.)/m)?.[1];assert.ok(acceptance);
   const ids=[...acceptance.matchAll(/^\| (Q\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('原生 PostgreSQL 多连接竞争'));
-  assert.ok(product.includes('已按用户继续实现要求完成'));
+  assert.ok(product.includes('资料纠错与审核已实现'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.9[^\n]+\[产品设计文档 v2\.20\]/m);
+  assert.match(technical,/^版本：v3\.10[^\n]+\[产品设计文档 v2\.21\]/m);
   assert.match(technical,/^## 17\. 资料纠错与审核技术方案（已实现）/m);
 });
 
-test('纠错审核实现对应简历路线、受保护写路径和验证边界',async()=>{
+test('纠错审核选型明确模块职责、受保护写路径和验证边界',async()=>{
   const section=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),17);
   assert.match(section,/^## 17\. 资料纠错与审核技术方案（已实现）/);
-  for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','简历连续性对话.md',
-    'Python + FastAPI + Pydantic + SQLAlchemy 事务 + 现有 Vue 3','MySQL','人工介入','随实施补学与边界',
-    '不引入 LangGraph interrupt','不新增 Redis、Celery','不更新简历','work_corrections','work_review_state','work_review_events',
+  for(const text of ['技术选择与职责','严格布尔／null',
+    'Python + FastAPI + Pydantic + SQLAlchemy 事务 + 现有 Vue 3','PostgreSQL 行锁','人工审核状态','作品稿与索引原子发布',
+    '不引入 LangGraph interrupt','不新增 Redis、Celery','实际验证及边界见 17.13','work_corrections','work_review_state','work_review_events',
     'users.is_reviewer','actor_key','active_key','幂等别名','补充新来源','提交回执只允许查 submit 类型','SET NULL','RESTRICT','0010_work_corrections.py','down_revision="0009"',
     'legacy_snapshot','profile_upgrade.py','不重建用户表','protect_write()','24,000 字节','Cache-Control: no-store',
     '当前 Session 和审核权仍有效','auth.write()','BEGIN IMMEDIATE','rowcount=1','锁外准备候选',
@@ -135,12 +135,12 @@ test('纠错审核技术验证映射覆盖产品Q01至Q12且接口和引用依�
   assert.match(product,/技术方案第 17 节已补齐对应设计与验证映射/);
 });
 
-test('连续调整技术选择对齐简历、锁定依赖、原有接口和实现验收',async()=>{
+test('连续调整技术选择保留状态约束、锁定依赖、原有接口和实现验收',async()=>{
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   const section=technicalSection(technical,16);
   assert.match(section,/^## 16\. 连续调整推荐技术方案（已实现）/);
-  for(const text of ['00_尹恒-实习简历-Python_Agent项目版_20260920.docx','Python + FastAPI + LangChain 结构化输出 + 现有 Vue 3',
-    '不把学习经历或仓库现成代码等同于已经熟练掌握全部工具','Checkpointer','Store','不新增数据库表',
+  for(const text of ['技术选择与职责','Python + FastAPI + LangChain 结构化输出 + 现有 Vue 3',
+    '结构合法与语义可信分别校验','Checkpointer','Store','不新增数据库表',
     'ChatPromptTemplate','PydanticOutputParser','extra="forbid"','最多 20 个','old_values','evidence',
     '逐字引用只是必要条件','整个调整不生效','POST /api/v1/preferences/refine','24,000 字节','Cache-Control: no-store',
     'PREFERENCE_REFINE_IP_LIMIT','refinement_invalid_output','base_revision','no_change','needs_confirmation',
@@ -414,7 +414,7 @@ test('个人空间实现说明对齐产品基线、迁移和实际功能文件',
     'frontend/tests/personal-space.test.ts','scripts/verify-personal-space.mjs','data/avatar-presets.json']) {
     assert.ok((await stat(new URL('../'+file,import.meta.url))).isFile(),file);
   }
-  for(const requirement of ['Python + FastAPI + 现有 Vue 3','不代表已经掌握该工具','0006_user_profiles.py',
+  for(const requirement of ['Python + FastAPI + 现有 Vue 3','唯一约束、条件更新和事务回滚','0006_user_profiles.py',
     'create_all()','uq_users_nickname_key','NFKC','casefold()','多个 NULL','保存本人当前昵称',
     '并发正确性由唯一索引保证','不展示注册时间','服务端 Session','extra="forbid"',
     'PATCH /api/v1/me/profile','GET /api/v1/me/profile','GET /api/v1/me/space-summary','POST /api/v1/me/password',
@@ -601,4 +601,24 @@ test('真实片段预览文档区分已验证样本、来源边界与待完成�
   for (const requirement of ['更新短剧库成功保存后','预览准备中','重启恢复','默认有声','漫画暂不支持预览','不显示封面或章节画面']) assert.ok(section.includes(requirement), requirement);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
   for (const requirement of ['0005_preview_jobs.py','sync-previews --retry-failed','preparing','preview_jobs','有限','首集 ID','同一作品更名','预期内容指纹','404']) assert.ok(technical.includes(requirement),requirement);
+});
+
+
+test('项目文档使用产品工程表述，保留模型技术名词、验收边界与公开来源',async()=>{
+  const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
+  const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
+  const readme=await readFile(new URL('../README.md',import.meta.url),'utf8');
+  const acceptance=await readFile(new URL('../docs/实现与验收.md',import.meta.url),'utf8');
+  for(const text of [product,technical,readme,acceptance]) {
+    assert.doesNotMatch(text,/助手|Codex|ChatGPT|简历|已重新读取最新版|按用户本次/);
+  }
+  assert.match(readme,/^# 奇维 Kiwi 短剧推荐系统/m);
+  assert.ok(readme.includes('个人项目'));
+  for(const term of ['LangChain','DeepSeek','Embedding','AI剧','0010','原生 PostgreSQL','待'])assert.ok(technical.includes(term),term);
+  const data=await readFile(new URL('../data/审核说明.md',import.meta.url),'utf8');
+  assert.ok(data.includes('真实片段与自动准备任务'));
+  assert.ok(data.includes('独立离线 Demo 保留模拟动画'));
+  assert.ok(data.includes('../docs/preview-library-validation.json'));
+  assert.ok(technical.includes('有限真实模型样例'));
+  assert.ok(product.includes('独立人工复核仍待完成'));
 });
