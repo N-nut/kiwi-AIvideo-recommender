@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "奇维 Kiwi：带偏好确认和证据追溯的 RAG 漫剧推荐",
+  "description": "奇维 Kiwi：基于 FastAPI、Vue 3 与 RAG 的个人短剧推荐项目，支持自然语言偏好解析、语义检索、收藏反馈、历史片单、视频预览及资料纠错审核。",
   "scripts": {
     "build": "node scripts/build-demo.mjs",
     "start": "node scripts/start.mjs",

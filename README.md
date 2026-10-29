@@ -1,28 +1,48 @@
 # 奇维 Kiwi 短剧推荐系统
 
-个人项目，已实现可本地运行的短剧推荐与资料审核系统：**输入需求 → 偏好解析 → 编辑确认 → 硬条件筛选与语义检索 → 带资料依据的推荐**。前端采用 Vue 3 / TypeScript，后端采用 FastAPI / SQLAlchemy / LangChain 模型适配，真实调用 DeepSeek 与百炼 text-embedding-v4（1024 维）。最多返回 3 部，不足时按实际数量返回。
+奇维 Kiwi 是我围绕观剧偏好与作品资料管理开发的个人项目，采用前后端分离架构。通过自然语言描述想看的题材、剧情特色和排除项，核对偏好后获取有资料依据的推荐；同时提供完整的片库、账号收藏、反馈、历史片单、视频预览与资料纠错审核流程。
 
-桌面左侧栏底部提供 **更新短剧库**、更新状态和账号区，手机适配为导航下方工具区：选择真人剧、漫剧、AI剧、漫画及可选热播榜，后台自动翻页，采集真实标题、封面、简介、标签、集数或章节与榜单信息，按来源标识增量入库。原 36 部 Bilibili 资料已停用。自动采集资料用于开发验证，独立人工复核待完成。详见 [数据审核说明](data/审核说明.md)。
+**项目简介：** 奇维 Kiwi：基于 FastAPI、Vue 3 与 RAG 的个人短剧推荐项目，支持自然语言偏好解析、语义检索、收藏反馈、历史片单、视频预览及资料纠错审核。
 
-## 在这台电脑上启动
+项目已完成当前业务范围内的功能实现，可在本地运行和演示，后续持续扩展功能。详细实现及验证范围见 [实现与验收](docs/实现与验收.md)。
 
-项目的独立 Python 环境、前端依赖和编译结果均已准备，可在项目目录执行：
+## 功能
+
+| 模块 | 已实现内容 |
+| --- | --- |
+| 片库管理 | 按类别分页采集、来源标识去重、增量更新、进度查看、剧名搜索、题材筛选和数字分页 |
+| 偏好推荐 | 自然语言解析、偏好编辑确认、必须条件与排除项、三态事实筛选、语义检索和推荐依据校验 |
+| 连续调整 | 基于当前条件追加、替换或取消偏好，展示差异，确认后生成；失败保留原条件与片单 |
+| 个性化发现 | 收藏风格轮播与提示词、“不感兴趣／已看过”反馈、撤销反馈及按已确认条件换一批 |
+| 账号与个人空间 | 注册登录、服务端 Session、账号隔离、昵称与头像、收藏概览、只读兴趣画像和密码修改 |
+| 历史片单 | 自动保存登录后的成功片单、分页回看、删除、沿用偏好及历史资料变化提示 |
+| 视频预览 | 剧集首集 15 秒片段自动准备、侧边预览、声音控制、任务恢复及失败状态；漫画保留阅读入口 |
+| 纠错与审核 | 本人纠错记录、指定审核者工作台、来源与字段差异核对、采纳发布、人工字段保护、作品停用与恢复 |
+
+推荐流程：**描述需求 → 核对偏好 → 条件筛选与语义检索 → 查看推荐 → 调整或换一批**。
+
+资料维护流程：**发现问题 → 提交纠错 → 审核核对 → 发布资料与索引 → 查看处理结果**。
+
+## 技术实现
+
+| 层次 | 技术与职责 |
+| --- | --- |
+| 前端 | Vue 3、TypeScript、Vite；响应式布局、表单交互、请求取消与账号状态隔离 |
+| 后端 | Python、FastAPI、Pydantic 2；HTTP 接口、严格校验、权限、任务和错误处理 |
+| 推荐 | LangChain、DeepSeek、百炼 text-embedding-v4；结构化偏好、1024 维向量检索与引用校验 |
+| 数据 | SQLAlchemy、Alembic；本地 SQLite，保留 PostgreSQL／pgvector 路径 |
+| 媒体 | Node Playwright、FFmpeg／ffprobe；公开首集解析、片段处理及文件检查 |
+| 测试 | pytest、Vitest、Node Test Runner、Playwright；接口、事务、状态竞争与浏览器流程 |
+
+硬条件先由 SQL 执行，再进行语义排序；未知事实不会被当作符合排除条件。审核发布采用锁外索引准备、锁内权限与版本复核，在同一事务中提交资料、索引、审核事件和幂等回执。收藏、反馈与历史归属服务端 Session 对应账号。
+
+## 快速开始
+
+建议使用 Python 3.13 和 Node.js 24；前端要求 Node.js 22.12 及以上。以下为 Windows PowerShell 示例：
 
 ```powershell
-npm.cmd start
-```
-
-打开 [本地产品](http://127.0.0.1:8000/)，保持终端运行。也可直接双击项目内 `启动产品.cmd`。端口冲突时可执行 `npm.cmd start -- --port 8001`，并将 `http://127.0.0.1:8001` 加入 `.env` 的 `AUTH_ALLOWED_ORIGINS` 后重启。启动保留上次同步结果，不再自动导入旧 36 部资料。
-
-Windows PowerShell 可能因执行策略拦截 `npm.ps1`，因此这里明确使用 `npm.cmd`，无需修改系统执行策略。
-
-本机通过 SQLite 保存真实资料和真实向量，在 Python 中执行精确余弦排序；必须条件和三态排除仍由 SQL 执行。正式部署路径采用 PostgreSQL + pgvector，在数据库内执行约束和精确向量排序。不会在服务出错后切到虚构作品。
-
-## 从新环境安装
-
-已实测 Python **3.13.9**、Node **24.14.0**。Python 依赖固定于 `backend/requirements.lock`，前端与 PostgreSQL 测试辅助包各有 `package-lock.json`。
-
-```powershell
+git clone https://github.com/N-nut/kiwi-AIvideo-recommender.git
+cd kiwi-AIvideo-recommender
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
 .\.venv\Scripts\python.exe -m pip install --no-deps -e backend
@@ -32,190 +52,43 @@ npm.cmd run build:app
 Copy-Item .env.example .env
 ```
 
-在 `.env` 填写 `DEEPSEEK_API_KEY`、`DASHSCOPE_API_KEY` 后运行 `npm.cmd start`。也支持系统环境变量。密钥只由后端读取。百炼密钥的地域须与 `EMBEDDING_BASE_URL` 一致。默认 DeepSeek 模型为 `deepseek-chat`，可配置 `DEEPSEEK_MODEL`。
-
-无密钥也能启动、采集和浏览作品；缺少百炼密钥时不创建向量，健康检查会保留未就绪状态。配置密钥后再次更新即可补齐索引。也可**显式**执行 `npm.cmd start -- --baseline` 使用标签基线和证据模板，页面会标记基线模式，不调用模型。
-
-前端开发分别运行：
+在 `.env` 中配置 `DEEPSEEK_API_KEY` 与 `DASHSCOPE_API_KEY`，然后启动：
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn kiwi.main:app --host 127.0.0.1 --port 8000
-npm.cmd --prefix frontend run dev
+npm.cmd start
 ```
 
-打开 Vite 输出的地址（默认 5173），`/api`、`/health` 代理到后端。
+访问 [本地网页](http://127.0.0.1:8000/)，或使用项目内的 `启动产品.cmd`。密钥由后端读取；数据库、会话、照片、媒体文件和 `.env` 不进入 Git 仓库。新环境首次更新片库后建立本地资料及向量，媒体按任务状态逐步准备。
 
-## 使用与数据导入
+无需模型调用时，可显式运行 `npm.cmd start -- --baseline` 使用标签基线与证据模板，页面会标记该模式。完整配置、前后端开发、迁移、审核授权、媒体工具、Compose 和备份方法见 [运行与维护](docs/运行与维护.md)。
 
-点击首页“更新短剧库”，默认勾选漫剧、AI剧，可增加真人剧、漫画和热播榜。页面显示实际类别、当前页、已读取页数、原始条数、去重数量和索引进度，完成后自动刷新卡片。刷新网页后继续查看同一任务；运行中不重复发起，结束后 30 秒内复用最近结果。
-
-后端固定来源为 [真人剧](https://hongguoduanju.com/category/real-drama)、[漫剧](https://hongguoduanju.com/category/comic-drama)、[AI剧](https://hongguoduanju.com/category/ai-drama)、[漫画](https://hongguoduanju.com/category/comic) 和 [热播榜](https://hongguoduanju.com/rank/hot-drama)。默认每来源最多 **5 页**，整个任务最多 **25 页、500 部**；达到上限明确显示限定范围。每次从第一页开始，按来源分页信息停止，不承诺全站全量。漫画独立保存标识、章节与阅读链接；分类信息优先于榜单缺失标签。
-
-本次限定范围的页面、字段校验和向量化全部成功后，一次事务新增或更新；**不会删除本次未出现的作品**。同名不同来源 ID 保留，人工拒绝状态不会被自动批准。页面、模型或超时失败保留原库。仅热度、封面或日期变化复用向量，检索文本变化才重新索引。状态存入数据库；本版按本地单进程服务设计，多实例调度仍待后续实现，资料审核已按第 17 节接入。
-
-`POST /api/v1/catalog/refresh` 提交范围，`GET /api/v1/catalog/refresh` 查看状态。请求示例：
-
-```json
-{"categories":["comic-drama","ai-drama"],"include_hot_rank":false}
-```
-
-来源由后端固定，不接受外部爬取 URL。`.env.example` 提供页数、作品数和时间预算配置；请求串行间隔至少 0.5 秒，采集/索引/全任务默认分别最多 300/600/900 秒。已有 SQLite 原位升级；PostgreSQL 沿用 Alembic 0002，本轮只扩展 JSON 字段，无需新增实体列。
-
-- 点击“理解我的口味”后检查识别结果；可调整题材、主题、节奏、排除项和必须条件，再点击确认生成。修改描述会重置本轮偏好，旧请求的迟到结果不能覆盖新输入。
-- 不要后宫时，只有 `harem=false` 能通过，`true` 和未知均排除；来源未说明的特征不会推断为“没有”。
-- 作品详情展示原始简介、证据、资料日期和官方链接。名称、链接和简介来自数据库；生成的 ID、证据和引用经过校验。生成失败时使用证据模板并标识。
-- 首页有六部作品的封面轮播，竖版海报完整展示，前后按钮使用居中的箭头图标，已移除手动暂停按钮；仍每 6 秒自动切换，悬停、焦点、后台、弹窗及减少动态效果保护保留。已接入当前账号全部有效剧集收藏的标签排序，优先展示未收藏的相近作品，最多 6 部；不足时补充公开未收藏作品。需求框下方最多 4 条提示词来自同部收藏的真实标签共现；游客或无有效风格时展示“换个口味试试：”。点击仅填入需求，仍需识别并确认。此功能不新增模型调用。尚未生成片单时，虚线框直接展示三步指引，用户确认后才展示推荐作品。
-- “未标注”类别已移除：本批来源合并后仍缺少明确内容类型的记录在清洗阶段剔除，更新详情会显示数量；剧情事实未知仍保持三态。
-- 详情移除整块“判断与推荐依据”和重复引用的定位按钮，保留简介、标签、明确剧情事实、本次推荐理由、来源及收藏；推荐理由继续去除重复的简介摘录，后台证据与引用校验保留。更新成功统计也默认收起。
-- “片库”支持类别、题材筛选和剧名模糊搜索；标题旁输入关键词，停顿 300ms 或按回车即查询整个已审核片库，查询变化重置页码。服务端每页加载 12 部，页码可直接点击，首尾和当前页附近数字动态切换。账号收藏复用数字分页，不随片库翻页丢失；不可用资料可展开管理并取消收藏。
-- 卡片采用 2:3 竖版海报；片库和收藏每页 12 部，根据内容宽度排成 1、2、3、4 或 6 列，完整页不再出现宽屏末行大片留白。末页及少量筛选结果按实际数量展示；图片失败使用同尺寸占位图。
-- 悬停约 260ms 后在原卡片右侧或左侧展示纯媒体预览，不遮挡原卡片资料；窄屏通过“预览”按钮在卡片资料下方展开。全部剧集及更新新增作品自动准备对应首集的 15 秒片段，默认有声循环播放，可切换静音；侧栏显示补齐进度，准备中与不可用明确区分。已就绪素材复用，失败可重试；漫画预览框仅显示“漫画暂不支持预览”，不显示画面。移出、关闭、切页或原卡片移除时停止并卸载媒体；自动播放受限或减少动态效果时可手动播放。
-- 详情弹窗只滚动正文，隐藏可见滚动条，标题、关闭按钮及底部操作保持可见；点击旁边空白处或按 Esc 可关闭。
-- 完结、时长等未支持的明确条件需要用户主动调整或移除；冲突条件不直接推荐。
-- 左侧栏下方“登录 / 注册”支持用户名密码注册、登录和退出；点击账号区进入个人空间，可保存唯一昵称、选择预设头像、查看收藏概览和兴趣画像，并修改密码；改密成功后所有会话失效，资料和收藏保留。注册即登录，刷新和服务重启可恢复 7 天内的有效会话。密码以 Argon2id 保存，Cookie 为 HttpOnly。游客仍可浏览和生成片单；游客收藏会先登录，再继续该次操作。
-- 收藏保存在账号中，不同账号隔离。同账号访问同一后端和数据库即可恢复；已用两套独立 Cookie 存储验证，真实双设备随部署验收。旧 `kiwi-real-library-v1` 按演示昵称提示，用户确认选中组后才导入，每批最多 100 条；跳过失效资料、可重试且保留原始本地字典。
-- 新增账号和收藏写请求要求 `X-Kiwi-Request: 1` 和允许的完整来源；会话与个人接口禁止缓存。`.env.example` 提供 Cookie、允许来源、会话期限和单进程限流参数。HTTPS 部署必须设置 `AUTH_COOKIE_SECURE=true`，允许来源仅列部署域名。本地启动关闭代理头解析；Nginx 后的额度暂按代理 IP 共享。
-
-空的 [默认种子文件](data/works.json) 不再预装作品。JSON 结构见 [WorkInput](backend/kiwi/schemas.py)，可用 `scripts/collect-sources.py` 将相同来源导出到 `data/source-cache/hongguo.json`。非空摘要、标签或三态事实均需要原文证据；只有审核通过记录参与检索。
+## 测试与验证
 
 ```powershell
-.\.venv\Scripts\python.exe -m kiwi import --file data/source-cache/hongguo.json
-# 已有 ID 内容变化，显式允许更新
-.\.venv\Scripts\python.exe -m kiwi import --file data/source-cache/hongguo.json --update
-# 重建时必须提供整库；本版固定 1024 维
-.\.venv\Scripts\python.exe -m kiwi import --file data/source-cache/hongguo.json --update --reembed
-```
-
-手工导入中重复且一致的 ID 跳过，同批冲突或疑似同名作品报错；网页来源同步按来源 ID 保留同名条目，不自动合并。整批校验或向量化失败时不提交部分更新。将 `approved` 改回 `pending` 也需显式 `--update`。
-
-已完成首次片单或合法空结果后，可在“继续调整”输入“加点重生”“偏好题材改成都市，其他不变”“取消不要后宫”，先理解、核对变化，再点击“确认调整并推荐”。修改主需求会重新开始；换一批只沿用已生效条件。游客可用，登录后的成功非空片单沿用账号历史保存。
-
-## 测试与评测
-
-```powershell
-npm.cmd run check
 npm.cmd test
-npm.cmd run build
-.\.venv\Scripts\python.exe -X utf8 -m pytest backend -q
+.\.venv\Scripts\python.exe -X utf8 -m pytest backend/tests
 npm.cmd --prefix frontend test
-npm.cmd run build:app
+npm.cmd --prefix frontend run build
 node scripts/test-postgres.mjs
-.\.venv\Scripts\python.exe scripts/evaluate.py
 ```
 
-`test-postgres.mjs` 在一次性内存 **PostgreSQL 18.6 / PGlite** 中通过真正的 psycopg 网络连接验证 Alembic、JSONB 条件、pgvector 距离及事务，不安装系统数据库。它不是多连接并发或 Docker 部署验收。直接运行 pytest 时，未配置 PostgreSQL 的一项测试会明确跳过。
+功能验证包含接口与事务、账号隔离、重复提交、版本冲突、失败回滚，以及桌面和手机宽度下的操作流程。各阶段的实际测试数量、浏览器报告、截图和复现命令收录于 [实现与验收](docs/实现与验收.md)。
 
-也可通过 `KIWI_TEST_DATABASE_URL` 指向空的独立 PostgreSQL + pgvector 测试库，数据库名必须包含 `test`。测试会创建并删除测试表，请勿指定业务数据库。
+当前运行方式以本地单服务为主；Docker／Nginx 配置已提供，原生 PostgreSQL 多连接、真实双设备与 HTTPS 部署仍需单独验收。PGlite／pgvector 验证兼容路径，独立人工剧情复核和推荐相关性评估另行记录，不将规则检查结果作为推荐准确率。
 
-真实付费模型评测单独执行：
+## 文档
 
-```powershell
-.\.venv\Scripts\python.exe scripts/evaluate.py --live --concurrency 2
-# 额外调用解析模型；不加 --parse 时使用固定确认结构
-.\.venv\Scripts\python.exe scripts/evaluate.py --live --parse --concurrency 2
-```
+- [项目介绍](项目介绍.md)：开发背景、当前功能和项目特点。
+- [产品设计](产品设计文档.md)：功能、交互、数据原则及验收要求。
+- [技术方案](docs/技术方案.md)：架构、数据模型、接口、事务及状态处理。
+- [运行与维护](docs/运行与维护.md)：配置、升级、部署、备份与功能验证。
+- [实现与验收](docs/实现与验收.md)：当前完成情况与按日期保留的验证记录。
+- [资料与审核](data/审核说明.md)、[媒体预览](docs/媒体预览.md)：来源、处理规则及媒体任务。
 
-旧 36 部对应的 24 条需求和报告保留为历史记录。当前 [25 条固定需求](data/evaluation.json) 基于 192 部红果资料的源站标签建立规则参考，**待独立人工相关性标注**。标签基线和真实向量模式读取相同本机库，报告保存为 `docs/evaluation-hongguo-*.json`；不覆盖历史报告，也不把规则命中率称为推荐准确率。脚本校验检索内容指纹；后续片库变化后须复核并更新参考集，旧指标不能直接沿用。
+`Demo.html` 和 `demo/` 是另存的早期离线演示，使用模拟数据；完整项目由 `frontend/` 与 `backend/` 组成，默认 `npm.cmd start` 启动完整项目。离线演示的历史验收见 [Demo 记录](demo/验收记录.md)。
 
-## 账号升级与本地验收
+## 后续迭代
 
-从尚无账号表的 SQLite 升级前，先执行备份辅助脚本（仅支持现有 SQLite 文件）：
+在现有完整功能上，继续完善独立相关性评估、扩大受控偏好表达覆盖，并根据实际评估结果考虑混合检索、重排序和部署优化。
 
-```powershell
-.\.venv\Scripts\python.exe scripts/prepare-accounts.py
-```
-
-脚本使用 SQLite backup API 生成时间戳备份、检查完整性，再创建账号表，并校验作品、向量和更新状态的整体指纹不变。本机本轮备份与结果见 [账号验收记录](docs/实现与验收.md)。新环境启动自动建表；PostgreSQL 使用新增 Alembic `0003_accounts`。回滚前先停止服务并恢复匹配的数据库备份。
-
-自动账号检查包含在上面的 pytest、Vue 和 PostgreSQL 命令中。浏览器脚本 `scripts/verify-accounts.mjs` 使用 Playwright 和已安装的 Edge，仅连接回环 HTTP；验收时请将公共作品库复制到独立 SQLite 文件，配置 `AI_MODE=baseline`、该测试库的 `DATABASE_URL` 和 `AUTH_ALLOWED_ORIGINS=http://127.0.0.1:8001`，启动 8001 后执行脚本。它会在测试库创建合成账号，不调用付费模型。可用 `KIWI_PLAYWRIGHT_MODULE` 指定已安装的 Playwright 模块；报告见 [浏览器验证](docs/account-browser-validation.json)。本轮使用桌面 1440×1000、手机 390×844 两套独立 Cookie 存储。
-
-## 收藏风格推荐
-
-首页使用 `GET /api/v1/home/recommendations` 获取公开内容；确认登录后改用 `GET /api/v1/me/home-recommendations`。私人接口只认服务端会话，排除当前账号全部已收藏作品；漫画、未知类别和不可用资料不参与风格统计。标签权重与提示词模板见 [技术方案第 11 节](docs/技术方案.md)。账号变化立即清除个人推荐，收藏、取消、导入及片库更新成功后刷新；刷新不改写需求、偏好或当次片单。私人请求失败时明确回退公开内容，可独立重试。
-
-自动检查包含在 pytest、Vue 和独立 PostgreSQL 命令中。完整浏览器验收使用已安装的 Playwright 与 Edge：
-
-```powershell
-# Playwright 不在项目依赖中时，用 KIWI_PLAYWRIGHT_MODULE 指定已有模块目录
-node scripts/verify-home-recommendations.mjs
-```
-
-脚本先将当前库的公共作品资料复制到新的 `.local/home-recommendations-*.db`，自动启动 8001 上的 baseline 测试服务，在两套独立 Cookie 中创建合成账号并验证不同收藏、取消、旧收藏导入、503 回退及重试、账号切换和输入保护。结束自动关闭测试服务，业务账号和作品库保持原样；端口占用时可设置 `KIWI_HOME_TEST_PORT`。当前资料需包含带标签的修仙与末世漫剧作为验收样本。截图主动阻止外部封面，检查既有封面占位。报告见 [收藏推荐浏览器验收](docs/home-recommendations-browser-validation.json)；人工推荐相关性、原生 PostgreSQL 并发和部署验收仍待完成。
-
-## Docker Compose 与备份
-
-媒体接口、自动准备、离线导入清单、工具配置及备份说明见 [媒体预览操作说明](docs/媒体预览.md)。服务启动补齐全库 AI剧、漫剧和真人剧，每次更新保存新增作品后继续后台准备，不等待视频生成才刷新资料。运行 `python -m kiwi sync-previews --retry-failed` 可独立补齐；实际覆盖见 [片库媒体检查](docs/preview-library-validation.json)。需要 FFmpeg/ffprobe、Node 与项目 Playwright 依赖（`npm ci`），Windows 默认复用 Edge。真实文件不随 Git 分发；来源不可用时保留明确提示。
-
-同一源站作品更名时，进一步核对详情页和首集，自动同步现名、简介、封面、标签、集数与榜单资料，并更新检索索引及片库显示；作品 ID 和收藏关联保留。来源 404 的作品保持当前不可用提示。实际同步记录见 [源站同步验证](docs/source-sync-validation.json)。
-
-准备好 `.env` 后：
-
-```powershell
-docker compose up --build -d
-```
-
-打开 [Compose 本地入口](http://127.0.0.1:8080/)。三个服务分别为 pgvector PostgreSQL、FastAPI、Nginx；启动时执行迁移和幂等导入，数据库保存在 `kiwi-db` 持久卷。可在 `.env` 配置 `POSTGRES_PASSWORD`；数据库 URL 中的特殊字符需要 URL 编码。
-
-```powershell
-# 先导出到容器，再复制，避免 Windows 重定向破坏二进制文件
-docker compose exec db pg_dump -U kiwi -d kiwi -Fc -f /tmp/kiwi.dump
-docker compose cp db:/tmp/kiwi.dump ./kiwi.dump
-# 恢复会覆盖当前库，请先保存需要的数据
-docker compose cp ./kiwi.dump db:/tmp/restore.dump
-docker compose exec db pg_restore -U kiwi -d kiwi --clean --if-exists /tmp/restore.dump
-```
-
-本机没有 Docker，完整镜像构建、三容器启动和备份恢复尚未实测。已有迁移测试和 WASM PostgreSQL SQL 验证不能替代部署验收。
-
-## 文档与原型
-
-- [产品设计](产品设计文档.md)、[技术方案](docs/技术方案.md)
-- 资料纠错与审核：[技术方案第 17 节](docs/技术方案.md#17-资料纠错与审核技术方案已实现)已实现；普通注册默认无审核权，本地合成验证不等于完成独立人工审核。
-- [实现与验收记录](docs/实现与验收.md)、[数据审核说明](data/审核说明.md)
-- 历史评测（旧作品库）：[标签基线](docs/evaluation-baseline.json)、[真实向量](docs/evaluation-live.json)
-- 当前库自动检查：[标签基线](docs/evaluation-hongguo-baseline.json)、[真实向量](docs/evaluation-hongguo-live.json)；参考标注仍待人工复核。
-- [后端 OpenAPI](http://127.0.0.1:8000/docs)；`/health/live` 检查存活，`/health/ready` 检查配置、资料和向量版本。
-- 原有 `Demo.html` 保留：双击离线体验 12 部虚构作品和原创模拟视频。单独服务命令改为 `npm.cmd run demo`。修改 `demo/` 后运行 `npm.cmd run build` 重新打包。
-
-正式页面提供真实账号与服务端收藏，旧 Demo.html 仍是离线演示。收藏驱动轮播与提示词、全库及新增剧集自动预览准备已实现；素材可播放情况以真实来源及文件验证为准。真实双设备及 HTTPS 部署、多轮对话、协同过滤及重排序属于后续范围。
-
-口味推荐区在桌面并列展示需求与分组偏好，超宽屏输入区限制为 680px，手机改为单列。点击“理解我的口味”先识别偏好，成功后弹出核对提示，可直接确认生成、手动调整或关闭；关闭不会生成片单，下方明确显示等待确认。只有确认生成时才显示作品骨架；解析失败、冲突及暂不支持的条件分别提示，不混作片单加载失败。
-
-“推荐反馈＋换一批”已按 [产品设计 3.11](产品设计文档.md#311-推荐反馈换一批已实现) 与 [技术方案第 14 节](docs/技术方案.md#14-推荐反馈与换一批技术方案已实现) 实现。首页轮播和片单可标记“不感兴趣／已看过”，成功后移出展示并提供撤销；个人空间可分页筛选和撤销反馈。反馈不改变收藏或兴趣画像。登录片单使用私人接口，公开接口即使带 Cookie 也不读反馈；本轮换批复用确认条件并排除已展示作品，失败保留上批，真实耗尽与服务失败分别提示。200 个 ID 或 24,000 字节正文达到容量限制时须主动重新浏览，不截断去重记录。SQLite 在识别旧库并建立一致性备份后升级至 0010，PostgreSQL 启动前执行 Alembic 升级。浏览器验收命令为 `node scripts/verify-feedback.mjs`，使用公共资料副本、合成账号及 baseline 模式；[验证报告](docs/feedback-browser-validation.json) 与 [实现记录](docs/实现与验收.md) 记录实际范围。口味推荐浏览器验收可执行 `node scripts/verify-preference-flow.mjs`，使用独立公共作品副本和 baseline 模式；报告见 [口味推荐验收](docs/preference-flow-browser-validation.json)，截图见 [宽屏核对区](docs/screenshots/preference-confirmation-wide.png)、[识别提示](docs/screenshots/preference-recognition-desktop.png)。
-
-## 个人空间
-
-登录后点击账号区或头像进入个人空间。昵称按 NFKC／casefold 规范化后全站唯一，用户名只读；支持选择自己的 JPG、PNG、WebP 照片（最大 5 MB），先在本机裁切预览；照片、六款预设头像和昵称统一通过“保存资料”确认，“取消修改”还原服务器头像。照片只在本人登录后读取，同账号刷新或重新登录可恢复，切回系统头像后旧照片路径失效。收藏总数包含漫画与不可用资料；兴趣画像只统计有效剧集收藏，显示真实标签及数量。资料与概览可分别重试，未确认保存的草稿不影响账号区。
-
-修改密码需当前密码及两次新密码，成功后当前和其他会话全部撤销，重新登录后资料和收藏保留；普通退出只结束当前会话。页面切换、保存资料和改密均保留已输入的观剧需求、偏好及片单。断网后的写入结果可能尚未确认，资料可重新读取核对，密码需重新登录验证。
-
-旧 SQLite 安装首次启动前应停止旧服务；应用识别已知结构，在写锁内生成同目录 `*.before-profiles-*.bak` 备份后沿迁移链升级至 0010，未知结构拒绝自动迁移。备份含账号与会话，仅本地保存；回退前另行备份新增资料。PostgreSQL 使用 `alembic -c backend/alembic.ini upgrade head`。保留原有注册时间记录，个人接口不返回该字段。
-
-可先运行 `.\.venv\Scripts\python.exe scripts/verify-personal-space-upgrade.py`，将当前 SQLite 以只读方式复制到独立文件并验证升级、重复启动、原值指纹和外键完整性，结果见 [升级验证](docs/personal-space-upgrade-validation.json)。副本及自动备份含私有账号数据，保留在 `.local` 且不进入 Git；验证不会更改业务库。历史 `create_all()` 安装的迁移版本可能落后于实际表结构，只有完整结构校验通过后才校正基线。
-
-复现个人空间浏览器验收：`node scripts/verify-personal-space.mjs`。脚本复制公共作品与媒体元数据到新 `.local/personal-space-*.db`，关闭自动采集和模型调用，创建合成账号并验证桌面、平板、手机；不复制业务账号、不修改真实密码，结束自动关闭测试服务。端口默认 8006，可用 `KIWI_SPACE_TEST_PORT` 调整。报告与截图见 [浏览器验收](docs/personal-space-browser-validation.json)、[桌面](docs/screenshots/personal-space-desktop.png)、[手机](docs/screenshots/personal-space-mobile.png)。
-
-轮播已改为主海报配缩略海报导航和柔和封面背景；宽屏展开缩略图，手机保留精简布局。“不感兴趣／已看过”改为两个独立图标，悬停或键盘焦点显示说明；禁用及提交中的按钮统一显示禁止点击指针。个人空间使用独立左右列，右侧收藏、反馈、兴趣卡片紧凑排列，手机单列。
-
-照片处理新增锁定依赖 Pillow 13.0.0；更新已有环境可执行 `.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock`。SQLite 自动备份后升级至 0010，PostgreSQL 启动前执行 `alembic -c backend/alembic.ini upgrade head`。原照片在浏览器压缩为头像后才随原有 JSON 资料接口上传，继续使用 24,000 字节正文上限；服务端校验并重新编码，不保留照片元数据。复现布局、照片保存与账号隔离验证：`node scripts/verify-profile-polish.mjs`；查看[浏览器验证](docs/profile-polish-browser-validation.json)及[实现记录](docs/实现与验收.md)。
-
-## 历史片单
-
-登录后成功生成的非空片单会自动保存，“换一批”分别记录；从主导航或个人空间查看最近 100 份，包含当时的需求、确认偏好与推荐理由。查看不重新调用模型；“沿用偏好”会带回发现页供再次确认。支持确认删除单份历史，收藏和反馈继续保留。游客仍可正常生成，功能启用前与游客阶段的片单不追记。作品资料改变或不可用时有明确说明，历史详情和最新作品资料分别展示。
-
-本次新增迁移 0009，无新增依赖。SQLite 停止旧服务后按既有备份流程自动升级，PostgreSQL 先执行 `alembic -c backend/alembic.ini upgrade head`。复现浏览器验收：`node scripts/verify-history.mjs`；升级只读副本检查：`.\.venv\Scripts\python.exe -X utf8 scripts/verify-personal-space-upgrade.py --history`。见[产品要求 3.12](产品设计文档.md#312-历史片单已实现)、[技术方案第 15 节](docs/技术方案.md#15-历史片单技术方案已实现)、[浏览器报告](docs/history-browser-validation.json)和[升级报告](docs/history-upgrade-validation.json)。
-
-## 资料纠错与审核
-
-详情“资料有误？”在登录后打开纠错表单，用户再次确认才提交；提交不改变公共资料。个人空间“我的纠错”查看本人结果，指定审核者另有审核工作台，可核对来源与相关变更、采纳、未采纳、更新过期基准、主动建立核对单，以及暂停／恢复作品。公共详情只显示核对字段范围；人工未知值也受后续采集保护，不将未说明当作不存在。
-
-普通注册账号默认没有审核权。运维在本机用现有账号的真实 ID 明确授权或撤权，事件会保存理由；网页不开放角色自授，账号 ID 可由该账号登录后的 `/api/v1/auth/me` 响应核对：
-
-```powershell
-.\.venv\Scripts\python.exe -X utf8 -m kiwi reviewer --user-id <真实账号ID> --grant --reason "指定资料审核职责"
-.\.venv\Scripts\python.exe -X utf8 -m kiwi reviewer --user-id <真实账号ID> --revoke --reason "结束资料审核职责"
-```
-
-本功能新增 `0010_work_corrections.py`，无新增依赖；停止旧服务后重启，SQLite 识别已知结构、备份后自动升级至 0010；PostgreSQL 先执行 Alembic `upgrade head`。未给现有业务账号自动授权。需要降级时先导出新增纠错与审计记录，降级会删除新表，不能作为无损回滚。
-
-网络结果未知时先核对回执和记录，若选择重试须保持同一操作标识。live 仅对需要的有效作品文本准备 Embedding，索引失败不发布；baseline 检索文本变化会清除旧索引，明确只使用标签基线。本人说明不送入模型、索引或其他用户推荐。复现隔离浏览器检查：`node scripts/verify-corrections.mjs`，使用全新合成数据库、三个测试账号及 baseline 模式。报告见[纠错审核验证](docs/corrections-browser-validation.json)，实际边界见[实现记录](docs/实现与验收.md)。原生 PostgreSQL 多连接竞争和线上部署仍待实测。
+所有短剧来源红果短剧，推荐大家前往红果短剧观看。项目保留具体作品来源入口；自动整理资料标明核对范围，媒体当前用于本地开发验证。

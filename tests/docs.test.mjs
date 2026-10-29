@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
-const documents = [new URL('../README.md', import.meta.url), new URL('../docs/技术方案.md', import.meta.url), new URL('../产品设计文档.md', import.meta.url), new URL('../docs/实现与验收.md', import.meta.url), new URL('../data/审核说明.md', import.meta.url), new URL('../docs/媒体预览.md', import.meta.url)];
+const documents = ['../README.md', '../项目介绍.md', '../docs/技术方案.md', '../产品设计文档.md', '../docs/实现与验收.md', '../data/审核说明.md', '../docs/媒体预览.md', '../docs/运行与维护.md', '../demo/验收记录.md'].map(path => new URL(path, import.meta.url));
 
 function technicalSection(source, number) {
   const start=source.search(new RegExp(`^## ${number}\\.`, 'm'));
@@ -41,9 +41,9 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.21/);
+  assert.match(product,/技术方案对应的产品基线：v2\.22/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.10[^\n]+\[产品设计文档 v2\.21\]/m);
+  assert.match(technical,/^版本：v3\.11[^\n]+\[产品设计文档 v2\.22\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('连续调整推荐与详情精简已实现'));
 });
@@ -58,8 +58,8 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
 
 test('资料纠错与审核已实现，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.21[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.21/);
+  assert.match(product,/^版本：v2\.22[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.22/);
   assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 已实现纠错、本人记录、授权审核、人工保护与停用恢复；验证边界见实现记录 \|/);
   const section=product.match(/^### 3\.14 资料纠错与审核（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
@@ -73,7 +73,7 @@ test('资料纠错与审核已实现，覆盖核对发布、人工修正、账�
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('原生 PostgreSQL 多连接竞争'));
   assert.ok(product.includes('资料纠错与审核已实现'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.10[^\n]+\[产品设计文档 v2\.21\]/m);
+  assert.match(technical,/^版本：v3\.11[^\n]+\[产品设计文档 v2\.22\]/m);
   assert.match(technical,/^## 17\. 资料纠错与审核技术方案（已实现）/m);
 });
 
@@ -621,4 +621,27 @@ test('项目文档使用产品工程表述，保留模型技术名词、验收�
   assert.ok(data.includes('../docs/preview-library-validation.json'));
   assert.ok(technical.includes('有限真实模型样例'));
   assert.ok(product.includes('独立人工复核仍待完成'));
+});
+
+test('全部项目文档使用当前完整项目定位，简介与维护入口一致，历史状态明确归档',async()=>{
+  for(const document of documents) {
+    const source=await readFile(document,'utf8');
+    assert.doesNotMatch(source,/\bMVP\b|最小可行|搭框架|助手|Codex|ChatGPT|简历/i,document.pathname);
+  }
+  const readme=await readFile(new URL('../README.md',import.meta.url),'utf8');
+  const packageJson=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
+  assert.ok(packageJson.description.length>20&&packageJson.description.length<=350);
+  assert.ok(readme.includes(packageJson.description),'GitHub 简介与项目首页应相符');
+  for(const name of ['片库管理','偏好推荐','连续调整','个性化发现','账号与个人空间','历史片单','视频预览','纠错与审核']) {
+    assert.match(readme,new RegExp(`^\\| ${name} \\|`,'m'));
+  }
+  for(const phrase of ['个人项目','已完成当前业务范围内的功能实现','docs/运行与维护.md','项目介绍.md','本地单服务','仍需单独验收'])assert.ok(readme.includes(phrase),phrase);
+  const operations=await readFile(new URL('../docs/运行与维护.md',import.meta.url),'utf8');
+  for(const phrase of ['upgrade head','0010','--user-id','--grant','--revoke','AUTH_COOKIE_SECURE=true','媒体预览.md','--concurrency 2'])assert.ok(operations.includes(phrase),phrase);
+  const validation=await readFile(new URL('../docs/实现与验收.md',import.meta.url),'utf8');
+  assert.ok(validation.indexOf('## 当前完成情况')<validation.indexOf('## 历史记录阅读说明'));
+  assert.match(validation,/^## 2026-10-24 基础账号技术设计历史（已由后续实现取代）/m);
+  assert.ok(validation.includes('只表示对应日期的状态'));
+  const demo=await readFile(new URL('../demo/验收记录.md',import.meta.url),'utf8');
+  assert.ok(demo.includes('不描述当前完整项目'));
 });
