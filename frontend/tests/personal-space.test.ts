@@ -131,11 +131,26 @@ describe('personal space state',()=>{
 
 it('renders independent modules, real counts, accessible avatar selection and collapsed password form',async()=>{
   const s=setup();await enter(s);const w=mount(PersonalSpace,{props:{space:s.space,logoutBusy:false}});cleanup.push(()=>w.unmount());
-  expect(w.text()).toContain('根据 4 部有效剧集收藏整理');expect(w.text()).toContain('2 部资料暂不可用');expect(w.text()).not.toContain('注册时间');expect(w.find('input[value=Alpha]').exists()).toBe(false);
+  expect(w.text()).toContain('来自 4 部有效剧集收藏');expect(w.text()).toContain('2 部资料暂不可用');expect(w.text()).not.toContain('注册时间');expect(w.find('input[value=Alpha]').exists()).toBe(false);
   expect(w.findAll('.avatar-option')).toHaveLength(6);expect(w.find('.avatar-option[aria-pressed=true]').text()).toContain('✓');
   await w.find('[aria-label="月光头像"]').trigger('click');expect(s.space.draft.avatar_id).toBe('kiwi-moon');expect(s.space.profile.value?.avatar_id).toBe('kiwi-default');
   expect(w.find('#password-form').exists()).toBe(false);await w.find('[aria-controls=password-form]').trigger('click');expect(w.findAll('input[type=password]')).toHaveLength(3);
   await w.find('[aria-label=显示当前密码]').trigger('click');expect(w.find('#space-current_password').attributes('type')).toBe('text');
+});
+
+it('groups overview and management separately, keeps visible button labels, and gates reviewer entry',async()=>{
+  const s=setup();await enter(s);const w=mount(PersonalSpace,{props:{space:s.space,logoutBusy:false,canReview:false}});cleanup.push(()=>w.unmount());
+  expect(w.findAll('.space-overview > .space-card')).toHaveLength(2);
+  expect(w.findAll('.space-shortcuts > .space-card')).toHaveLength(3);
+  expect(w.find('.space-shortcuts .profile-card').exists()).toBe(false);
+  expect(w.findAll('button').every(button=>!/[↗→←]/.test(button.text()))).toBe(true);
+  expect(w.text()).not.toContain('资料审核工作台');
+  const visit=(text:string)=>w.findAll('button').find(button=>button.text()===text)!;
+  await visit('找回往期推荐').trigger('click');await visit('推荐反馈管理').trigger('click');await visit('我的纠错').trigger('click');
+  expect(w.emitted('navigate')).toEqual([['history'],['feedback'],['corrections']]);
+  await w.setProps({canReview:true});await visit('资料审核工作台').trigger('click');
+  expect(w.emitted('navigate')?.at(-1)).toEqual(['review']);
+  await visit('修改密码').trigger('click');expect(w.find('#password-form').exists()).toBe(true);
 });
 
 it('opens personal space after guest login, preserves the active viewing flow, and never fetches catalogue for that view',async()=>{

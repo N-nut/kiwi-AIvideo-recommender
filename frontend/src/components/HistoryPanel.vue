@@ -27,19 +27,19 @@ watch(props.auth.generation,()=>{confirmId.value='';});
 <template>
   <section class="history-panel" aria-labelledby="history-title">
     <header class="space-heading"><div><h1 id="history-title" ref="heading" tabindex="-1">历史片单</h1><p>留下每一次心动，随时找回当时的推荐。</p></div><button class="text-button" @click="emit('back')">返回个人空间</button></header>
-    <div class="history-toolbar"><p>自动保留最近 100 次成功片单，换一批也会独立保存。</p><button v-if="!selectedId" class="text-button" :disabled="loading||!!deleting" @click="history.load">刷新片单</button><button v-else class="text-button" :disabled="!!deleting" @click="back">← 全部片单</button></div>
+    <div class="history-toolbar"><p>最近 100 份片单</p><button v-if="!selectedId" class="text-button" :disabled="loading||!!deleting" @click="history.load">刷新片单</button><button v-else class="text-button" :disabled="!!deleting" @click="back">全部片单</button></div>
     <p v-if="deleteError" class="field-error" role="alert">{{deleteError}}；页面保留当前记录，可重试删除或刷新核对。</p>
     <template v-if="selectedId">
       <p v-if="detailLoading" role="status">正在找回当时的片单…</p>
       <p v-if="detailError" class="field-error" role="alert">{{detailError}} <button class="text-button" @click="open(selectedId)">重试片单详情</button></p>
       <article v-if="selected" class="history-detail">
-        <div class="history-detail-heading"><div><p class="history-date">{{date(selected.created_at)}} · {{selected.count}} 部作品 · {{selected.mode==='baseline'?'标签基线':'AI 推荐'}}</p><h2>{{selected.query||'按确认偏好生成的片单'}}</h2></div><button class="primary-button" @click="emit('reuse',selected)">沿用偏好，再次推荐 ↗</button></div>
+        <div class="history-detail-heading"><div><p class="history-date">{{date(selected.created_at)}} · {{selected.count}} 部作品 · {{selected.mode==='baseline'?'标签基线':'AI 推荐'}}</p><h2>{{selected.query||'按确认偏好生成的片单'}}</h2></div><button class="primary-button" @click="emit('reuse',selected)">沿用偏好，再次推荐</button></div>
         <p class="source-note">以下为生成时的偏好和推荐理由。沿用偏好后需再次确认，才会生成新片单。</p>
         <PreferenceSummary class="history-preferences" :groups="groups"/>
         <p v-if="selected.warnings.length" class="source-note">{{selected.warnings.join('；')}}</p>
         <ol class="history-works"><li v-for="(item,index) in selected.items" :key="item.id">
           <span class="history-work-number">{{String(index+1).padStart(2,'0')}}</span>
-          <div class="history-work-copy"><h3>{{item.title}}</h3><template v-if="item.work"><p v-if="item.changed" class="history-changed">作品资料已更新，以下为当时的推荐理由；详情显示最新资料。</p><p>{{item.work.reason||item.work.summary}}</p><p v-if="item.work.caveats?.length" class="source-note">当时的提醒：{{item.work.caveats.join('；')}}</p><button class="text-button" @click="emit('detail',item.work)">查看最新作品资料 →</button></template><p v-else class="source-note">作品资料暂不可用，保留当时的片单位置。</p></div>
+          <div class="history-work-copy"><h3>{{item.title}}</h3><template v-if="item.work"><p v-if="item.changed" class="history-changed">作品资料已更新，以下为当时的推荐理由；详情显示最新资料。</p><p>{{item.work.reason||item.work.summary}}</p><p v-if="item.work.caveats?.length" class="source-note">当时的提醒：{{item.work.caveats.join('；')}}</p><button class="text-button" @click="emit('detail',item.work)">查看最新作品资料</button></template><p v-else class="source-note">作品资料暂不可用，保留当时的片单位置。</p></div>
         </li></ol>
         <div class="history-delete"><template v-if="confirmId===selected.id"><span>删除这份历史片单？</span><button class="secondary-button" :disabled="!!deleting" @click="remove(selected.id)">{{deleting?'正在删除…':'确认删除'}}</button><button class="text-button" :disabled="!!deleting" @click="confirmId=''">取消</button></template><button v-else class="text-button" :disabled="!!deleting" @click="confirmId=selected.id">删除这份片单</button><small>收藏和推荐反馈会继续保留。</small></div>
       </article>
@@ -51,9 +51,9 @@ watch(props.auth.generation,()=>{confirmId.value='';});
       <div class="history-grid"><article v-for="item in items" :key="item.id" class="history-card">
         <p class="history-date">{{date(item.created_at)}}<span>{{item.count}} 部</span></p><h2>{{item.query||'按确认偏好生成的片单'}}</h2>
         <ul class="history-titles"><li v-for="(title,index) in item.titles" :key="index"><span>{{String(index+1).padStart(2,'0')}}</span>{{title}}</li></ul>
-        <div class="history-card-actions"><button class="secondary-button" @click="open(item.id)">查看片单 →</button><button v-if="confirmId!==item.id" class="text-button" :disabled="!!deleting" @click="confirmId=item.id">删除</button><template v-else><span class="sr-only">删除这份历史片单？</span><button class="text-button history-confirm" :disabled="!!deleting" @click="remove(item.id)">{{deleting===item.id?'正在删除…':'确认删除'}}</button><button class="text-button" :disabled="!!deleting" @click="confirmId=''">取消</button></template></div>
+        <div class="history-card-actions"><button class="secondary-button" @click="open(item.id)">查看片单</button><button v-if="confirmId!==item.id" class="text-button" :disabled="!!deleting" @click="confirmId=item.id">删除</button><template v-else><span class="sr-only">删除这份历史片单？</span><button class="text-button history-confirm" :disabled="!!deleting" @click="remove(item.id)">{{deleting===item.id?'正在删除…':'确认删除'}}</button><button class="text-button" :disabled="!!deleting" @click="confirmId=''">取消</button></template></div>
       </article></div>
-      <div v-if="!items.length&&!loading&&!error" class="empty-state"><h2>还没有历史片单</h2><p>登录后生成的非空片单会自动保存在这里。</p><button class="primary-button" @click="emit('discover')">去发现好剧 →</button></div>
+      <div v-if="!items.length&&!loading&&!error" class="empty-state"><h2>还没有历史片单</h2><p>登录后生成的非空片单会自动保存在这里。</p><button class="primary-button" @click="emit('discover')">去发现好剧</button></div>
       <CatalogPagination :page="page" :pages="pages" :busy="loading||!!deleting" @change="confirmId='';page=$event"/>
     </template>
   </section>

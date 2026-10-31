@@ -41,9 +41,9 @@ test('连续调整已实现，产品规则与验收覆盖继承、差异、失�
   const ids=[...acceptance.matchAll(/^\| (C\d{2}) \|/gm)].map(([,id])=>id);
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`C${String(i+1).padStart(2,'0')}`));
   assert.ok(acceptance.includes('有限真实模型样例'));
-  assert.match(product,/技术方案对应的产品基线：v2\.22/);
+  assert.match(product,/技术方案对应的产品基线：v2\.23/);
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.11[^\n]+\[产品设计文档 v2\.22\]/m);
+  assert.match(technical,/^版本：v3\.12[^\n]+\[产品设计文档 v2\.23\]/m);
   assert.match(technical,/^## 16\. 连续调整推荐技术方案（已实现）/m);
   assert.ok(product.includes('连续调整推荐与详情精简已实现'));
 });
@@ -58,8 +58,8 @@ test('作品详情完整移除判断与推荐依据，保留推荐理由和后�
 
 test('资料纠错与审核已实现，覆盖核对发布、人工修正、账号与十二项验收',async()=>{
   const product=await readFile(new URL('../产品设计文档.md',import.meta.url),'utf8');
-  assert.match(product,/^版本：v2\.22[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
-  assert.match(product,/技术方案对应的产品基线：v2\.22/);
+  assert.match(product,/^版本：v2\.23[^\n]+状态：[^\n]*资料纠错与审核已实现/m);
+  assert.match(product,/技术方案对应的产品基线：v2\.23/);
   assert.match(product,/\| 资料纠错与审核 \|[^\n]+\| 已实现纠错、本人记录、授权审核、人工保护与停用恢复；验证边界见实现记录 \|/);
   const section=product.match(/^### 3\.14 资料纠错与审核（已实现）\r?\n([\s\S]*?)(?=^## 4\.)/m)?.[1];assert.ok(section);
   for(const text of ['目标与本期范围','用户入口与提交','审核工作台与判断','生效、人工核对标识与持续采集','异常、隐私与交互边界',
@@ -73,7 +73,7 @@ test('资料纠错与审核已实现，覆盖核对发布、人工修正、账�
   assert.deepEqual(ids,Array.from({length:12},(_,i)=>`Q${String(i+1).padStart(2,'0')}`));assert.ok(acceptance.includes('原生 PostgreSQL 多连接竞争'));
   assert.ok(product.includes('资料纠错与审核已实现'));
   const technical=await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8');
-  assert.match(technical,/^版本：v3\.11[^\n]+\[产品设计文档 v2\.22\]/m);
+  assert.match(technical,/^版本：v3\.12[^\n]+\[产品设计文档 v2\.23\]/m);
   assert.match(technical,/^## 17\. 资料纠错与审核技术方案（已实现）/m);
 });
 
@@ -465,7 +465,7 @@ test('个人空间响应不泄露内部信息，收藏与兴趣统计示例口�
 test('照片头像和布局契约保留账号隐私、正文限制、系统头像与真实迁移',async()=>{
   const technical=technicalSection(await readFile(new URL('../docs/技术方案.md',import.meta.url),'utf8'),13);
   for(const text of ['0008_user_avatars.py','down_revision="0007"','user_avatars','avatar_image','avatar_url','5 MB','16,000','24,000 字节',
-    'Pillow 13.0.0','EXIF','auth.write()','GET /api/v1/me/avatar/{asset_id}','no-store','nosniff','不写入 localStorage','space-side','not-allowed'])assert.ok(technical.includes(text),text);
+    'Pillow 13.0.0','EXIF','auth.write()','GET /api/v1/me/avatar/{asset_id}','no-store','nosniff','不写入 localStorage','space-overview','space-shortcuts','not-allowed'])assert.ok(technical.includes(text),text);
   for(const name of ['backend/kiwi/avatars.py','backend/migrations/versions/0008_user_avatars.py','backend/tests/test_avatars.py','frontend/src/avatar.ts','frontend/tests/avatar.test.ts','scripts/verify-profile-polish.mjs'])assert.ok((await stat(new URL('../'+name,import.meta.url))).isFile(),name);
 });
 

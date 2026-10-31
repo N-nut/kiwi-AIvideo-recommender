@@ -21,30 +21,45 @@ function server(override?:(url:string)=>Promise<Response>|undefined) {
 }
 async function catalog() {wrapper=mount(App);await flushPromises();await button('片库').trigger('click');await flushPromises();}
 
-describe('sidebar and catalogue search',()=>{
-  it('moves update and account controls into the lower sidebar with an avatar placeholder',async()=>{
+describe('top navigation and catalogue search',()=>{
+  it('keeps update and account controls in the top header with an avatar placeholder',async()=>{
     server();await catalog();
-    expect(wrapper.find('.sidebar-bottom .catalog-update-button').exists()).toBe(true);
+    expect(wrapper.find('.site-header .library-panel .catalog-update-button').exists()).toBe(true);
     expect(wrapper.find('.catalog-update-button').text()).toBe('↻更新短剧库');
-    expect(wrapper.find('.sidebar-brand .brand-slogan').text()).toBe('发现刚好对味的短剧');
+    expect(wrapper.find('.header-brand .brand-slogan').text()).toBe('发现刚好对味的短剧');
     expect(wrapper.find('.brand-slogan > span').text()).toBe('发现刚好');
     expect(wrapper.find('.brand-slogan > strong').text()).toBe('对味的短剧');
     expect(wrapper.find('.page-footer .source-attribution').text()).toBe('所有短剧来源红果短剧，推荐大家前往红果短剧观看。');
-    expect(wrapper.find('.sidebar-bottom .account-button').text()).toBe('登录 / 注册');expect(wrapper.find('.account-avatar svg').exists()).toBe(true);
+    expect(wrapper.find('.header-account .account-button').text()).toBe('登录 / 注册');expect(wrapper.find('.account-avatar svg').exists()).toBe(true);
     expect(wrapper.find('.topbar').exists()).toBe(false);expect(wrapper.find('.catalog-heading h1').text()).toBe('片库');
+    expect(wrapper.find('aside.sidebar').exists()).toBe(false);
+    expect(wrapper.find('.site-navigation [aria-current=page]').text()).toContain('片库');
     expect(wrapper.find('[aria-label="主导航"]').text()).not.toContain('真实片库');expect(wrapper.find('input[type=file]').exists()).toBe(false);
+  });
+  it('closes library management on Escape and outside pointer without changing demand or calling a model',async()=>{
+    const fetcher=server();wrapper=mount(App,{attachTo:document.body});await flushPromises();
+    const demand=wrapper.find('#query').element as HTMLTextAreaElement;
+    await wrapper.find('#query').setValue('保留正在输入的需求');
+    const menu=wrapper.find('.header-library'),element=menu.element as HTMLDetailsElement;
+    element.open=true;await menu.trigger('keydown',{key:'Escape'});expect(element.open).toBe(false);
+    element.open=true;document.body.dispatchEvent(new Event('pointerdown',{bubbles:true}));expect(element.open).toBe(false);
+    element.open=true;await button('发现好剧').trigger('click');expect(element.open).toBe(false);
+    element.open=true;await button('更新短剧库').trigger('click');expect(element.open).toBe(false);
+    expect(wrapper.find('.collection-dialog').attributes('open')).toBeDefined();
+    expect(demand.value).toBe('保留正在输入的需求');
+    expect(fetcher.mock.calls.some(([url])=>url.includes('/parse')||url.includes('/recommendations')&&!url.includes('/home/'))).toBe(false);
   });
   it('jumps to a numbered last page and keeps first/last and neighboring pages available',async()=>{
     const fetcher=server();await catalog();await wrapper.find('[aria-label="第 37 页"]').trigger('click');await flushPromises();
-    expect(wrapper.find('.drama-card h3').text()).toBe('第37页作品');expect(wrapper.find('[aria-current=page]').text()).toBe('37');
+    expect(wrapper.find('.drama-card h3').text()).toBe('第37页作品');expect(wrapper.find('.catalog-pagination [aria-current=page]').text()).toBe('37');
     expect(wrapper.find('[aria-label="下一页"]').attributes('disabled')).toBeDefined();expect(fetcher.mock.calls.some(([url])=>url.includes('page=37'))).toBe(true);
-    await wrapper.find('[aria-label="第 35 页"]').trigger('click');await flushPromises();expect(wrapper.find('[aria-current=page]').text()).toBe('35');
+    await wrapper.find('[aria-label="第 35 页"]').trigger('click');await flushPromises();expect(wrapper.find('.catalog-pagination [aria-current=page]').text()).toBe('35');
   });
   it('debounces typing, resets to page one and combines the title with both filters',async()=>{
     const fetcher=server();await catalog();await wrapper.find('[aria-label="第 37 页"]').trigger('click');await flushPromises();
     await wrapper.find('#catalog-search').setValue('修');await vi.advanceTimersByTimeAsync(150);await wrapper.find('#catalog-search').setValue(' 修仙 ');
     expect(fetcher.mock.calls.filter(([url])=>url.includes('q='))).toHaveLength(0);
-    await vi.advanceTimersByTimeAsync(300);await flushPromises();expect(wrapper.find('.drama-card h3').text()).toBe('修仙的故事');expect(wrapper.find('[aria-current=page]').text()).toBe('1');
+    await vi.advanceTimersByTimeAsync(300);await flushPromises();expect(wrapper.find('.drama-card h3').text()).toBe('修仙的故事');expect(wrapper.find('.catalog-pagination [aria-current=page]').text()).toBe('1');
     await wrapper.find('.content-type-filters button:nth-child(2)').trigger('click');await flushPromises();
     await wrapper.findAll('.catalog-filters')[1]!.findAll('button').find(b=>b.text()==='修仙')!.trigger('click');await flushPromises();
     const params=new URL(fetcher.mock.calls.at(-1)![0],'http://local').searchParams;

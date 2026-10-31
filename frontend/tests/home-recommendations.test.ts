@@ -113,7 +113,7 @@ it('uses server ordering and identifies only genuine favorite matches in the car
   const work=workFixture({cover_url:'https://example.org/a.jpg',source_meta:{provider:'hongguo',content_type:'漫剧',tags:[],pages:[],rank:null,heat:null,episode_count:null}});
   const items=homeFixture([work,{...work,id:'second'}]).items;items[0]!.basis='favorites';items[0]!.reason='根据你收藏的修仙风格推荐';
   const w=mount(FeaturedCarousel,{props:{works:items}});stops.push(()=>w.unmount());
-  expect(w.find('.featured-label').text()).toBe('根据收藏推荐');expect(w.find('.featured-reason').text()).toContain('修仙');
+  expect(w.find('.featured-label').text()).toBe('根据收藏推荐');expect(w.find('.featured-reason').exists()).toBe(false);
   await w.find('[aria-label="下一部精选"]').trigger('click');expect(w.find('.featured-label').text()).toBe('片库精选');expect(w.find('.featured-reason').exists()).toBe(false);
 });
 

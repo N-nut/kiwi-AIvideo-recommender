@@ -1,0 +1,446 @@
+{
+  "date": "2026-10-31",
+  "mode": "baseline",
+  "database": ".local\\interface-mvw5msk0.db",
+  "public_works": 607,
+  "synthetic_account": true,
+  "external_model_calls": 0,
+  "external_images": "local SVG stand-ins for layout only",
+  "checks": [
+    "top navigation and readable composer at eight viewport widths",
+    "library popover closes with Escape/outside click and retains update settings",
+    "explicit preference confirmation still runs separately after copy simplification",
+    "synthetic account and profile controls remain functional",
+    "personal space cards never overlap while scrolling or expanding password fields",
+    "catalogue cards, action buttons and work details stay readable on desktop and mobile",
+    "navigation, catalogue search, favorites, history and feedback remain reachable"
+  ],
+  "viewports": [
+    {
+      "surface": "discovery",
+      "width": 2560,
+      "height": 1300,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 101,
+      "header_bottom": 101,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 92
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 97.796875
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 123
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 92
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 1920,
+      "height": 1080,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 101,
+      "header_bottom": 101,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 92
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 97.796875
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 123
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 92
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 101,
+      "header_bottom": 101,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 92
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 97.796875
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 123
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 92
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 1280,
+      "height": 900,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 101,
+      "header_bottom": 101,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 92
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 97.796875
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 123
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 92
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 1024,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 131.1875,
+      "header_bottom": 131.1875,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 104
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 109.796875
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 135
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 104
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 131.1875,
+      "header_bottom": 131.1875,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 16,
+          "width": 104
+        },
+        {
+          "text": "片库607",
+          "font": 16,
+          "width": 72
+        },
+        {
+          "text": "我的收藏0",
+          "font": 16,
+          "width": 104
+        },
+        {
+          "text": "历史片单",
+          "font": 16,
+          "width": 104
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 116.09375,
+      "header_bottom": 116.09375,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 14,
+          "width": 88
+        },
+        {
+          "text": "片库607",
+          "font": 14,
+          "width": 88
+        },
+        {
+          "text": "我的收藏0",
+          "font": 14,
+          "width": 88
+        },
+        {
+          "text": "历史片单",
+          "font": 14,
+          "width": 88
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "discovery",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false,
+      "header_top": 0,
+      "main_top": 116.09375,
+      "header_bottom": 116.09375,
+      "input_font": 16,
+      "hint_font": 15,
+      "nav_labels": [
+        {
+          "text": "发现好剧",
+          "font": 14,
+          "width": 70.5
+        },
+        {
+          "text": "片库607",
+          "font": 14,
+          "width": 70.5
+        },
+        {
+          "text": "我的收藏0",
+          "font": 14,
+          "width": 70.5
+        },
+        {
+          "text": "历史片单",
+          "font": 14,
+          "width": 70.5
+        }
+      ],
+      "composer_heading_border": "solid",
+      "taste_heading_border": "solid"
+    },
+    {
+      "surface": "personal-space",
+      "width": 2560,
+      "height": 1300,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 1920,
+      "height": 1080,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 1440,
+      "height": 1000,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 1280,
+      "height": 900,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 1024,
+      "height": 1000,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 768,
+      "height": 1024,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 390,
+      "height": 844,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "personal-space",
+      "width": 320,
+      "height": 740,
+      "overlaps": [],
+      "horizontal_overflow": false,
+      "profile_position": "static"
+    },
+    {
+      "surface": "catalogue",
+      "width": 1440,
+      "height": 1000,
+      "horizontal_overflow": false,
+      "title_font": 17,
+      "card_width": 321.90625,
+      "actions": [
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        },
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        }
+      ]
+    },
+    {
+      "surface": "catalogue",
+      "width": 768,
+      "height": 1024,
+      "horizontal_overflow": false,
+      "title_font": 17,
+      "card_width": 225.96875,
+      "actions": [
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        },
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        }
+      ]
+    },
+    {
+      "surface": "catalogue",
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "title_font": 17,
+      "card_width": 358,
+      "actions": [
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        },
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        }
+      ]
+    },
+    {
+      "surface": "catalogue",
+      "width": 320,
+      "height": 740,
+      "horizontal_overflow": false,
+      "title_font": 17,
+      "card_width": 288,
+      "actions": [
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        },
+        {
+          "height": 36,
+          "font": 13,
+          "border": "solid"
+        }
+      ]
+    }
+  ],
+  "page_errors": [],
+  "status": "passed"
+}

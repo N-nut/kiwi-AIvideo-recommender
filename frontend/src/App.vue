@@ -66,6 +66,15 @@ const health = ref<{mode?:string;status?:string;storage?:string;works?:number;co
 const refresh = ref<CatalogRefresh>({status:'idle',message:'选择类别，同步红果作品资料'});
 const refreshError = ref(''); const refreshStarting = ref(false);
 const syncDetails = ref(false);
+const libraryMenu = ref<HTMLDetailsElement>();
+function closeLibraryMenu(focus=false) {
+  if(!libraryMenu.value?.open)return;
+  libraryMenu.value.open=false;
+  if(focus)libraryMenu.value.querySelector('summary')?.focus();
+}
+function outsideLibraryMenu(event:Event) {
+  if(event.target instanceof Node&&!libraryMenu.value?.contains(event.target))closeLibraryMenu();
+}
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 const refreshLane = latestRequest(); let disposed=false;
 const editor = ref<HTMLDialogElement>(); const detail = ref<HTMLDialogElement>();
@@ -112,7 +121,7 @@ const detailReason=computed(()=>{
   return text&&!comparableText(detailIntro.value).includes(text)&&!comparableText(work.summary).includes(text)?reason:'';
 });
 watch(query, () => { closeRecognition();lane.cancel();parseBusy.value=false;requestKind.value=null;parsed.value=false;prefs.value=emptyPreferences();resetRound();error.value=''; });
-watch(view,()=>{preview.value?.close();historyWorkLane.cancel();if(view.value!=='discover')closeRecognition();});
+watch(view,()=>{closeLibraryMenu();preview.value?.close();historyWorkLane.cancel();if(view.value!=='discover')closeRecognition();});
 function closeRecognition(){if(recognition.value?.open)recognition.value.close();}
 function showRecognition(){if(view.value==='discover'&&parsed.value&&!busy.value&&!recognition.value?.open)recognition.value?.showModal();}
 function message(text:string) { clearTimeout(toastTimer); toast.value=text; toastTimer=setTimeout(()=>toast.value='',3000); }
@@ -186,7 +195,7 @@ async function pollRefresh() {
     if(request.current()&&!disposed) await acceptRefresh(state,refresh.value.status==='running'&&state.status!=='running');
   } catch(exc) { if(request.current()&&!disposed) refreshError.value='无法获取更新进度，请点击重试。'; }
 }
-function openUpdate() {if(updating.value) {if(refreshError.value) void pollRefresh();return;} updateDialog.value?.showModal();}
+function openUpdate() {closeLibraryMenu();if(updating.value) {if(refreshError.value) void pollRefresh();return;} updateDialog.value?.showModal();}
 const scopeText=computed(()=>refresh.value.scope ? [...refresh.value.scope.categories.map(key=>collectionCategories.find(c=>c.value===key)?.label||key),...(refresh.value.scope.include_hot_rank?['热播榜']:[])].join('、') : '选择类别自动翻页采集');
 async function updateCatalog() {
   if(updating.value) { await pollRefresh(); return; }
@@ -198,6 +207,7 @@ async function updateCatalog() {
   finally { if(request.current()) refreshStarting.value=false; }
 }
 function setView(value:string) {
+  closeLibraryMenu();
   preview.value?.close();
   if(['favorites','personal-space','feedback','history','corrections','review'].includes(value)&&auth.state.value!=='authenticated') {
     if(auth.state.value==='guest') {pendingFavorite.value='';pendingView.value=value;login.value?.open();}
@@ -206,6 +216,7 @@ function setView(value:string) {
   }
   if(value==='history')historyId.value='';
   shelf.setView(value);
+  void nextTick(()=>{if(!disposed)document.getElementById('main-content')?.scrollIntoView?.({block:'start'});});
 }
 function goToPage(page:number) {
   if(page<1||page>catalogPages.value||page===catalogPage.value) return;
@@ -334,31 +345,35 @@ const favoriteReady=computed(()=>auth.state.value==='guest'||auth.state.value===
 watch(auth.generation,()=>{historyId.value='';historyWorkLane.cancel();undo.value=null;correctionTarget.value=null;relatedCorrection.value='';if(!auth.user.value){dismissLogin();preview.value?.close();detail.value?.close();if(['feedback','history','corrections','review'].includes(view.value))shelf.setView('discover');}},{flush:'post'});
 function featureText(value:boolean|null) { return value===null?'资料未知':value?'明确有':'明确无'; }
 onMounted(async()=>{
+  document.addEventListener('pointerdown',outsideLibraryMenu);
   window.addEventListener('focus',refreshVisibleDetail);document.addEventListener('visibilitychange',refreshVisibleDetail);
   void auth.restore();
   void loadCatalog();
   void loadHealth(); void pollRefresh();
 });
-onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLane.cancel();closeCurrentDetail();clearTimeout(toastTimer);clearTimeout(refreshTimer);window.removeEventListener('focus',refreshVisibleDetail);document.removeEventListener('visibilitychange',refreshVisibleDetail);});
+onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLane.cancel();closeCurrentDetail();clearTimeout(toastTimer);clearTimeout(refreshTimer);window.removeEventListener('focus',refreshVisibleDetail);document.removeEventListener('visibilitychange',refreshVisibleDetail);document.removeEventListener('pointerdown',outsideLibraryMenu);});
 </script>
 
 <template>
-  <a class="skip-link" href="#query">跳到观剧需求</a>
-  <aside class="sidebar">
-    <div class="sidebar-brand">
+  <a class="skip-link" :href="view==='discover'?'#query':'#main-content'">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+    <div class="header-brand">
       <a class="brand" href="#" @click.prevent="setView('discover')"><span class="brand-icon"><img :src="logo" width="44" height="44" alt=""></span><span>奇维<small>KIWI</small></span></a>
       <p class="brand-slogan"><span>发现刚好</span><strong>对味的短剧</strong></p>
     </div>
-    <nav aria-label="主导航">
-      <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')"><span class="nav-icon">⌂</span>发现好剧</button>
-      <button :class="['nav-item',{active:view==='catalog'}]" @click="setView('catalog')"><span class="nav-icon">▦</span>片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
-      <button :class="['nav-item',{active:view==='favorites'}]" @click="setView('favorites')"><span class="nav-icon">♡</span>我的收藏<span class="nav-count">{{favoriteCount}}</span></button>
-      <button :class="['nav-item',{active:view==='history'}]" :aria-current="view==='history'?'page':undefined" @click="setView('history')"><span class="nav-icon" aria-hidden="true">◷</span>历史片单</button>
+    <nav class="site-navigation" aria-label="主导航">
+      <button :class="['nav-item',{active:view==='discover'}]" :aria-current="view==='discover'?'page':undefined" @click="setView('discover')">发现好剧</button>
+      <button :class="['nav-item',{active:view==='catalog'}]" :aria-current="view==='catalog'?'page':undefined" @click="setView('catalog')">片库<span class="nav-count">{{health.works ?? shelf.overall.value}}</span></button>
+      <button :class="['nav-item',{active:view==='favorites'}]" :aria-current="view==='favorites'?'page':undefined" @click="setView('favorites')">我的收藏<span class="nav-count">{{favoriteCount}}</span></button>
+      <button :class="['nav-item',{active:view==='history'}]" :aria-current="view==='history'?'page':undefined" @click="setView('history')">历史片单</button>
     </nav>
 
-    <div class="sidebar-bottom">
-      <section class="sidebar-library" aria-label="片库更新">
-        <div class="sidebar-section-title"><span>片库管理</span><span class="library-status" :class="{running:updating,failed:refresh.status==='failed'}">{{updating?'更新中':refresh.last_success_at?'已同步':'尚未同步'}}</span></div>
+    <div class="header-actions">
+      <details ref="libraryMenu" class="header-library" @keydown.esc.prevent="closeLibraryMenu(true)">
+        <summary>片库管理<span class="library-indicator" :class="{running:updating,failed:refresh.status==='failed'}" aria-hidden="true"></span><span class="sr-only">{{updating?'更新中':refresh.last_success_at?'已同步':'尚未同步'}}</span></summary>
+      <section class="library-panel" aria-label="片库更新">
+        <div class="library-panel-heading"><h2>片库更新</h2><span class="library-status" :class="{running:updating,failed:refresh.status==='failed'}">{{updating?'更新中':refresh.last_success_at?'已同步':'尚未同步'}}</span></div>
         <button class="catalog-update-button" :disabled="updating&&!refreshError" :aria-busy="updating" @click="openUpdate"><span :class="{spinning:updating}" aria-hidden="true">↻</span>{{updating?(refreshError?'重试更新进度':'正在更新…'):'更新短剧库'}}</button>
         <div class="catalog-sync" :class="{failed:refresh.status==='failed'||refreshError}" role="status" aria-live="polite">
       <span>{{refreshError || (refresh.status==='running'||refresh.status==='failed'?refresh.message:'最近更新 '+updatedTime)}}</span>
@@ -376,20 +391,21 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       </div>
     </div>
       </section>
-      <section :class="['sidebar-account',{active:view==='personal-space'}]" aria-label="账号与个人空间">
+      </details>
+      <section :class="['header-account',{active:view==='personal-space'}]" aria-label="账号与个人空间">
         <div class="account-identity">
           <button class="account-avatar" aria-label="进入个人空间" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount"><PresetAvatar :id="auth.user.value?.avatar_id" :src="auth.user.value?.avatar_url"/></button>
           <div class="account-copy">
             <button v-if="auth.user.value" class="account-button" :title="auth.user.value.username" :aria-current="view==='personal-space'?'page':undefined" @click="openAccount">{{auth.user.value.nickname||auth.user.value.username}}</button>
             <button v-else class="account-button" :disabled="auth.state.value==='checking'||auth.busy.value" @click="openAccount">{{auth.state.value==='checking'?'正在检查账号…':auth.state.value==='error'?'重试账号状态':'登录 / 注册'}}</button>
-            <small>{{auth.user.value?'个人空间':'收藏喜欢的作品'}}</small>
           </div>
         </div>
         <button class="logout-button" v-if="auth.user.value" :disabled="auth.busy.value" @click="logout">{{auth.busy.value?'正在退出…':'退出'}}</button>
       </section>
     </div>
-  </aside>
-  <main>
+    </div>
+  </header>
+  <main id="main-content" tabindex="-1">
     <p v-if="auth.error.value" class="account-notice" role="alert">{{auth.error.value}} <button v-if="auth.state.value==='error'" class="text-button" @click="auth.restore">重试</button><button v-else-if="auth.state.value==='guest'" class="text-button" @click="openAccount">登录</button></p>
     <p v-if="library.error.value" class="account-notice" role="alert">{{library.error.value}} <button class="text-button" @click="library.load">重试收藏状态</button></p>
     <LegacyImport ref="legacy" :auth="auth" :library="library" />
@@ -403,27 +419,26 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       <FeaturedCarousel :works="home.works.value" :suspended="busy" feedback-enabled :feedback-pending="feedback.pending.value" @detail="showDetail" @feedback="submitFeedback" />
       <div v-if="home.error.value" class="featured-status" role="alert"><span>{{home.error.value}}</span><button class="text-button" @click="home.load">重新加载首页推荐</button></div>
       <p v-else-if="home.loading.value" class="featured-status" role="status">正在加载首页推荐…</p>
-      <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库还没有可展示的剧集，点击侧栏“更新短剧库”即可加载。'}}</p>
+      <p v-else-if="!home.works.value.length" class="featured-status">{{auth.state.value==='authenticated'?'暂无可展示的未收藏剧集，可继续浏览片库或更新作品库。':'片库暂无剧集，可从顶部“片库管理”更新。'}}</p>
       <div v-if="home.notice.value" class="featured-status" role="status">{{home.notice.value}} <button class="text-button" @click="home.load">重试个性化推荐</button></div>
       <p v-if="home.data.value?.warnings.length" class="featured-status" role="status">{{home.data.value.warnings.join('；')}}</p>
       <section class="composer" aria-labelledby="composer-title">
-        <div class="section-top composer-heading"><div><h2 id="composer-title">今天，想看点什么？</h2></div><span class="composer-flow">写下需求 <span aria-hidden="true">→</span> 核对偏好 <span aria-hidden="true">→</span> 生成片单</span></div>
+        <div class="section-top composer-heading"><h2 id="composer-title">今天，想看点什么？</h2><span class="composer-caption">按你的口味找短剧</span></div>
         <div class="composer-grid">
           <div class="query-column">
-            <label class="query-label" for="query">描述你的观剧需求</label>
-            <p id="query-help" class="query-help">说说喜欢的题材、剧情，以及不想看的内容。</p>
-            <textarea id="query" v-model="query" maxlength="300" rows="3" aria-describedby="query-help" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
+            <label class="query-label" for="query">想看的故事</label>
+            <textarea id="query" v-model="query" maxlength="300" rows="3" placeholder="比如：想看修仙逆袭，不要后宫……" @keydown.ctrl.enter.prevent="!busy && generate()"></textarea>
             <div class="input-bottom prompt-intro"><span id="favorite-prompts-title">{{home.promptTitle.value}}</span><span class="query-count">{{query.length}} / 300</span></div>
             <div class="example-buttons favorite-prompt-examples" role="group" aria-labelledby="favorite-prompts-title"><button type="button" class="example-button" v-for="prompt in home.prompts.value" :key="prompt.label" @click="choosePrompt(prompt.text)">{{prompt.label}}</button></div>
             <p v-if="error" class="field-error" role="alert">{{error}}</p>
           </div>
           <div :class="['taste-panel',{recognized:parsed}]" role="region" aria-labelledby="taste-title" :aria-busy="busy">
-            <div class="taste-heading"><h3 id="taste-title">你的偏好</h3><span class="taste-state">{{parsing?'识别中':busy?'生成中':parsed?(preferenceIssues.length||result?.status==='needs_confirmation'?'待调整':result?(result.items.length?'已生成片单':'暂无匹配'):'待确认'):'待识别'}}</span><button class="text-button" @click="edit" :disabled="!parsed||busy">调整 ↗</button></div>
+            <div class="taste-heading"><h3 id="taste-title">你的偏好</h3><span class="taste-state">{{parsing?'识别中':busy?'生成中':parsed?(preferenceIssues.length||result?.status==='needs_confirmation'?'待调整':result?(result.items.length?'已生成片单':'暂无匹配'):'待确认'):'待识别'}}</span><button class="text-button" @click="edit" :disabled="!parsed||busy">调整</button></div>
             <PreferenceSummary v-if="parsed" class="preference-chips" :groups="preferenceGroups"/>
-            <div v-else class="preference-chips preference-placeholder"><span class="empty-preferences">先识别偏好，再由你确认。</span><p>题材、剧情特色和排除项会整理在这里，方便你检查与调整。</p></div>
+            <div v-else class="preference-chips preference-placeholder"><span class="empty-preferences">识别后，在这里核对题材和排除项。</span></div>
             <p v-if="preferenceIssues.length" class="constraint-warning" role="alert">{{preferenceIssues.join('；')}}。请调整偏好。</p>
-            <p v-else class="taste-next-note">{{parsing?'正在识别，完成后会提示你核对。':result?(result.status==='needs_confirmation'?'请调整待确认的条件后重新生成。':result.items.length?'片单已按以上偏好生成，可继续调整偏好。':'暂时没有符合条件的作品，可调整偏好后重试。'):parsed?'请核对以上偏好，确认后才会生成片单。':'点击下方按钮识别偏好，不会直接生成片单。'}}</p>
-            <button id="recommend-button" class="primary-button" :disabled="busy||parsed&&!!preferenceIssues.length" @click="generate"><span>{{refinement.status.value==='understanding'?'正在理解调整…':refinement.status.value==='applying'?'正在应用新条件…':busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span><span aria-hidden="true">{{busy?'◌':'›'}}</span></button>
+            <p v-else-if="parsed&&!result" class="taste-next-note">核对后确认，生成你的片单。</p>
+            <button id="recommend-button" class="primary-button" :disabled="busy||parsed&&!!preferenceIssues.length" @click="generate"><span>{{refinement.status.value==='understanding'?'正在理解调整…':refinement.status.value==='applying'?'正在应用新条件…':busy?phase:parsed?'确认偏好，生成片单':'理解我的口味'}}</span></button>
             <button v-if="parsed&&!busy" class="text-button reparse" @click="parse">重新理解原始描述</button>
           </div>
         </div>
@@ -432,7 +447,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
         <div class="section-top result-top"><div><h2 id="results-title">{{parsing?'正在识别偏好':busy&&!result?'正在查找作品':result?(result.items.length?`找到 ${result.items.length} 部作品`:'你的片单'):'你的片单'}}</h2></div><div class="batch-actions"><span v-if="result?.timings_ms.total" class="result-caption">用时 {{(result.timings_ms.total/1000).toFixed(1)}} 秒</span><button v-if="result?.status==='success'" class="secondary-button next-batch" :disabled="!batches.canNext.value||busy" @click="nextBatch">{{batches.busy.value?'正在换一批…':'换一批'}}</button></div></div>
         <RefinementComposer v-if="refinement.available.value" :refinement="refinement" :disabled="busy"/>
         <div v-if="batches.error.value||batches.notice.value" class="batch-status" role="status"><span>{{batches.error.value||batches.notice.value}}</span><button v-if="batches.snapshot.value" class="text-button" :disabled="busy" @click="restartBatch">重新浏览本轮</button><button class="text-button" :disabled="busy" @click="edit">调整偏好</button></div>
-        <p v-if="auth.state.value==='authenticated'" class="source-note history-save-note"><template v-if="savedHistoryId"><span>已自动保存到历史片单</span> <button class="text-button" @click="openSavedHistory(savedHistoryId)">查看这份片单 →</button></template><template v-else-if="result?.history?.status==='failed'">本次历史片单保存失败，当前结果已保留。</template><template v-else>成功生成的非空片单会自动保存，最近 100 份可在历史片单中查看。</template></p>
+        <p v-if="auth.state.value==='authenticated'&&(savedHistoryId||result?.history?.status==='failed')" class="source-note history-save-note"><template v-if="savedHistoryId"><span>已保存到历史片单</span> <button class="text-button" @click="openSavedHistory(savedHistoryId)">查看这份片单</button></template><template v-else>历史片单保存失败，当前结果已保留。</template></p>
         <p v-if="batches.stale.value" class="source-note">上次结果 · 按当前身份重新生成后可继续换批</p>
         <div v-if="result?.warnings.length" class="result-status" role="status">{{result.warnings.join(' ')}}</div>
         <div v-if="parsing" class="parse-progress" role="status"><span class="parse-progress-icon" aria-hidden="true">◌</span><div><strong>正在理解你的观剧需求</strong><p>识别完成后会请你核对偏好，确认后再生成片单。</p></div></div>
@@ -444,11 +459,10 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
           <p v-if="parsed" class="confirmation-guide-copy">当前还没有生成片单。{{preferenceIssues.length?'请手动调整或移除暂不支持的条件。':'核对上方偏好区，点击“确认偏好，生成片单”即可继续。'}}</p>
           <button v-if="parsed" class="secondary-button" @click="showRecognition">再次核对偏好</button>
           <ol v-else class="generation-steps">
-            <li><strong>写下想看的故事</strong><p>在上方描述题材、剧情偏好和不想看的内容，例如“想看修仙逆袭，不要后宫”。</p></li>
-            <li><strong>检查识别出的偏好</strong><p>点击“理解我的口味”，确认题材、必须条件和排除项；有偏差时点击“调整”。</p></li>
-            <li><strong>确认并生成片单</strong><p>点击“确认偏好，生成片单”，从已有资料中查找最多 3 部作品。点开作品可查看详情与来源。</p></li>
+            <li><strong>描述故事</strong><p>题材、剧情，以及不想看的内容。</p></li>
+            <li><strong>核对偏好</strong><p>检查必须条件和明确排除项。</p></li>
+            <li><strong>生成片单</strong><p>确认后，推荐最多 3 部作品。</p></li>
           </ol>
-          <p v-if="!parsed" class="source-note">资料未知或条件过严时，可能没有匹配结果。你可以主动调整条件，系统不会自动放宽明确排除项。</p>
         </div>
       </section>
     </section>
@@ -480,7 +494,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
       <CatalogPagination :page="catalogPage" :pages="catalogPages" :busy="catalogLoading||favoriteLoading" @change="goToPage" />
       <div v-if="!visibleWorks.length&&!catalogLoading&&!favoriteLoading&&!catalogError&&!favoriteError" class="empty-state"><h3>{{view==='favorites'?'还没有收藏作品':shelf.searchTerm.value?'没有找到相关剧名':'暂时没有符合条件的作品'}}</h3><template v-if="view==='catalog'&&shelf.searchTerm.value"><p>试试其他关键词，或清空搜索后继续浏览。</p><button class="secondary-button" @click="shelf.clearSearch">清空搜索</button></template><button v-else class="secondary-button" @click="setView('discover')">回到首页</button></div>
     </section>
-    <footer class="page-footer"><p class="source-attribution">{{sourceNotice}}</p><p class="footer-review-note">资料自动整理 · 人工核对范围见作品详情</p></footer>
+    <footer class="page-footer"><p class="source-attribution">{{sourceNotice}}</p></footer>
   </main>
 
   <dialog ref="updateDialog" class="collection-dialog" aria-labelledby="collection-title">
@@ -499,8 +513,7 @@ onUnmounted(()=>{disposed=true;lane.cancel();historyWorkLane.cancel();refreshLan
     <p id="recognition-description">{{preferenceIssues.length?'以下条件需要调整或移除，请核对后手动调整。':'请核对您的偏好，如有不符可手动调整。确认后才会生成片单。'}}</p>
     <PreferenceSummary :groups="preferenceGroups"/>
     <p v-if="preferenceIssues.length" class="recognition-warning" role="alert">{{preferenceIssues.join('；')}}</p>
-    <p class="recognition-note">{{preferenceIssues.length?'暂不生成片单，请先处理待确认条件。':'偏好已整理完成，当前尚未生成片单。'}}</p>
-    <div class="dialog-actions"><button type="button" class="primary-button" :disabled="busy||!!preferenceIssues.length" autofocus @click="generate">核对无误，生成片单 <span aria-hidden="true">›</span></button><button type="button" class="secondary-button" @click="edit">手动调整偏好</button></div>
+    <div class="dialog-actions"><button type="button" class="primary-button" :disabled="busy||!!preferenceIssues.length" autofocus @click="generate">核对无误，生成片单</button><button type="button" class="secondary-button" @click="edit">手动调整偏好</button></div>
   </dialog>
   <dialog ref="editor" class="preference-dialog" aria-labelledby="editor-title"><div class="dialog-heading"><h2 id="editor-title">调整偏好</h2><button class="icon-button" @click="editor?.close()" aria-label="关闭偏好设置">×</button></div><PreferenceEditor :preferences="draft" @update="saveEditor" /></dialog>
   <WorkPreview ref="preview" />

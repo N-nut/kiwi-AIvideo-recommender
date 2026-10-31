@@ -103,8 +103,8 @@ it('panel shows explicit confirmation before delete and emits reuse without gene
   const s=setup();await s.auth.restore();await flushPromises();const w=mount(HistoryPanel,{props:{auth:s.auth}});stops.push(()=>w.unmount());await flushPromises();
   const button=(text:string)=>w.findAll('button').find(b=>b.text()===text)!;
   await button('删除').trigger('click');expect(s.fetcher.mock.calls.some(([,o])=>o?.method==='DELETE')).toBe(false);await button('取消').trigger('click');
-  await button('查看片单 →').trigger('click');await flushPromises();expect(w.text()).toContain('当时的推荐理由');expect(w.text()).toContain('标签基线');
-  await button('沿用偏好，再次推荐 ↗').trigger('click');expect(w.emitted('reuse')?.[0]?.[0]).toEqual(fixture());expect(s.fetcher.mock.calls.some(([url,o])=>url.endsWith('/recommendations')&&o?.method==='POST')).toBe(false);
+  await button('查看片单').trigger('click');await flushPromises();expect(w.text()).toContain('当时的推荐理由');expect(w.text()).toContain('标签基线');
+  await button('沿用偏好，再次推荐').trigger('click');expect(w.emitted('reuse')?.[0]?.[0]).toEqual(fixture());expect(s.fetcher.mock.calls.some(([url,o])=>url.endsWith('/recommendations')&&o?.method==='POST')).toBe(false);
 });
 it('unavailable works have no detail controls, changed works clearly label their historical reasons',async()=>{
   const s=setup();await s.auth.restore();await flushPromises();const data=fixture();data.items[0]!.changed=true;data.items.push({id:'removed',title:'已移除作品',available:false,changed:false,work:null});s.rows([data]);
@@ -118,7 +118,7 @@ it('App reuses saved preferences only after the explicit action and still asks f
   await w.find('.history-detail-heading .primary-button').trigger('click');await flushPromises();
   expect((w.find('#query').element as HTMLTextAreaElement).value).toBe('想看修仙，不要后宫');expect(w.find('.recognition-dialog[open]').exists()).toBe(true);
   expect(s.fetcher.mock.calls.some(([url,o])=>url.endsWith('/recommendations')&&o?.method==='POST')).toBe(false);
-  await w.find('.recognition-dialog .primary-button').trigger('click');await flushPromises();expect(w.find('.history-save-note').text()).toContain('已自动保存');
+  await w.find('.recognition-dialog .primary-button').trigger('click');await flushPromises();expect(w.find('.history-save-note').text()).toContain('已保存到历史片单');
   const sent=s.fetcher.mock.calls.filter(([url,o])=>url.endsWith('/recommendations')&&o?.method==='POST');expect(JSON.parse(sent[0]![1]!.body as string).query).toBe('想看修仙，不要后宫');
 });
 it('App requests current work data when opening a historical work',async()=>{

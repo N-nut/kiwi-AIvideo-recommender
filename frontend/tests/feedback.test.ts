@@ -154,7 +154,7 @@ it('undo preserves the original home recommendation explanation when a work also
   await w.find('#recommend-button').trigger('click');await flushPromises();await w.find('.recognition-dialog .primary-button').trigger('click');await flushPromises();
   await w.find('.results-section .feedback-options button').trigger('click');await flushPromises();expect(w.find('.featured-label').exists()).toBe(false);
   await w.find('.feedback-notice button').trigger('click');await flushPromises();
-  expect(w.find('.featured-label').text()).toBe('根据收藏推荐');expect(w.find('.featured-reason').text()).toBe('根据你收藏的修仙风格推荐');
+  expect(w.find('.featured-label').text()).toBe('根据收藏推荐');expect(w.find('.featured-reason').exists()).toBe(false);
 });
 
 it('saving and undo restore the original same-batch card; navigation retains the round',async()=>{

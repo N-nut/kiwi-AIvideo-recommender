@@ -92,7 +92,7 @@ describe('preference confirmation flow',()=>{
   it('keeps the guide usable when the carousel load fails and allows a separate retry',async()=>{
     let failed=true;const fetcher=vi.fn((url:string)=>url==='/api/v1/home/recommendations'?(failed?response({error:{message:'片库暂时不可用'}},503):response(homeFixture())):initial(url));vi.stubGlobal('fetch',fetcher);
     const w=mount(App);await flushPromises();expect(w.find('.featured-status').text()).toContain('片库暂时不可用');expect(w.find('.generation-guide').exists()).toBe(true);
-    failed=false;await findButton(w,'重新加载首页推荐').trigger('click');await flushPromises();expect(w.find('.featured-status').text()).toContain('片库还没有可展示的剧集');expect(w.find('.generation-guide').exists()).toBe(true);
+    failed=false;await findButton(w,'重新加载首页推荐').trigger('click');await flushPromises();expect(w.find('.featured-status').text()).toContain('片库暂无剧集');expect(w.find('.generation-guide').exists()).toBe(true);
     expect(fetcher.mock.calls.some(([url])=>url==='/api/v1/recommendations'||url.includes('/parse'))).toBe(false);w.unmount();
   });
   it('requires a separate confirmation before recommendation',async()=>{
@@ -101,7 +101,7 @@ describe('preference confirmation flow',()=>{
   });
   it('sends user-edited preferences without reparsing',async()=>{
     const fetcher=vi.fn((url:string)=>url.includes('/parse')?response({preferences:prefs()}):url==='/api/v1/recommendations'?response({status:'empty',items:[],warnings:[],timings_ms:{},request_id:'test'}):initial(url));vi.stubGlobal('fetch',fetcher);
-    const w=mount(App);await flushPromises();await findButton(w,'理解我的口味').trigger('click');await flushPromises();await findButton(w,'调整 ↗').trigger('click');const inputs=w.findAll('input[type=checkbox]');const city=inputs.find(i=>i.element.getAttribute('value')==='都市')!;await city.setValue(true);await findButton(w,'确认修改').trigger('click');await findButton(w,'确认偏好').trigger('click');await flushPromises();
+    const w=mount(App);await flushPromises();await findButton(w,'理解我的口味').trigger('click');await flushPromises();await findButton(w,'调整').trigger('click');const inputs=w.findAll('input[type=checkbox]');const city=inputs.find(i=>i.element.getAttribute('value')==='都市')!;await city.setValue(true);await findButton(w,'确认修改').trigger('click');await findButton(w,'确认偏好').trigger('click');await flushPromises();
     const call=fetcher.mock.calls.find(([u])=>u==='/api/v1/recommendations') as unknown as [string,RequestInit];expect(JSON.parse(call[1].body as string).preferences.soft_preferences.genres).toContain('都市');expect(fetcher.mock.calls.filter(([u])=>u.includes('/parse'))).toHaveLength(1);w.unmount();
   });
   it('ignores an old parse response after the description changes',async()=>{

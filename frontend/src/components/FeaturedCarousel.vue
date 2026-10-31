@@ -39,8 +39,7 @@ onUnmounted(()=>{clearInterval(timer);motion?.removeEventListener?.('change',mot
       <h1>{{active.title}}</h1>
       <div class="featured-meta"><span>{{active.source_meta?.content_type}}</span><span v-for="tag in active.genres.slice(0,2)" :key="tag">{{tag}}</span><span v-if="active.source_meta?.episode_count">全 {{active.source_meta.episode_count}} 集</span></div>
       <p>{{active.summary}}</p>
-      <p v-if="'basis' in active && active.basis==='favorites'" class="featured-reason">{{active.reason}}</p>
-      <div class="featured-actions"><button class="featured-detail" @click="emit('detail',active)">查看详情 <span aria-hidden="true">›</span></button>
+      <div class="featured-actions"><button class="featured-detail" @click="emit('detail',active)">查看详情</button>
       <FeedbackMenu v-if="feedbackEnabled" :title="active.title" :busy="feedbackPending?.has(active.id)" @select="emit('feedback',active,$event)"/>
       </div>
     </div>
