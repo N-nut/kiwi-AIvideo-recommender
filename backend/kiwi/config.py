@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     preview_retry_seconds: float = Field(default=60, ge=1, le=3600)
     preview_attempts: int = Field(default=3, ge=1, le=3)
 
+    @field_validator("embedding_dimension", mode="before")
+    @classmethod
+    def parse_embedding_dimension(cls, value):
+        return 1024 if value == "1024" else value
+
     @field_validator("media_root")
     @classmethod
     def resolve_media_root(cls, value):

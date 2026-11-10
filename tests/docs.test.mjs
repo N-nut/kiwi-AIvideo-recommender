@@ -4,6 +4,22 @@ import { readFile, stat } from 'node:fs/promises';
 
 const documents = ['../README.md', '../项目介绍.md', '../docs/技术方案.md', '../产品设计文档.md', '../docs/实现与验收.md', '../data/审核说明.md', '../docs/媒体预览.md', '../docs/运行与维护.md', '../demo/验收记录.md'].map(path => new URL(path, import.meta.url));
 
+test('公开配置模板和操作示例的模型密钥保持空白', async () => {
+  const template = await readFile(new URL('../.env.example', import.meta.url), 'utf8');
+  const guide = await readFile(new URL('../docs/运行与维护.md', import.meta.url), 'utf8');
+  const setup = guide.split(/^## 配置模型密钥\r?$/m)[1]?.split(/\r?\n## /)[0];
+  assert.ok(setup, '维护文档应有独立的密钥配置章节');
+  const example = setup.match(/```dotenv\s*\r?\n([\s\S]*?)```/)?.[1];
+  assert.ok(example, '密钥配置章节应提供空值示例');
+  for (const key of ['DEEPSEEK_API_KEY', 'DASHSCOPE_API_KEY']) {
+    const assignment = new RegExp(`^[ \\t]*${key}[ \\t]*=`);
+    for (const source of [template, example]) {
+      const lines = source.split(/\r?\n/).filter(line => assignment.test(line));
+      assert.ok(lines.length === 1 && lines[0].trim() === `${key}=`, `${key} 必须仅出现一次并留空`);
+    }
+  }
+});
+
 function technicalSection(source, number) {
   const start=source.search(new RegExp(`^## ${number}\\.`, 'm'));
   assert.notEqual(start,-1,`技术方案缺少第 ${number} 节`);

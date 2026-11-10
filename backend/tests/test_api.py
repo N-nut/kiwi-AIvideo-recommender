@@ -15,6 +15,32 @@ from kiwi.schemas import WorkInput
 from conftest import FakeAI
 
 
+def test_model_settings_from_public_template(tmp_path, monkeypatch):
+    for field in Settings.model_fields:
+        monkeypatch.delenv(field.upper(), raising=False)
+        monkeypatch.delenv(field, raising=False)
+
+    config = tmp_path / ".env"
+    template = (ROOT / ".env.example").read_text(encoding="utf-8")
+    config.write_text(
+        template.replace("DEEPSEEK_API_KEY=\n", "DEEPSEEK_API_KEY=local-config-a\n")
+        .replace("DASHSCOPE_API_KEY=\n", "DASHSCOPE_API_KEY=local-config-b\n"),
+        encoding="utf-8",
+    )
+    settings = Settings(_env_file=config)
+    assert settings.configured and settings.ai_mode == "live"
+    assert settings.deepseek_model == "deepseek-flash"
+    assert settings.embedding_dimension == 1024
+    assert settings.deepseek_api_key.get_secret_value() == "local-config-a"
+    assert settings.dashscope_api_key.get_secret_value() == "local-config-b"
+
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "process-config-a")
+    assert Settings(_env_file=config).deepseek_api_key.get_secret_value() == "process-config-a"
+    monkeypatch.setenv("EMBEDDING_DIMENSION", "768")
+    with pytest.raises(ValueError, match="embedding_dimension"):
+        Settings(_env_file=config)
+
+
 def test_health_and_blank_input(client):
     assert client.get('/health/live').status_code==200
     assert client.get('/health/ready').status_code==503

@@ -51,10 +51,9 @@ python -m venv .venv
 npm.cmd ci
 npm.cmd --prefix frontend ci
 npm.cmd run build:app
-Copy-Item .env.example .env
 ```
 
-在 `.env` 中配置 `DEEPSEEK_API_KEY` 与 `DASHSCOPE_API_KEY`，然后启动：
+使用真实模型时，按 [配置模型密钥](docs/运行与维护.md#配置模型密钥) 在项目根目录的本地 `.env` 填写 `DEEPSEEK_API_KEY` 和 `DASHSCOPE_API_KEY`，然后启动。
 
 ```powershell
 npm.cmd start
